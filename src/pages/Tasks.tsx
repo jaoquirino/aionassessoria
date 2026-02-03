@@ -9,7 +9,7 @@ import { TaskKanbanBoard } from "@/components/tasks/TaskKanbanBoard";
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { TaskFilters, TaskFiltersState } from "@/components/tasks/TaskFilters";
 import { AddTaskDialog } from "@/components/tasks/AddTaskDialog";
-import { TaskDetailSheet } from "@/components/tasks/TaskDetailSheet";
+import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { useTasks, useUpdateTaskStatus, useTeamMembers, useClients } from "@/hooks/useTasks";
 import type { TaskStatusDB } from "@/types/tasks";
 
@@ -247,7 +247,7 @@ export default function Tasks() {
 
       {/* Dialogs */}
       <AddTaskDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
-      <TaskDetailSheet 
+      <TaskEditDialog 
         taskId={selectedTaskId} 
         open={!!selectedTaskId} 
         onOpenChange={(open) => !open && setSelectedTaskId(null)} 

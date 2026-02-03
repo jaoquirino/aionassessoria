@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, MoreHorizontal, UserCheck, Clock, Loader2 } from "lucide-react";
+import { Search, MoreHorizontal, UserCheck, Clock, Loader2, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { AddClientDialog } from "@/components/clients/AddClientDialog";
+import { EditClientDialog } from "@/components/clients/EditClientDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -43,6 +44,7 @@ export default function Clients() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
 
   const fetchClients = async () => {
     try {
@@ -242,7 +244,8 @@ export default function Clients() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.05 * index }}
-                  className="group hover:bg-muted/30 transition-colors"
+                  className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                  onClick={() => setEditingClient(client)}
                 >
                   <td className="px-6 py-4">
                     <span className="font-medium text-foreground">
@@ -261,18 +264,17 @@ export default function Clients() {
                     {new Date(client.created_at).toLocaleDateString("pt-BR")}
                   </td>
                   <td className="px-6 py-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-background">
-                        <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                        <DropdownMenuItem>Novo contrato</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingClient(client);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                   </td>
                 </motion.tr>
               ))}
@@ -287,6 +289,14 @@ export default function Clients() {
           </table>
         </div>
       </motion.div>
+
+      {/* Edit Client Dialog */}
+      <EditClientDialog
+        client={editingClient}
+        open={!!editingClient}
+        onOpenChange={(open) => !open && setEditingClient(null)}
+        onClientUpdated={fetchClients}
+      />
     </div>
   );
 }
