@@ -54,6 +54,8 @@ import {
   useTeamMembers,
 } from "@/hooks/useTasks";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
+import { TaskComments } from "./TaskComments";
+import { useTaskComments } from "@/hooks/useTaskComments";
 
 interface TaskEditDialogProps {
   taskId: string | null;
@@ -64,6 +66,7 @@ interface TaskEditDialogProps {
 export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogProps) {
   const { data: task, isLoading } = useTask(taskId);
   const { data: teamMembers = [] } = useTeamMembers();
+  const { data: comments = [] } = useTaskComments(taskId);
   
   const updateTask = useUpdateTask();
   const updateStatus = useUpdateTaskStatus();
@@ -238,6 +241,15 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                       </Badge>
                     ) : null}
                   </TabsTrigger>
+                  <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Comentários
+                    {comments.length > 0 ? (
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        {comments.length}
+                      </Badge>
+                    ) : null}
+                  </TabsTrigger>
                   <TabsTrigger value="history" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <History className="h-4 w-4 mr-2" />
                     Histórico
@@ -260,7 +272,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {(Object.entries(taskStatusConfig) as [TaskStatusDB, typeof taskStatusConfig[TaskStatusDB]][]).map(([key, config]) => (
+                        {(Object.entries(taskStatusConfig) as [string, typeof taskStatusConfig[keyof typeof taskStatusConfig]][])
+                          .filter(([key]) => key !== "overdue")
+                          .map(([key, config]) => (
                           <SelectItem 
                             key={key} 
                             value={key}
@@ -555,6 +569,11 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                       </p>
                     )}
                   </div>
+                </TabsContent>
+
+                {/* Comments Tab */}
+                <TabsContent value="comments" className="p-6 mt-0">
+                  <TaskComments taskId={task.id} />
                 </TabsContent>
 
                 {/* History Tab */}
