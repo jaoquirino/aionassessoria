@@ -336,6 +336,41 @@ export type Database = {
           },
         ]
       }
+      task_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          task_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          task_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_history: {
         Row: {
           action_type: string
@@ -399,6 +434,7 @@ export type Database = {
           due_date: string
           id: string
           is_deliverable: boolean
+          priority: string
           required_role: string
           status: Database["public"]["Enums"]["task_status"]
           title: string
@@ -420,6 +456,7 @@ export type Database = {
           due_date: string
           id?: string
           is_deliverable?: boolean
+          priority?: string
           required_role: string
           status?: Database["public"]["Enums"]["task_status"]
           title: string
@@ -441,6 +478,7 @@ export type Database = {
           due_date?: string
           id?: string
           is_deliverable?: boolean
+          priority?: string
           required_role?: string
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
@@ -525,6 +563,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -534,8 +593,17 @@ export type Database = {
         Args: { task_type: Database["public"]["Enums"]["task_type"] }
         Returns: number
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_team_member: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      app_role: "admin" | "member"
       client_status: "onboarding" | "active" | "paused" | "ended"
       onboarding_step_status: "pending" | "in_progress" | "completed"
       task_status: "todo" | "in_progress" | "review" | "waiting_client" | "done"
@@ -667,6 +735,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "member"],
       client_status: ["onboarding", "active", "paused", "ended"],
       onboarding_step_status: ["pending", "in_progress", "completed"],
       task_status: ["todo", "in_progress", "review", "waiting_client", "done"],

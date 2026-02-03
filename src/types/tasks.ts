@@ -64,6 +64,8 @@ export interface ContractModule {
   service_module?: ServiceModule;
 }
 
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
+
 export interface Task {
   id: string;
   title: string;
@@ -77,6 +79,7 @@ export interface Task {
   due_date: string;
   status: TaskStatusDB;
   weight: number;
+  priority: TaskPriority;
   description_objective: string | null;
   description_deliverable: string | null;
   description_references: string | null;
@@ -93,6 +96,20 @@ export interface Task {
   checklist?: TaskChecklistItem[];
   attachments?: TaskAttachment[];
   history?: TaskHistory[];
+  comments?: TaskComment[];
+}
+
+export interface TaskComment {
+  id: string;
+  task_id: string;
+  user_id: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  profile?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  };
 }
 
 export interface TaskChecklistItem {
@@ -138,12 +155,31 @@ export interface CreateTaskInput {
   assigned_to?: string | null;
   created_by?: string | null;
   due_date: string;
+  priority?: TaskPriority;
   description_objective?: string | null;
   description_deliverable?: string | null;
   description_references?: string | null;
   description_notes?: string | null;
   is_deliverable?: boolean;
   checklist?: string[];
+}
+
+export interface UpdateTaskInput {
+  id: string;
+  title?: string;
+  contract_id?: string | null;
+  contract_module_id?: string | null;
+  type?: TaskType;
+  required_role?: string;
+  assigned_to?: string | null;
+  due_date?: string;
+  status?: TaskStatusDB;
+  priority?: TaskPriority;
+  description_objective?: string | null;
+  description_deliverable?: string | null;
+  description_references?: string | null;
+  description_notes?: string | null;
+  is_deliverable?: boolean;
 }
 
 export interface UpdateTaskInput {
@@ -163,8 +199,11 @@ export interface UpdateTaskInput {
   is_deliverable?: boolean;
 }
 
-// Status config for UI
-export const taskStatusConfig: Record<TaskStatusDB, { label: string; color: string }> = {
+// Status config for UI - incluindo "overdue" virtual
+export type TaskStatusDisplay = TaskStatusDB | "overdue";
+
+export const taskStatusConfig: Record<TaskStatusDisplay, { label: string; color: string }> = {
+  overdue: { label: "Pra ontem", color: "bg-destructive/20 text-destructive" },
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
   in_progress: { label: "Em produção", color: "bg-primary/20 text-primary" },
   review: { label: "Em revisão", color: "bg-warning/20 text-warning" },
@@ -177,6 +216,13 @@ export const taskTypeConfig: Record<TaskType, { label: string; color: string; we
   planning: { label: "Planejamento", color: "border-purple/30 text-purple", weight: 1 },
   project: { label: "Projeto", color: "border-primary/30 text-primary", weight: 4 },
   extra: { label: "Extra", color: "border-orange/30 text-orange", weight: 3 },
+};
+
+export const priorityConfig: Record<TaskPriority, { label: string; color: string; order: number }> = {
+  low: { label: "Baixa", color: "bg-muted text-muted-foreground", order: 4 },
+  medium: { label: "Média", color: "bg-info/20 text-info", order: 3 },
+  high: { label: "Alta", color: "bg-warning/20 text-warning", order: 2 },
+  urgent: { label: "Urgente", color: "bg-destructive/20 text-destructive", order: 1 },
 };
 
 export const roleOptions = [

@@ -16,6 +16,7 @@ import Modules from "./pages/Modules";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import Permissions from "./pages/Permissions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/equipe" element={<Team />} />
             <Route path="/modulos" element={<Modules />} />
             <Route path="/configuracoes" element={<Settings />} />
+            <Route path="/permissoes" element={<Permissions />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
