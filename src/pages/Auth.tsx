@@ -117,22 +117,13 @@ export default function Auth() {
             <img 
               src={logoDark} 
               alt="AION Assessoria" 
-              className="h-12 w-auto dark:block hidden"
+              className="h-20 w-auto dark:block hidden"
             />
             <img 
               src={logoLight} 
               alt="AION Assessoria" 
-              className="h-12 w-auto dark:hidden block"
+              className="h-20 w-auto dark:hidden block"
             />
-          </div>
-
-          {/* Subtitle */}
-          <div className="text-center mb-8">
-            <p className="text-muted-foreground">
-              {isLogin
-                ? "Acesse sua conta para continuar"
-                : "Preencha os dados para criar sua conta"}
-            </p>
           </div>
 
           {/* Form */}
