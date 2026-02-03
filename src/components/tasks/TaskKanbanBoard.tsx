@@ -83,21 +83,9 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask }: T
                   {columnTasks.length}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
-                  P{totalWeight}
-                </span>
-                {column !== "done" && onAddTask && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => onAddTask(column)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+              <span className="text-xs text-muted-foreground">
+                P{totalWeight}
+              </span>
             </div>
 
             <div className="space-y-3">
@@ -169,9 +157,20 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask }: T
               ))}
 
               {columnTasks.length === 0 && (
-                <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center h-20 text-sm text-muted-foreground">
                   Nenhuma tarefa
                 </div>
+              )}
+
+              {/* Add Task Button - Trello Style */}
+              {column !== "done" && onAddTask && (
+                <button
+                  onClick={() => onAddTask(column)}
+                  className="w-full rounded-lg border-2 border-dashed border-muted-foreground/30 p-3 flex items-center justify-center gap-2 text-muted-foreground/60 hover:border-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30 transition-all cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="text-sm font-medium">Adicionar tarefa</span>
+                </button>
               )}
             </div>
           </motion.div>
