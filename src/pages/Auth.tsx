@@ -126,12 +126,9 @@ export default function Auth() {
             />
           </div>
 
-          {/* Title */}
+          {/* Subtitle */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-foreground">
-              {isLogin ? "Entrar" : "Criar conta"}
-            </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground">
               {isLogin
                 ? "Acesse sua conta para continuar"
                 : "Preencha os dados para criar sua conta"}
