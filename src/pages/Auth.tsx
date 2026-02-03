@@ -18,7 +18,23 @@ const SETUP_USERNAME = "admin";
 const SETUP_PASSWORD = "9Ov?w+5a}8qH/H=ht6ET";
 
 const emailSchema = z.string().email("Email inválido");
-const passwordSchema = z.string().min(6, "Senha deve ter no mínimo 6 caracteres");
+
+// Validação de senha forte para criação de conta
+const strongPasswordSchema = z.string()
+  .min(12, "Senha deve ter no mínimo 12 caracteres")
+  .regex(/[a-z]/, "Senha deve conter letra minúscula")
+  .regex(/[A-Z]/, "Senha deve conter letra maiúscula")
+  .regex(/[0-9]/, "Senha deve conter número")
+  .regex(/[^a-zA-Z0-9]/, "Senha deve conter caractere especial");
+
+// Função para obter requisitos da senha com status
+const getPasswordRequirements = (password: string) => [
+  { label: "Mínimo 12 caracteres", met: password.length >= 12 },
+  { label: "Letra minúscula (a-z)", met: /[a-z]/.test(password) },
+  { label: "Letra maiúscula (A-Z)", met: /[A-Z]/.test(password) },
+  { label: "Número (0-9)", met: /[0-9]/.test(password) },
+  { label: "Caractere especial (!@#$...)", met: /[^a-zA-Z0-9]/.test(password) },
+];
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -52,10 +68,10 @@ export default function Auth() {
       }
     }
 
-    // Senha sempre precisa de pelo menos 6 caracteres para criar conta
+    // Validação de senha forte apenas para criação de conta (não para login)
     if (!isLogin || isSetupMode) {
-      const passwordResult = passwordSchema.safeParse(password);
-      if (!passwordResult.success && !isLogin) {
+      const passwordResult = strongPasswordSchema.safeParse(password);
+      if (!passwordResult.success) {
         newErrors.password = passwordResult.error.errors[0].message;
       }
     }
@@ -254,6 +270,23 @@ export default function Auth() {
               </div>
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password}</p>
+              )}
+              
+              {/* Requisitos de senha - mostrar apenas ao criar conta */}
+              {(!isLogin || isSetupMode) && password.length > 0 && (
+                <div className="mt-2 p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Requisitos da senha:</p>
+                  <div className="grid grid-cols-1 gap-1">
+                    {getPasswordRequirements(password).map((req, index) => (
+                      <div key={index} className="flex items-center gap-2 text-xs">
+                        <div className={`h-1.5 w-1.5 rounded-full ${req.met ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
+                        <span className={req.met ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
+                          {req.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
