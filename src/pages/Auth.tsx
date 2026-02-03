@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { z } from "zod";
 import logoLight from "@/assets/logo-light.png";
+import logoDark from "@/assets/logo-dark.png";
 
 const emailSchema = z.string().email("Email inválido");
 const passwordSchema = z.string().min(6, "Senha deve ter no mínimo 6 caracteres");
@@ -114,9 +115,14 @@ export default function Auth() {
           {/* Logo */}
           <div className="flex justify-center mb-8">
             <img 
+              src={logoDark} 
+              alt="AION Assessoria" 
+              className="h-12 w-auto dark:block hidden"
+            />
+            <img 
               src={logoLight} 
               alt="AION Assessoria" 
-              className="h-12 w-auto"
+              className="h-12 w-auto dark:hidden block"
             />
           </div>
 
