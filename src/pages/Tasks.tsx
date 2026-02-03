@@ -1,23 +1,12 @@
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Filter, MoreHorizontal, Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import { Plus, AlertTriangle, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-
-interface Task {
-  id: string;
-  title: string;
-  client: string;
-  module: string;
-  type: "recurring" | "planning" | "project" | "extra";
-  assignee: string;
-  assigneeRole: string;
-  dueDate: string;
-  status: "todo" | "in_progress" | "review" | "done";
-  weight: number;
-  isOverdue: boolean;
-}
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { TaskKanbanBoard, Task, TaskStatus } from "@/components/tasks/TaskKanbanBoard";
+import { TaskListView } from "@/components/tasks/TaskListView";
+import { TaskFilters, TaskFiltersState } from "@/components/tasks/TaskFilters";
 
 const mockTasks: Task[] = [
   {
@@ -98,25 +87,96 @@ const mockTasks: Task[] = [
     weight: 4,
     isOverdue: false,
   },
+  {
+    id: "7",
+    title: "Campanha de Natal finalizada",
+    client: "Loja Fashion",
+    module: "Gestão de Tráfego",
+    type: "project",
+    assignee: "Ana Silva",
+    assigneeRole: "Gestor de Tráfego",
+    dueDate: "2023-12-25",
+    status: "done",
+    weight: 4,
+    isOverdue: false,
+  },
+  {
+    id: "8",
+    title: "Posts Instagram - Semana 2",
+    client: "Restaurante Bella",
+    module: "Design",
+    type: "recurring",
+    assignee: "Carlos Santos",
+    assigneeRole: "Designer",
+    dueDate: "2024-01-09",
+    status: "done",
+    weight: 2,
+    isOverdue: false,
+  },
 ];
 
-const statusConfig = {
-  todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
-  in_progress: { label: "Em produção", color: "bg-primary/20 text-primary" },
-  review: { label: "Revisão", color: "bg-warning/20 text-warning" },
-  done: { label: "Entregue", color: "bg-success/20 text-success" },
-};
+const statusOptions = [
+  { value: "todo", label: "A fazer" },
+  { value: "in_progress", label: "Em produção" },
+  { value: "review", label: "Revisão" },
+  { value: "done", label: "Entregue" },
+];
 
-const typeConfig = {
-  recurring: { label: "Entrega recorrente", color: "border-blue-500/30 text-blue-500" },
-  planning: { label: "Planejamento", color: "border-purple-500/30 text-purple-500" },
-  project: { label: "Projeto", color: "border-primary/30 text-primary" },
-  extra: { label: "Extra", color: "border-orange-500/30 text-orange-500" },
-};
+const typeOptions = [
+  { value: "recurring", label: "Entrega recorrente" },
+  { value: "planning", label: "Planejamento" },
+  { value: "project", label: "Projeto" },
+  { value: "extra", label: "Extra" },
+];
 
 export default function Tasks() {
-  const overdueTasks = mockTasks.filter((t) => t.isOverdue);
-  const totalWeight = mockTasks.filter((t) => t.status !== "done").reduce((acc, t) => acc + t.weight, 0);
+  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [filters, setFilters] = useState<TaskFiltersState>({
+    search: "",
+    status: "all",
+    type: "all",
+    assignee: "all",
+    client: "all",
+  });
+
+  const assigneeOptions = useMemo(() => {
+    const unique = [...new Set(tasks.map((t) => t.assignee))];
+    return unique.map((a) => ({ value: a, label: a }));
+  }, [tasks]);
+
+  const clientOptions = useMemo(() => {
+    const unique = [...new Set(tasks.map((t) => t.client))];
+    return unique.map((c) => ({ value: c, label: c }));
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      const matchesSearch =
+        filters.search === "" ||
+        task.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+        task.client.toLowerCase().includes(filters.search.toLowerCase()) ||
+        task.assignee.toLowerCase().includes(filters.search.toLowerCase());
+
+      const matchesStatus = filters.status === "all" || task.status === filters.status;
+      const matchesType = filters.type === "all" || task.type === filters.type;
+      const matchesAssignee = filters.assignee === "all" || task.assignee === filters.assignee;
+      const matchesClient = filters.client === "all" || task.client === filters.client;
+
+      return matchesSearch && matchesStatus && matchesType && matchesAssignee && matchesClient;
+    });
+  }, [tasks, filters]);
+
+  const handleTaskMove = (taskId: string, newStatus: TaskStatus) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId ? { ...t, status: newStatus } : t
+      )
+    );
+  };
+
+  const overdueTasks = tasks.filter((t) => t.isOverdue);
+  const totalWeight = tasks.filter((t) => t.status !== "done").reduce((acc, t) => acc + t.weight, 0);
 
   return (
     <div className="space-y-6">
@@ -130,10 +190,27 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold text-foreground">Tarefas</h1>
           <p className="text-muted-foreground">Motor de entregas e produção</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Tarefa
-        </Button>
+        <div className="flex items-center gap-3">
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={(v) => v && setViewMode(v as "kanban" | "list")}
+            className="bg-muted rounded-lg p-1"
+          >
+            <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="gap-1.5 data-[state=on]:bg-background">
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden sm:inline">Kanban</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="Visualização Lista" className="gap-1.5 data-[state=on]:bg-background">
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">Lista</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Tarefa
+          </Button>
+        </div>
       </motion.div>
 
       {/* Overdue Alert */}
@@ -163,16 +240,15 @@ export default function Tasks() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="flex flex-col gap-4 sm:flex-row"
       >
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar tarefas..." className="pl-9" />
-        </div>
-        <Button variant="outline" className="gap-2">
-          <Filter className="h-4 w-4" />
-          Filtros
-        </Button>
+        <TaskFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          statusOptions={statusOptions}
+          typeOptions={typeOptions}
+          assigneeOptions={assigneeOptions}
+          clientOptions={clientOptions}
+        />
       </motion.div>
 
       {/* Stats */}
@@ -185,7 +261,7 @@ export default function Tasks() {
         <div className="glass rounded-xl p-4">
           <p className="text-sm text-muted-foreground">Total Ativas</p>
           <p className="text-2xl font-bold text-foreground">
-            {mockTasks.filter((t) => t.status !== "done").length}
+            {tasks.filter((t) => t.status !== "done").length}
           </p>
         </div>
         <div className="glass rounded-xl p-4 border-destructive/20">
@@ -195,7 +271,7 @@ export default function Tasks() {
         <div className="glass rounded-xl p-4">
           <p className="text-sm text-muted-foreground">Em Revisão</p>
           <p className="text-2xl font-bold text-warning">
-            {mockTasks.filter((t) => t.status === "review").length}
+            {tasks.filter((t) => t.status === "review").length}
           </p>
         </div>
         <div className="glass rounded-xl p-4">
@@ -204,87 +280,17 @@ export default function Tasks() {
         </div>
       </motion.div>
 
-      {/* Tasks List */}
+      {/* Tasks View */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="space-y-3"
       >
-        {mockTasks.map((task, index) => (
-          <motion.div
-            key={task.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.05 * index }}
-            className={cn(
-              "glass rounded-xl p-5 transition-all hover:shadow-lg group",
-              task.isOverdue && "border-destructive/30 bg-destructive/5"
-            )}
-          >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-start gap-4">
-                <div
-                  className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                    task.isOverdue
-                      ? "bg-destructive/10 text-destructive"
-                      : task.status === "done"
-                      ? "bg-success/10 text-success"
-                      : "bg-primary/10 text-primary"
-                  )}
-                >
-                  {task.isOverdue ? (
-                    <AlertTriangle className="h-5 w-5" />
-                  ) : task.status === "done" ? (
-                    <CheckCircle className="h-5 w-5" />
-                  ) : (
-                    <Clock className="h-5 w-5" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h3 className="font-medium text-foreground">{task.title}</h3>
-                    <Badge variant="outline" className={cn("text-xs", typeConfig[task.type].color)}>
-                      {typeConfig[task.type].label}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Peso: {task.weight}
-                    </Badge>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span>{task.client}</span>
-                    {task.module && (
-                      <>
-                        <span>·</span>
-                        <span>{task.module}</span>
-                      </>
-                    )}
-                    <span>·</span>
-                    <span>{task.assignee}</span>
-                    <span className="text-xs">({task.assigneeRole})</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <Badge className={cn(statusConfig[task.status].color)}>
-                    {statusConfig[task.status].label}
-                  </Badge>
-                  <p className={cn(
-                    "text-xs mt-1",
-                    task.isOverdue ? "text-destructive font-medium" : "text-muted-foreground"
-                  )}>
-                    {task.isOverdue ? "Atrasada" : `Prazo: ${new Date(task.dueDate).toLocaleDateString("pt-BR")}`}
-                  </p>
-                </div>
-                <button className="rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100">
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+        {viewMode === "kanban" ? (
+          <TaskKanbanBoard tasks={filteredTasks} onTaskMove={handleTaskMove} />
+        ) : (
+          <TaskListView tasks={filteredTasks} />
+        )}
       </motion.div>
     </div>
   );
