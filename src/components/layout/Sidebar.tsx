@@ -120,7 +120,7 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
             size={isCollapsed ? "icon" : "default"}
             onClick={onToggleTheme}
             className={cn(
-              "w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent",
+              "w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
               isCollapsed && "justify-center"
             )}
           >
