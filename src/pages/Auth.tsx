@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { z } from "zod";
+import logoLight from "@/assets/logo-light.png";
 
 const emailSchema = z.string().email("Email inválido");
 const passwordSchema = z.string().min(6, "Senha deve ter no mínimo 6 caracteres");
@@ -112,12 +113,11 @@ export default function Auth() {
         <div className="glass rounded-2xl p-8 shadow-xl">
           {/* Logo */}
           <div className="flex justify-center mb-8">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-                <span className="text-xl font-bold text-primary-foreground">A</span>
-              </div>
-              <span className="text-2xl font-bold text-foreground">AION</span>
-            </div>
+            <img 
+              src={logoLight} 
+              alt="AION Assessoria" 
+              className="h-12 w-auto"
+            />
           </div>
 
           {/* Title */}
