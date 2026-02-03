@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Loader2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { z } from "zod";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
+import { Badge } from "@/components/ui/badge";
 
 const emailSchema = z.string().email("Email inválido");
 const passwordSchema = z.string().min(6, "Senha deve ter no mínimo 6 caracteres");
@@ -24,9 +25,30 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
+  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [checkingSetup, setCheckingSetup] = useState(true);
 
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading, signIn, signUp, checkHasAdmin } = useAuth();
   const navigate = useNavigate();
+
+  // Check if this is the first setup
+  useEffect(() => {
+    const checkSetup = async () => {
+      try {
+        const hasAdmin = await checkHasAdmin();
+        setIsSetupMode(!hasAdmin);
+        if (!hasAdmin) {
+          setIsLogin(false); // Start with signup if no admin exists
+        }
+      } catch (error) {
+        console.error("Error checking setup:", error);
+      } finally {
+        setCheckingSetup(false);
+      }
+    };
+    
+    checkSetup();
+  }, []);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -87,7 +109,11 @@ export default function Auth() {
             toast.error(error.message);
           }
         } else {
-          toast.success("Conta criada! Verifique seu email para confirmar o cadastro.");
+          if (isSetupMode) {
+            toast.success("Conta de administrador criada! Verifique seu email para confirmar o cadastro.");
+          } else {
+            toast.success("Conta criada! Verifique seu email para confirmar o cadastro.");
+          }
           setIsLogin(true);
         }
       }
@@ -98,7 +124,7 @@ export default function Auth() {
     }
   };
 
-  if (loading) {
+  if (loading || checkingSetup) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -115,7 +141,7 @@ export default function Auth() {
       >
         <div className="glass rounded-2xl p-8 shadow-xl">
           {/* Logo */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-6">
             <img 
               src={logoDark} 
               alt="AION Assessoria" 
@@ -127,6 +153,26 @@ export default function Auth() {
               className="h-16 w-auto dark:hidden block"
             />
           </div>
+
+          {/* Setup Mode Banner */}
+          {isSetupMode && !isLogin && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="h-5 w-5 text-primary" />
+                <Badge variant="default" className="bg-primary text-primary-foreground">
+                  Configuração Inicial
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Seja bem-vindo! Crie a primeira conta para configurar o sistema. 
+                Esta conta receberá <strong>permissões de administrador</strong> automaticamente.
+              </p>
+            </motion.div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -220,7 +266,10 @@ export default function Auth() {
                   {isLogin ? "Entrando..." : "Criando conta..."}
                 </>
               ) : (
-                isLogin ? "Entrar" : "Criar conta"
+                <>
+                  {!isLogin && isSetupMode && <Shield className="mr-2 h-4 w-4" />}
+                  {isLogin ? "Entrar" : isSetupMode ? "Criar conta admin" : "Criar conta"}
+                </>
               )}
             </Button>
           </form>
@@ -230,22 +279,24 @@ export default function Auth() {
             onOpenChange={setShowForgotPassword} 
           />
 
-          {/* Toggle */}
-          <div className="mt-6 text-center">
-            <p className="text-muted-foreground">
-              {isLogin ? "Não tem uma conta?" : "Já tem uma conta?"}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setErrors({});
-                }}
-                className="ml-1 text-primary hover:underline font-medium"
-              >
-                {isLogin ? "Criar conta" : "Entrar"}
-              </button>
-            </p>
-          </div>
+          {/* Toggle - only show if not in setup mode or if viewing login */}
+          {(!isSetupMode || isLogin) && (
+            <div className="mt-6 text-center">
+              <p className="text-muted-foreground">
+                {isLogin ? "Não tem uma conta?" : "Já tem uma conta?"}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setErrors({});
+                  }}
+                  className="ml-1 text-primary hover:underline font-medium"
+                >
+                  {isLogin ? "Criar conta" : "Entrar"}
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
