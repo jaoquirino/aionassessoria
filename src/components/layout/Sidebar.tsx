@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -12,9 +12,12 @@ import {
   ChevronLeft,
   Sun,
   Moon,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface SidebarProps {
   isDarkMode: boolean;
@@ -34,6 +37,18 @@ const navigation = [
 export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Erro ao sair");
+    } else {
+      toast.success("Até logo!");
+      navigate("/auth", { replace: true });
+    }
+  };
 
   return (
     <motion.aside
@@ -114,7 +129,7 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-sidebar-border p-3">
+        <div className="border-t border-sidebar-border p-3 space-y-1">
           <Button
             variant="ghost"
             size={isCollapsed ? "icon" : "default"}
@@ -132,6 +147,18 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
             {!isCollapsed && (
               <span>{isDarkMode ? "Modo Claro" : "Modo Escuro"}</span>
             )}
+          </Button>
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            onClick={handleLogout}
+            className={cn(
+              "w-full justify-start gap-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive",
+              isCollapsed && "justify-center"
+            )}
+          >
+            <LogOut className="h-5 w-5" />
+            {!isCollapsed && <span>Sair</span>}
           </Button>
         </div>
       </div>
