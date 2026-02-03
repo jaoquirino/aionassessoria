@@ -1,8 +1,9 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Clock, AlertTriangle, CheckCircle, MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Task, TaskStatusDB } from "@/types/tasks";
+import type { Task } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig } from "@/types/tasks";
 
 interface TaskListViewProps {
@@ -10,13 +11,14 @@ interface TaskListViewProps {
   onTaskClick?: (taskId: string) => void;
 }
 
-export function TaskListView({ tasks, onTaskClick }: TaskListViewProps) {
+export const TaskListView = forwardRef<HTMLDivElement, TaskListViewProps>(
+  function TaskListView({ tasks, onTaskClick }, ref) {
   const isOverdue = (task: Task) => {
     return new Date(task.due_date) < new Date() && task.status !== "done";
   };
 
   return (
-    <div className="space-y-3">
+    <div ref={ref} className="space-y-3">
       {tasks.map((task, index) => (
         <motion.div
           key={task.id}
@@ -102,4 +104,4 @@ export function TaskListView({ tasks, onTaskClick }: TaskListViewProps) {
       )}
     </div>
   );
-}
+});

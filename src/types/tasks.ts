@@ -168,15 +168,15 @@ export const taskStatusConfig: Record<TaskStatusDB, { label: string; color: stri
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
   in_progress: { label: "Em produção", color: "bg-primary/20 text-primary" },
   review: { label: "Em revisão", color: "bg-warning/20 text-warning" },
-  waiting_client: { label: "Aguardando cliente", color: "bg-blue-500/20 text-blue-500" },
+  waiting_client: { label: "Aguardando cliente", color: "bg-info/20 text-info" },
   done: { label: "Entregue", color: "bg-success/20 text-success" },
 };
 
 export const taskTypeConfig: Record<TaskType, { label: string; color: string; weight: number }> = {
-  recurring: { label: "Entrega recorrente", color: "border-blue-500/30 text-blue-500", weight: 2 },
-  planning: { label: "Planejamento", color: "border-purple-500/30 text-purple-500", weight: 1 },
+  recurring: { label: "Entrega recorrente", color: "border-info/30 text-info", weight: 2 },
+  planning: { label: "Planejamento", color: "border-purple/30 text-purple", weight: 1 },
   project: { label: "Projeto", color: "border-primary/30 text-primary", weight: 4 },
-  extra: { label: "Extra", color: "border-orange-500/30 text-orange-500", weight: 3 },
+  extra: { label: "Extra", color: "border-orange/30 text-orange", weight: 3 },
 };
 
 export const roleOptions = [

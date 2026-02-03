@@ -66,7 +66,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask }: T
               column === "todo" && "bg-muted/50 border-muted-foreground/20",
               column === "in_progress" && "bg-primary/10 border-primary/30",
               column === "review" && "bg-warning/10 border-warning/30",
-              column === "waiting_client" && "bg-blue-500/10 border-blue-500/30",
+              column === "waiting_client" && "bg-info/10 border-info/30",
               column === "done" && "bg-success/10 border-success/30",
               dragOverColumn === column && "border-primary bg-primary/5"
             )}
