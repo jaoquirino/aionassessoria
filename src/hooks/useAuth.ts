@@ -60,7 +60,7 @@ export function useAuth() {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, makeAdmin: boolean = false) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
@@ -70,6 +70,7 @@ export function useAuth() {
         emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
+          make_admin: makeAdmin,
         },
       },
     });

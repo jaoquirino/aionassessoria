@@ -68,8 +68,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // If no admins exist, make this user an admin
-    if (!existingAdmins || existingAdmins.length === 0) {
+    // Check if user was created with make_admin flag (setup mode)
+    const makeAdmin = user.user_metadata?.make_admin === true;
+
+    // If no admins exist OR user was created with make_admin flag, make them admin
+    if (!existingAdmins || existingAdmins.length === 0 || makeAdmin) {
       const { error: insertError } = await supabase
         .from("user_roles")
         .insert({ user_id: user.id, role: "admin" });
@@ -81,12 +84,19 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Clear the make_admin flag from user metadata
+      if (makeAdmin) {
+        await supabase.auth.admin.updateUserById(user.id, {
+          user_metadata: { ...user.user_metadata, make_admin: undefined }
+        });
+      }
+
       return new Response(
         JSON.stringify({ 
           success: true, 
           role: "admin",
-          isFirstAdmin: true,
-          message: "First admin created successfully" 
+          isFirstAdmin: !existingAdmins || existingAdmins.length === 0,
+          message: "Admin created successfully" 
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
