@@ -214,25 +214,25 @@ export default function Contracts() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="grid gap-4 sm:grid-cols-4"
+        className="grid grid-cols-2 gap-4 lg:grid-cols-4"
       >
-        <div className="glass rounded-xl p-4">
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Contratos Ativos</p>
           <p className="text-2xl font-bold text-foreground">{activeContracts.length}</p>
         </div>
-        <div className="glass rounded-xl p-4">
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Receita Recorrente</p>
           <p className="text-2xl font-bold text-foreground">
             {formatCurrency(activeContracts.reduce((acc, c) => acc + c.monthlyValue, 0))}
           </p>
         </div>
-        <div className="glass rounded-xl p-4">
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Em Renovação</p>
           <p className="text-2xl font-bold text-warning">
             {mockContracts.filter((c) => c.status === "renewing").length}
           </p>
         </div>
-        <div className="glass rounded-xl p-4">
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Próx. Vencimento</p>
           <p className="text-2xl font-bold text-warning">
             {mockContracts.filter((c) => c.status === "expiring_soon").length}
