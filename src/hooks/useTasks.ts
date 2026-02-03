@@ -340,19 +340,24 @@ export function useAddComment() {
   });
 }
 
-// Fetch team members
+// Fetch team members (public view without email for security)
 export function useTeamMembers() {
   return useQuery({
     queryKey: ["team_members"],
     queryFn: async () => {
+      // Use the public view that excludes sensitive email data
       const { data, error } = await supabase
-        .from("team_members")
+        .from("team_members_public")
         .select("*")
         .eq("is_active", true)
         .order("name");
 
       if (error) throw error;
-      return data as TeamMember[];
+      // Map to TeamMember type with null email (not exposed in view)
+      return (data as Array<Omit<TeamMember, "email">>).map(member => ({
+        ...member,
+        email: null
+      })) as TeamMember[];
     },
   });
 }
