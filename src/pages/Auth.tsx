@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
 const emailSchema = z.string().email("Email inválido");
 const passwordSchema = z.string().min(6, "Senha deve ter no mínimo 6 caracteres");
@@ -21,6 +22,7 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
 
   const { user, loading, signIn, signUp } = useAuth();
@@ -195,6 +197,18 @@ export default function Auth() {
               )}
             </div>
 
+            {isLogin && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Esqueceu sua senha?
+                </button>
+              </div>
+            )}
+
             <Button
               type="submit"
               className="w-full"
@@ -210,6 +224,11 @@ export default function Auth() {
               )}
             </Button>
           </form>
+
+          <ForgotPasswordDialog 
+            open={showForgotPassword} 
+            onOpenChange={setShowForgotPassword} 
+          />
 
           {/* Toggle */}
           <div className="mt-6 text-center">
