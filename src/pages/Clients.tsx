@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Search, MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search, MoreHorizontal, UserCheck, Clock, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -11,38 +12,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { AddClientDialog } from "@/components/clients/AddClientDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Client {
   id: string;
   name: string;
-  status: "active" | "paused" | "ended";
-  contractsCount: number;
-  monthlyRevenue: number;
-  createdAt: string;
+  status: "onboarding" | "active" | "paused" | "ended";
+  created_at: string;
 }
 
-const mockClients: Client[] = [
-  { id: "1", name: "Tech Solutions", status: "active", contractsCount: 2, monthlyRevenue: 5000, createdAt: "2023-06-15" },
-  { id: "2", name: "Loja Fashion", status: "active", contractsCount: 1, monthlyRevenue: 3500, createdAt: "2023-08-20" },
-  { id: "3", name: "Restaurante Bella", status: "active", contractsCount: 1, monthlyRevenue: 2800, createdAt: "2023-09-10" },
-  { id: "4", name: "Fit Academia", status: "paused", contractsCount: 1, monthlyRevenue: 2200, createdAt: "2023-07-05" },
-  { id: "5", name: "Clínica Saúde+", status: "active", contractsCount: 2, monthlyRevenue: 4500, createdAt: "2023-05-01" },
-  { id: "6", name: "Auto Peças Silva", status: "ended", contractsCount: 0, monthlyRevenue: 0, createdAt: "2022-12-15" },
-];
-
 const statusConfig = {
-  active: { label: "Ativo", color: "bg-success/20 text-success border-success/30" },
-  paused: { label: "Pausado", color: "bg-warning/20 text-warning border-warning/30" },
-  ended: { label: "Encerrado", color: "bg-muted text-muted-foreground border-muted" },
+  onboarding: { label: "Em Onboarding", color: "bg-blue-500/20 text-blue-500 border-blue-500/30", icon: Clock },
+  active: { label: "Ativo", color: "bg-success/20 text-success border-success/30", icon: UserCheck },
+  paused: { label: "Pausado", color: "bg-warning/20 text-warning border-warning/30", icon: Clock },
+  ended: { label: "Encerrado", color: "bg-muted text-muted-foreground border-muted", icon: Clock },
 };
 
 export default function Clients() {
+  const navigate = useNavigate();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const fetchClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error: any) {
+      console.error("Error fetching clients:", error);
+      toast.error("Erro ao carregar clientes");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
   const filteredClients = useMemo(() => {
-    return mockClients.filter((client) => {
+    return clients.filter((client) => {
       const matchesSearch =
         search === "" ||
         client.name.toLowerCase().includes(search.toLowerCase());
@@ -51,14 +75,23 @@ export default function Clients() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [search, statusFilter]);
+  }, [clients, search, statusFilter]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
+  // Separate onboarding clients from active clients
+  const onboardingClients = filteredClients.filter((c) => c.status === "onboarding");
+  const otherClients = filteredClients.filter((c) => c.status !== "onboarding");
+
+  const handleContinueOnboarding = (clientId: string) => {
+    navigate(`/clientes/${clientId}/onboarding`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -74,10 +107,7 @@ export default function Clients() {
             Gerencie sua base de clientes
           </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Cliente
-        </Button>
+        <AddClientDialog onClientAdded={fetchClients} />
       </motion.div>
 
       {/* Filters */}
@@ -102,6 +132,7 @@ export default function Clients() {
           </SelectTrigger>
           <SelectContent className="bg-background border-border z-50">
             <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="onboarding">Em Onboarding</SelectItem>
             <SelectItem value="active">Ativo</SelectItem>
             <SelectItem value="paused">Pausado</SelectItem>
             <SelectItem value="ended">Encerrado</SelectItem>
@@ -114,33 +145,78 @@ export default function Clients() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="grid gap-4 sm:grid-cols-3"
+        className="grid grid-cols-2 gap-4 lg:grid-cols-4"
       >
-        <div className="glass rounded-xl p-4">
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
+          <p className="text-sm text-muted-foreground">Em Onboarding</p>
+          <p className="text-2xl font-bold text-blue-500">
+            {clients.filter((c) => c.status === "onboarding").length}
+          </p>
+        </div>
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Clientes Ativos</p>
           <p className="text-2xl font-bold text-foreground">
-            {mockClients.filter((c) => c.status === "active").length}
+            {clients.filter((c) => c.status === "active").length}
           </p>
         </div>
-        <div className="glass rounded-xl p-4">
-          <p className="text-sm text-muted-foreground">Receita Total</p>
-          <p className="text-2xl font-bold text-foreground">
-            {formatCurrency(mockClients.reduce((acc, c) => acc + c.monthlyRevenue, 0))}
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
+          <p className="text-sm text-muted-foreground">Pausados</p>
+          <p className="text-2xl font-bold text-warning">
+            {clients.filter((c) => c.status === "paused").length}
           </p>
         </div>
-        <div className="glass rounded-xl p-4">
-          <p className="text-sm text-muted-foreground">Contratos Ativos</p>
-          <p className="text-2xl font-bold text-foreground">
-            {mockClients.reduce((acc, c) => acc + c.contractsCount, 0)}
-          </p>
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
+          <p className="text-sm text-muted-foreground">Total</p>
+          <p className="text-2xl font-bold text-foreground">{clients.length}</p>
         </div>
       </motion.div>
+
+      {/* Onboarding Alert */}
+      {onboardingClients.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="space-y-3"
+        >
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-blue-500" />
+            <h2 className="font-semibold text-foreground">Em Onboarding</h2>
+            <Badge variant="secondary">{onboardingClients.length}</Badge>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {onboardingClients.map((client, index) => (
+              <motion.div
+                key={client.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.05 * index }}
+                className="glass rounded-xl p-4 border-blue-500/30 bg-blue-500/5"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-medium text-foreground">{client.name}</span>
+                  <Badge variant="outline" className={cn(statusConfig.onboarding.color)}>
+                    {statusConfig.onboarding.label}
+                  </Badge>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={() => handleContinueOnboarding(client.id)}
+                >
+                  Continuar Onboarding
+                </Button>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Client List */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.4 }}
         className="glass rounded-xl overflow-hidden"
       >
         <div className="overflow-x-auto">
@@ -154,19 +230,13 @@ export default function Clients() {
                   Status
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Contratos
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Receita Mensal
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Cliente Desde
                 </th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredClients.map((client, index) => (
+              {otherClients.map((client, index) => (
                 <motion.tr
                   key={client.id}
                   initial={{ opacity: 0 }}
@@ -188,24 +258,27 @@ export default function Clients() {
                     </Badge>
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">
-                    {client.contractsCount}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-foreground">
-                    {formatCurrency(client.monthlyRevenue)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">
-                    {new Date(client.createdAt).toLocaleDateString("pt-BR")}
+                    {new Date(client.created_at).toLocaleDateString("pt-BR")}
                   </td>
                   <td className="px-6 py-4">
-                    <button className="rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-background">
+                        <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+                        <DropdownMenuItem>Editar</DropdownMenuItem>
+                        <DropdownMenuItem>Novo contrato</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </motion.tr>
               ))}
               {filteredClients.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground">
                     Nenhum cliente encontrado
                   </td>
                 </tr>
