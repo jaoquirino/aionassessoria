@@ -55,11 +55,11 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <span className="text-sm font-bold text-primary-foreground">
-                  AM
+                  A
                 </span>
               </div>
               <span className="font-semibold text-sidebar-foreground">
-                AgencyManager
+                AION
               </span>
             </motion.div>
           )}

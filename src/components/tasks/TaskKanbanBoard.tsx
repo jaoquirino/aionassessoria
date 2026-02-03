@@ -72,7 +72,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps) {
   const getTasksByStatus = (status: TaskStatus) => tasks.filter((t) => t.status === status);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin">
       {columns.map((column) => {
         const columnTasks = getTasksByStatus(column);
         const totalWeight = columnTasks.reduce((acc, t) => acc + t.weight, 0);
@@ -83,7 +83,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "rounded-xl border-2 border-dashed p-3 min-h-[500px] transition-colors",
+              "rounded-xl border-2 border-dashed p-3 min-h-[500px] min-w-[280px] w-[280px] flex-shrink-0 snap-start transition-colors",
               statusConfig[column].color,
               dragOverColumn === column && "border-primary bg-primary/5"
             )}
