@@ -82,16 +82,437 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_modules: {
+        Row: {
+          contract_id: string
+          created_at: string
+          custom_weight: number | null
+          deliverable_limit: number | null
+          deliverable_used: number
+          id: string
+          last_reset_date: string
+          module_id: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          custom_weight?: number | null
+          deliverable_limit?: number | null
+          deliverable_used?: number
+          id?: string
+          last_reset_date?: string
+          module_id: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          custom_weight?: number | null
+          deliverable_limit?: number | null
+          deliverable_used?: number
+          id?: string
+          last_reset_date?: string
+          module_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_modules_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_modules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "service_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          minimum_duration_months: number
+          monthly_value: number
+          notes: string | null
+          renewal_date: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          minimum_duration_months?: number
+          monthly_value: number
+          notes?: string | null
+          renewal_date?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          minimum_duration_months?: number
+          monthly_value?: number
+          notes?: string | null
+          renewal_date?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_modules: {
+        Row: {
+          created_at: string
+          default_weight: number
+          deliverable_limit: number | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_recurring: boolean
+          name: string
+          primary_role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_weight?: number
+          deliverable_limit?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          name: string
+          primary_role: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_weight?: number
+          deliverable_limit?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          name?: string
+          primary_role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      task_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_type: string | null
+          file_url: string
+          id: string
+          task_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_type?: string | null
+          file_url: string
+          id?: string
+          task_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          task_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_checklist: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          item_text: string
+          order_index: number
+          task_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item_text: string
+          order_index?: number
+          task_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item_text?: string
+          order_index?: number
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_checklist_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_checklist_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_history: {
+        Row: {
+          action_type: string
+          comment: string | null
+          created_at: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          performed_by: string | null
+          task_id: string
+        }
+        Insert: {
+          action_type: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_by?: string | null
+          task_id: string
+        }
+        Update: {
+          action_type?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_by?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_history_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          client_id: string
+          contract_id: string | null
+          contract_module_id: string | null
+          created_at: string
+          created_by: string | null
+          description_deliverable: string | null
+          description_notes: string | null
+          description_objective: string | null
+          description_references: string | null
+          due_date: string
+          id: string
+          is_deliverable: boolean
+          required_role: string
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          type: Database["public"]["Enums"]["task_type"]
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_id: string
+          contract_id?: string | null
+          contract_module_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description_deliverable?: string | null
+          description_notes?: string | null
+          description_objective?: string | null
+          description_references?: string | null
+          due_date: string
+          id?: string
+          is_deliverable?: boolean
+          required_role: string
+          status?: Database["public"]["Enums"]["task_status"]
+          title: string
+          type: Database["public"]["Enums"]["task_type"]
+          updated_at?: string
+          weight: number
+        }
+        Update: {
+          assigned_to?: string | null
+          client_id?: string
+          contract_id?: string | null
+          contract_module_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description_deliverable?: string | null
+          description_notes?: string | null
+          description_objective?: string | null
+          description_references?: string | null
+          due_date?: string
+          id?: string
+          is_deliverable?: boolean
+          required_role?: string
+          status?: Database["public"]["Enums"]["task_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["task_type"]
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_contract_module_id_fkey"
+            columns: ["contract_module_id"]
+            isOneToOne: false
+            referencedRelation: "contract_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          avatar_url: string | null
+          capacity_limit: number
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          permission: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          capacity_limit?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          permission?: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          capacity_limit?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          permission?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_task_weight: {
+        Args: { task_type: Database["public"]["Enums"]["task_type"] }
+        Returns: number
+      }
     }
     Enums: {
       client_status: "onboarding" | "active" | "paused" | "ended"
       onboarding_step_status: "pending" | "in_progress" | "completed"
+      task_status: "todo" | "in_progress" | "review" | "waiting_client" | "done"
+      task_type: "recurring" | "planning" | "project" | "extra"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -221,6 +642,8 @@ export const Constants = {
     Enums: {
       client_status: ["onboarding", "active", "paused", "ended"],
       onboarding_step_status: ["pending", "in_progress", "completed"],
+      task_status: ["todo", "in_progress", "review", "waiting_client", "done"],
+      task_type: ["recurring", "planning", "project", "extra"],
     },
   },
 } as const
