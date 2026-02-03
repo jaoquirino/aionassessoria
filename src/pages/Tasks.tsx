@@ -1,17 +1,17 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, AlertTriangle, LayoutGrid, List, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle, LayoutGrid, List, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TaskKanbanBoard } from "@/components/tasks/TaskKanbanBoard";
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { TaskFilters, TaskFiltersState } from "@/components/tasks/TaskFilters";
-import { AddTaskDialog } from "@/components/tasks/AddTaskDialog";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
-import { useTasks, useUpdateTaskStatus, useTeamMembers, useClients } from "@/hooks/useTasks";
+import { useTasks, useUpdateTaskStatus, useTeamMembers, useClients, useCreateTask } from "@/hooks/useTasks";
 import type { TaskStatusDB } from "@/types/tasks";
+import { format, addDays } from "date-fns";
+import { toast } from "sonner";
 
 const statusOptions = [
   { value: "todo", label: "A fazer" },
@@ -30,7 +30,6 @@ const typeOptions = [
 
 export default function Tasks() {
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TaskFiltersState>({
     search: "",
@@ -44,6 +43,7 @@ export default function Tasks() {
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
   const updateStatus = useUpdateTaskStatus();
+  const createTask = useCreateTask();
 
   const assigneeOptions = useMemo(() => {
     return teamMembers.map((m) => ({ value: m.id, label: m.name }));
@@ -76,6 +76,31 @@ export default function Tasks() {
 
   const handleTaskClick = (taskId: string) => {
     setSelectedTaskId(taskId);
+  };
+
+  // Quick create task - creates with defaults and opens edit modal
+  const handleQuickAddTask = async (status: TaskStatusDB) => {
+    if (clients.length === 0) {
+      toast.error("Cadastre um cliente ativo primeiro");
+      return;
+    }
+
+    try {
+      const result = await createTask.mutateAsync({
+        title: "Nova tarefa",
+        client_id: clients[0].id, // First active client
+        type: "recurring",
+        required_role: "Designer",
+        due_date: format(addDays(new Date(), 7), "yyyy-MM-dd"),
+      });
+
+      // Open edit modal immediately after creation
+      if (result?.id) {
+        setSelectedTaskId(result.id);
+      }
+    } catch (error) {
+      // Error already handled by mutation
+    }
   };
 
   const overdueTasks = tasks.filter((t) => new Date(t.due_date) < new Date() && t.status !== "done");
@@ -115,27 +140,21 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold text-foreground">Tarefas</h1>
           <p className="text-muted-foreground">Motor de entregas e produção</p>
         </div>
-        <div className="flex items-center gap-3">
-          <ToggleGroup
-            type="single"
-            value={viewMode}
-            onValueChange={(v) => v && setViewMode(v as "kanban" | "list")}
-            className="bg-muted rounded-lg p-1"
-          >
-            <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="gap-1.5 data-[state=on]:bg-background">
-              <LayoutGrid className="h-4 w-4" />
-              <span className="hidden sm:inline">Kanban</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="list" aria-label="Visualização Lista" className="gap-1.5 data-[state=on]:bg-background">
-              <List className="h-4 w-4" />
-              <span className="hidden sm:inline">Lista</span>
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Nova Tarefa
-          </Button>
-        </div>
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => v && setViewMode(v as "kanban" | "list")}
+          className="bg-muted rounded-lg p-1"
+        >
+          <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="gap-1.5 data-[state=on]:bg-background">
+            <LayoutGrid className="h-4 w-4" />
+            <span className="hidden sm:inline">Kanban</span>
+          </ToggleGroupItem>
+          <ToggleGroupItem value="list" aria-label="Visualização Lista" className="gap-1.5 data-[state=on]:bg-background">
+            <List className="h-4 w-4" />
+            <span className="hidden sm:inline">Lista</span>
+          </ToggleGroupItem>
+        </ToggleGroup>
       </motion.div>
 
       {/* Alerts */}
@@ -236,6 +255,7 @@ export default function Tasks() {
             tasks={filteredTasks} 
             onTaskMove={handleTaskMove} 
             onTaskClick={handleTaskClick}
+            onAddTask={handleQuickAddTask}
           />
         ) : (
           <TaskListView 
@@ -245,8 +265,7 @@ export default function Tasks() {
         )}
       </motion.div>
 
-      {/* Dialogs */}
-      <AddTaskDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      {/* Edit Dialog */}
       <TaskEditDialog 
         taskId={selectedTaskId} 
         open={!!selectedTaskId} 
