@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, GripVertical, Clock } from "lucide-react";
+import { AlertTriangle, GripVertical, Clock, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Task, TaskStatusDB } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig } from "@/types/tasks";
@@ -10,11 +11,12 @@ interface TaskKanbanBoardProps {
   tasks: Task[];
   onTaskMove?: (taskId: string, newStatus: TaskStatusDB) => void;
   onTaskClick?: (taskId: string) => void;
+  onAddTask?: (status: TaskStatusDB) => void;
 }
 
 const columns: TaskStatusDB[] = ["todo", "in_progress", "review", "waiting_client", "done"];
 
-export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick }: TaskKanbanBoardProps) {
+export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask }: TaskKanbanBoardProps) {
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatusDB | null>(null);
 
@@ -81,9 +83,21 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick }: TaskKanbanBo
                   {columnTasks.length}
                 </Badge>
               </div>
-              <span className="text-xs text-muted-foreground">
-                Peso: {totalWeight}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  P{totalWeight}
+                </span>
+                {column !== "done" && onAddTask && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => onAddTask(column)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-3">
