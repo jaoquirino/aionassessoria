@@ -117,12 +117,12 @@ export default function Auth() {
             <img 
               src={logoDark} 
               alt="AION Assessoria" 
-              className="h-20 w-auto dark:block hidden"
+              className="h-16 w-auto dark:block hidden"
             />
             <img 
               src={logoLight} 
               alt="AION Assessoria" 
-              className="h-20 w-auto dark:hidden block"
+              className="h-16 w-auto dark:hidden block"
             />
           </div>
 
