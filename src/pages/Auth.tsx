@@ -211,13 +211,13 @@ export default function Auth() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">{isLogin && !isSetupMode ? "Email ou usuário" : "Email"}</Label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="email"
                   type={isLogin && !isSetupMode ? "text" : "email"}
-                  placeholder={isLogin && !isSetupMode ? "seu@email.com ou admin" : "seu@email.com"}
+                  placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
