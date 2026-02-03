@@ -1,49 +1,22 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, GripVertical } from "lucide-react";
+import { AlertTriangle, GripVertical, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-export type TaskStatus = "todo" | "in_progress" | "review" | "done";
-
-export interface Task {
-  id: string;
-  title: string;
-  client: string;
-  module: string;
-  type: "recurring" | "planning" | "project" | "extra";
-  assignee: string;
-  assigneeRole: string;
-  dueDate: string;
-  status: TaskStatus;
-  weight: number;
-  isOverdue: boolean;
-}
+import type { Task, TaskStatusDB } from "@/types/tasks";
+import { taskStatusConfig, taskTypeConfig } from "@/types/tasks";
 
 interface TaskKanbanBoardProps {
   tasks: Task[];
-  onTaskMove?: (taskId: string, newStatus: TaskStatus) => void;
+  onTaskMove?: (taskId: string, newStatus: TaskStatusDB) => void;
+  onTaskClick?: (taskId: string) => void;
 }
 
-const statusConfig: Record<TaskStatus, { label: string; color: string }> = {
-  todo: { label: "A fazer", color: "bg-muted/50 border-muted-foreground/20" },
-  in_progress: { label: "Em produção", color: "bg-primary/10 border-primary/30" },
-  review: { label: "Revisão", color: "bg-warning/10 border-warning/30" },
-  done: { label: "Entregue", color: "bg-success/10 border-success/30" },
-};
+const columns: TaskStatusDB[] = ["todo", "in_progress", "review", "waiting_client", "done"];
 
-const typeConfig = {
-  recurring: { label: "Recorrente", color: "border-blue-500/30 text-blue-500" },
-  planning: { label: "Planejamento", color: "border-purple-500/30 text-purple-500" },
-  project: { label: "Projeto", color: "border-primary/30 text-primary" },
-  extra: { label: "Extra", color: "border-orange-500/30 text-orange-500" },
-};
-
-const columns: TaskStatus[] = ["todo", "in_progress", "review", "done"];
-
-export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps) {
+export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick }: TaskKanbanBoardProps) {
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
-  const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<TaskStatusDB | null>(null);
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     setDraggedTask(taskId);
@@ -55,12 +28,12 @@ export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps) {
     setDragOverColumn(null);
   };
 
-  const handleDragOver = (e: React.DragEvent, column: TaskStatus) => {
+  const handleDragOver = (e: React.DragEvent, column: TaskStatusDB) => {
     e.preventDefault();
     setDragOverColumn(column);
   };
 
-  const handleDrop = (e: React.DragEvent, column: TaskStatus) => {
+  const handleDrop = (e: React.DragEvent, column: TaskStatusDB) => {
     e.preventDefault();
     if (draggedTask && onTaskMove) {
       onTaskMove(draggedTask, column);
@@ -69,7 +42,11 @@ export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps) {
     setDragOverColumn(null);
   };
 
-  const getTasksByStatus = (status: TaskStatus) => tasks.filter((t) => t.status === status);
+  const getTasksByStatus = (status: TaskStatusDB) => tasks.filter((t) => t.status === status);
+
+  const isOverdue = (task: Task) => {
+    return new Date(task.due_date) < new Date() && task.status !== "done";
+  };
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin">
@@ -84,7 +61,11 @@ export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps) {
             animate={{ opacity: 1, y: 0 }}
             className={cn(
               "rounded-xl border-2 border-dashed p-3 min-h-[500px] min-w-[280px] w-[280px] flex-shrink-0 snap-start transition-colors",
-              statusConfig[column].color,
+              column === "todo" && "bg-muted/50 border-muted-foreground/20",
+              column === "in_progress" && "bg-primary/10 border-primary/30",
+              column === "review" && "bg-warning/10 border-warning/30",
+              column === "waiting_client" && "bg-blue-500/10 border-blue-500/30",
+              column === "done" && "bg-success/10 border-success/30",
               dragOverColumn === column && "border-primary bg-primary/5"
             )}
             onDragOver={(e) => handleDragOver(e, column)}
@@ -94,7 +75,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps) {
             <div className="flex items-center justify-between mb-4 px-1">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-foreground text-sm">
-                  {statusConfig[column].label}
+                  {taskStatusConfig[column].label}
                 </h3>
                 <Badge variant="secondary" className="text-xs">
                   {columnTasks.length}
@@ -115,41 +96,56 @@ export function TaskKanbanBoard({ tasks, onTaskMove }: TaskKanbanBoardProps) {
                   draggable
                   onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, task.id)}
                   onDragEnd={handleDragEnd}
+                  onClick={() => onTaskClick?.(task.id)}
                   className={cn(
-                    "glass rounded-lg p-3 cursor-grab active:cursor-grabbing group transition-all hover:shadow-md",
+                    "glass rounded-lg p-3 cursor-pointer active:cursor-grabbing group transition-all hover:shadow-md",
                     draggedTask === task.id && "opacity-50 scale-95",
-                    task.isOverdue && "border-destructive/50 bg-destructive/5"
+                    isOverdue(task) && "border-destructive/50 bg-destructive/5"
                   )}
                 >
                   <div className="flex items-start gap-2">
-                    <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                    <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-grab" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <p className="font-medium text-foreground text-sm line-clamp-2">
                           {task.title}
                         </p>
-                        {task.isOverdue && (
+                        {isOverdue(task) && (
                           <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                         )}
                       </div>
 
                       <div className="flex flex-wrap gap-1 mb-2">
-                        <Badge variant="outline" className={cn("text-xs", typeConfig[task.type].color)}>
-                          {typeConfig[task.type].label}
+                        <Badge variant="outline" className={cn("text-xs", taskTypeConfig[task.type].color)}>
+                          {taskTypeConfig[task.type].label}
                         </Badge>
                         <Badge variant="outline" className="text-xs">
                           P{task.weight}
                         </Badge>
                       </div>
 
+                      {/* Required Role - Highlighted */}
+                      <div className="mb-2">
+                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                          {task.required_role}
+                        </Badge>
+                      </div>
+
                       <div className="space-y-1 text-xs text-muted-foreground">
-                        <p className="truncate">{task.client}</p>
+                        <p className="truncate">{task.client?.name}</p>
                         <div className="flex items-center justify-between">
-                          <span className="truncate">{task.assignee}</span>
+                          <span className="truncate">
+                            {task.assignee?.name || "Não atribuído"}
+                          </span>
                           <span className={cn(
-                            task.isOverdue ? "text-destructive font-medium" : ""
+                            "flex items-center gap-1",
+                            isOverdue(task) ? "text-destructive font-medium" : ""
                           )}>
-                            {task.isOverdue ? "Atrasada" : new Date(task.dueDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                            <Clock className="h-3 w-3" />
+                            {isOverdue(task) 
+                              ? "Atrasada" 
+                              : new Date(task.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+                            }
                           </span>
                         </div>
                       </div>

@@ -1,124 +1,23 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, AlertTriangle, LayoutGrid, List } from "lucide-react";
+import { Plus, AlertTriangle, LayoutGrid, List, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { TaskKanbanBoard, Task, TaskStatus } from "@/components/tasks/TaskKanbanBoard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TaskKanbanBoard } from "@/components/tasks/TaskKanbanBoard";
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { TaskFilters, TaskFiltersState } from "@/components/tasks/TaskFilters";
-
-const mockTasks: Task[] = [
-  {
-    id: "1",
-    title: "Criar campanha Black Friday",
-    client: "Loja Fashion",
-    module: "Gestão de Tráfego",
-    type: "project",
-    assignee: "Ana Silva",
-    assigneeRole: "Gestor de Tráfego",
-    dueDate: "2024-01-15",
-    status: "in_progress",
-    weight: 4,
-    isOverdue: true,
-  },
-  {
-    id: "2",
-    title: "Posts Instagram - Semana 3",
-    client: "Restaurante Bella",
-    module: "Design",
-    type: "recurring",
-    assignee: "Carlos Santos",
-    assigneeRole: "Designer",
-    dueDate: "2024-01-16",
-    status: "review",
-    weight: 2,
-    isOverdue: false,
-  },
-  {
-    id: "3",
-    title: "Planejamento Mensal Fevereiro",
-    client: "Tech Solutions",
-    module: "",
-    type: "planning",
-    assignee: "Maria Costa",
-    assigneeRole: "Copywriter",
-    dueDate: "2024-01-31",
-    status: "todo",
-    weight: 1,
-    isOverdue: false,
-  },
-  {
-    id: "4",
-    title: "Landing Page Promoção Verão",
-    client: "Fit Academia",
-    module: "Landing Pages",
-    type: "extra",
-    assignee: "João Mendes",
-    assigneeRole: "Designer",
-    dueDate: "2024-01-14",
-    status: "in_progress",
-    weight: 3,
-    isOverdue: true,
-  },
-  {
-    id: "5",
-    title: "Textos para Blog - Janeiro",
-    client: "Tech Solutions",
-    module: "Copywriting",
-    type: "recurring",
-    assignee: "Maria Costa",
-    assigneeRole: "Copywriter",
-    dueDate: "2024-01-20",
-    status: "todo",
-    weight: 2,
-    isOverdue: false,
-  },
-  {
-    id: "6",
-    title: "Identidade Visual Completa",
-    client: "Nova Startup",
-    module: "Identidade Visual",
-    type: "project",
-    assignee: "Carlos Santos",
-    assigneeRole: "Designer",
-    dueDate: "2024-01-25",
-    status: "in_progress",
-    weight: 4,
-    isOverdue: false,
-  },
-  {
-    id: "7",
-    title: "Campanha de Natal finalizada",
-    client: "Loja Fashion",
-    module: "Gestão de Tráfego",
-    type: "project",
-    assignee: "Ana Silva",
-    assigneeRole: "Gestor de Tráfego",
-    dueDate: "2023-12-25",
-    status: "done",
-    weight: 4,
-    isOverdue: false,
-  },
-  {
-    id: "8",
-    title: "Posts Instagram - Semana 2",
-    client: "Restaurante Bella",
-    module: "Design",
-    type: "recurring",
-    assignee: "Carlos Santos",
-    assigneeRole: "Designer",
-    dueDate: "2024-01-09",
-    status: "done",
-    weight: 2,
-    isOverdue: false,
-  },
-];
+import { AddTaskDialog } from "@/components/tasks/AddTaskDialog";
+import { TaskDetailSheet } from "@/components/tasks/TaskDetailSheet";
+import { useTasks, useUpdateTaskStatus, useTeamMembers, useClients } from "@/hooks/useTasks";
+import type { TaskStatusDB } from "@/types/tasks";
 
 const statusOptions = [
   { value: "todo", label: "A fazer" },
   { value: "in_progress", label: "Em produção" },
-  { value: "review", label: "Revisão" },
+  { value: "review", label: "Em revisão" },
+  { value: "waiting_client", label: "Aguardando cliente" },
   { value: "done", label: "Entregue" },
 ];
 
@@ -131,7 +30,8 @@ const typeOptions = [
 
 export default function Tasks() {
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TaskFiltersState>({
     search: "",
     status: "all",
@@ -140,43 +40,68 @@ export default function Tasks() {
     client: "all",
   });
 
+  const { data: tasks = [], isLoading } = useTasks();
+  const { data: teamMembers = [] } = useTeamMembers();
+  const { data: clients = [] } = useClients();
+  const updateStatus = useUpdateTaskStatus();
+
   const assigneeOptions = useMemo(() => {
-    const unique = [...new Set(tasks.map((t) => t.assignee))];
-    return unique.map((a) => ({ value: a, label: a }));
-  }, [tasks]);
+    return teamMembers.map((m) => ({ value: m.id, label: m.name }));
+  }, [teamMembers]);
 
   const clientOptions = useMemo(() => {
-    const unique = [...new Set(tasks.map((t) => t.client))];
-    return unique.map((c) => ({ value: c, label: c }));
-  }, [tasks]);
+    return clients.map((c) => ({ value: c.id, label: c.name }));
+  }, [clients]);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       const matchesSearch =
         filters.search === "" ||
         task.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        task.client.toLowerCase().includes(filters.search.toLowerCase()) ||
-        task.assignee.toLowerCase().includes(filters.search.toLowerCase());
+        task.client?.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        task.assignee?.name?.toLowerCase().includes(filters.search.toLowerCase());
 
       const matchesStatus = filters.status === "all" || task.status === filters.status;
       const matchesType = filters.type === "all" || task.type === filters.type;
-      const matchesAssignee = filters.assignee === "all" || task.assignee === filters.assignee;
-      const matchesClient = filters.client === "all" || task.client === filters.client;
+      const matchesAssignee = filters.assignee === "all" || task.assigned_to === filters.assignee;
+      const matchesClient = filters.client === "all" || task.client_id === filters.client;
 
       return matchesSearch && matchesStatus && matchesType && matchesAssignee && matchesClient;
     });
   }, [tasks, filters]);
 
-  const handleTaskMove = (taskId: string, newStatus: TaskStatus) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, status: newStatus } : t
-      )
-    );
+  const handleTaskMove = (taskId: string, newStatus: TaskStatusDB) => {
+    updateStatus.mutate({ taskId, status: newStatus });
   };
 
-  const overdueTasks = tasks.filter((t) => t.isOverdue);
-  const totalWeight = tasks.filter((t) => t.status !== "done").reduce((acc, t) => acc + t.weight, 0);
+  const handleTaskClick = (taskId: string) => {
+    setSelectedTaskId(taskId);
+  };
+
+  const overdueTasks = tasks.filter((t) => new Date(t.due_date) < new Date() && t.status !== "done");
+  const waitingClientTasks = tasks.filter((t) => t.status === "waiting_client");
+  const totalWeight = tasks.filter((t) => t.status !== "done" && t.status !== "waiting_client").reduce((acc, t) => acc + t.weight, 0);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+        <div className="flex gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-[500px] w-[280px]" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -206,14 +131,14 @@ export default function Tasks() {
               <span className="hidden sm:inline">Lista</span>
             </ToggleGroupItem>
           </ToggleGroup>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             Nova Tarefa
           </Button>
         </div>
       </motion.div>
 
-      {/* Overdue Alert */}
+      {/* Alerts */}
       {overdueTasks.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -235,12 +160,33 @@ export default function Tasks() {
         </motion.div>
       )}
 
+      {waitingClientTasks.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="flex items-center gap-4 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/20">
+            <Clock className="h-5 w-5 text-blue-500" />
+          </div>
+          <div>
+            <p className="font-medium text-foreground">
+              {waitingClientTasks.length} tarefa{waitingClientTasks.length > 1 ? "s" : ""} aguardando cliente
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Não contabilizadas como gargalo interno
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Stats */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="grid grid-cols-2 gap-4 lg:grid-cols-4"
+        className="grid grid-cols-2 gap-4 lg:grid-cols-5"
       >
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Total Ativas</p>
@@ -257,6 +203,10 @@ export default function Tasks() {
           <p className="text-2xl font-bold text-warning">
             {tasks.filter((t) => t.status === "review").length}
           </p>
+        </div>
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
+          <p className="text-sm text-muted-foreground">Aguardando</p>
+          <p className="text-2xl font-bold text-blue-500">{waitingClientTasks.length}</p>
         </div>
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Peso Total</p>
@@ -282,11 +232,26 @@ export default function Tasks() {
           />
         </div>
         {viewMode === "kanban" ? (
-          <TaskKanbanBoard tasks={filteredTasks} onTaskMove={handleTaskMove} />
+          <TaskKanbanBoard 
+            tasks={filteredTasks} 
+            onTaskMove={handleTaskMove} 
+            onTaskClick={handleTaskClick}
+          />
         ) : (
-          <TaskListView tasks={filteredTasks} />
+          <TaskListView 
+            tasks={filteredTasks} 
+            onTaskClick={handleTaskClick}
+          />
         )}
       </motion.div>
+
+      {/* Dialogs */}
+      <AddTaskDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <TaskDetailSheet 
+        taskId={selectedTaskId} 
+        open={!!selectedTaskId} 
+        onOpenChange={(open) => !open && setSelectedTaskId(null)} 
+      />
     </div>
   );
 }
