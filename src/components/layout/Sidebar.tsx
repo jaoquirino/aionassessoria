@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import logoLight from "@/assets/logo-light.png";
+import logoDark from "@/assets/logo-dark.png";
 
 interface SidebarProps {
   isDarkMode: boolean;
@@ -66,16 +68,13 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-2"
+              className="flex items-center"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <span className="text-sm font-bold text-primary-foreground">
-                  A
-                </span>
-              </div>
-              <span className="font-semibold text-sidebar-foreground">
-                AION
-              </span>
+              <img 
+                src={isDarkMode ? logoDark : logoLight} 
+                alt="AION Assessoria" 
+                className="h-8 w-auto"
+              />
             </motion.div>
           )}
           <Button
