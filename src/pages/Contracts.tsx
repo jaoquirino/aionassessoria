@@ -1,8 +1,16 @@
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Filter, MoreHorizontal, Calendar, DollarSign, AlertTriangle } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Calendar, DollarSign, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 interface Contract {
@@ -83,6 +91,29 @@ const statusConfig = {
 };
 
 export default function Contracts() {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [moduleFilter, setModuleFilter] = useState("all");
+
+  const allModules = useMemo(() => {
+    const modules = new Set<string>();
+    mockContracts.forEach((c) => c.modules.forEach((m) => modules.add(m)));
+    return Array.from(modules).sort();
+  }, []);
+
+  const filteredContracts = useMemo(() => {
+    return mockContracts.filter((contract) => {
+      const matchesSearch =
+        search === "" ||
+        contract.clientName.toLowerCase().includes(search.toLowerCase());
+
+      const matchesStatus = statusFilter === "all" || contract.status === statusFilter;
+      const matchesModule = moduleFilter === "all" || contract.modules.includes(moduleFilter);
+
+      return matchesSearch && matchesStatus && matchesModule;
+    });
+  }, [search, statusFilter, moduleFilter]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -144,12 +175,38 @@ export default function Contracts() {
       >
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar contratos..." className="pl-9" />
+          <Input
+            placeholder="Buscar contratos..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-        <Button variant="outline" className="gap-2">
-          <Filter className="h-4 w-4" />
-          Filtros
-        </Button>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[200px] bg-background">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border z-50">
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="active">Ativo</SelectItem>
+            <SelectItem value="expiring_soon">Próx. vencimento</SelectItem>
+            <SelectItem value="renewing">Em renovação</SelectItem>
+            <SelectItem value="ended">Encerrado</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={moduleFilter} onValueChange={setModuleFilter}>
+          <SelectTrigger className="w-full sm:w-[180px] bg-background">
+            <SelectValue placeholder="Módulo" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border z-50">
+            <SelectItem value="all">Todos os módulos</SelectItem>
+            {allModules.map((mod) => (
+              <SelectItem key={mod} value={mod}>
+                {mod}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </motion.div>
 
       {/* Stats */}
@@ -190,7 +247,7 @@ export default function Contracts() {
         transition={{ delay: 0.4 }}
         className="space-y-4"
       >
-        {mockContracts.map((contract, index) => (
+        {filteredContracts.map((contract, index) => (
           <motion.div
             key={contract.id}
             initial={{ opacity: 0, x: -20 }}
@@ -247,6 +304,11 @@ export default function Contracts() {
             </div>
           </motion.div>
         ))}
+        {filteredContracts.length === 0 && (
+          <div className="glass rounded-xl p-12 text-center">
+            <p className="text-muted-foreground">Nenhum contrato encontrado</p>
+          </div>
+        )}
       </motion.div>
     </div>
   );

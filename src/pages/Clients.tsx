@@ -1,8 +1,16 @@
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
+import { Plus, Search, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 interface Client {
@@ -30,6 +38,21 @@ const statusConfig = {
 };
 
 export default function Clients() {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const filteredClients = useMemo(() => {
+    return mockClients.filter((client) => {
+      const matchesSearch =
+        search === "" ||
+        client.name.toLowerCase().includes(search.toLowerCase());
+
+      const matchesStatus = statusFilter === "all" || client.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [search, statusFilter]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -69,12 +92,21 @@ export default function Clients() {
           <Input
             placeholder="Buscar clientes..."
             className="pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Button variant="outline" className="gap-2">
-          <Filter className="h-4 w-4" />
-          Filtros
-        </Button>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[180px] bg-background">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border z-50">
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="active">Ativo</SelectItem>
+            <SelectItem value="paused">Pausado</SelectItem>
+            <SelectItem value="ended">Encerrado</SelectItem>
+          </SelectContent>
+        </Select>
       </motion.div>
 
       {/* Stats */}
@@ -134,7 +166,7 @@ export default function Clients() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {mockClients.map((client, index) => (
+              {filteredClients.map((client, index) => (
                 <motion.tr
                   key={client.id}
                   initial={{ opacity: 0 }}
@@ -171,6 +203,13 @@ export default function Clients() {
                   </td>
                 </motion.tr>
               ))}
+              {filteredClients.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                    Nenhum cliente encontrado
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

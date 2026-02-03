@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 interface TeamMember {
@@ -86,6 +94,33 @@ function getCapacityStatus(current: number, max: number) {
 }
 
 export default function Team() {
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [permissionFilter, setPermissionFilter] = useState("all");
+  const [capacityFilter, setCapacityFilter] = useState("all");
+
+  const allRoles = useMemo(() => {
+    const roles = new Set(mockTeam.map((m) => m.role));
+    return Array.from(roles).sort();
+  }, []);
+
+  const filteredTeam = useMemo(() => {
+    return mockTeam.filter((member) => {
+      const matchesSearch =
+        search === "" ||
+        member.name.toLowerCase().includes(search.toLowerCase()) ||
+        member.email.toLowerCase().includes(search.toLowerCase());
+
+      const matchesRole = roleFilter === "all" || member.role === roleFilter;
+      const matchesPermission = permissionFilter === "all" || member.permission === permissionFilter;
+
+      const status = getCapacityStatus(member.currentWeight, member.maxWeight);
+      const matchesCapacity = capacityFilter === "all" || status === capacityFilter;
+
+      return matchesSearch && matchesRole && matchesPermission && matchesCapacity;
+    });
+  }, [search, roleFilter, permissionFilter, capacityFilter]);
+
   const totalCapacity = mockTeam.reduce((acc, m) => acc + m.maxWeight, 0);
   const usedCapacity = mockTeam.reduce((acc, m) => acc + m.currentWeight, 0);
 
@@ -109,16 +144,56 @@ export default function Team() {
         </Button>
       </motion.div>
 
-      {/* Search */}
+      {/* Filters */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
+        className="flex flex-col gap-4 sm:flex-row"
       >
-        <div className="relative max-w-md">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar membros..." className="pl-9" />
+          <Input
+            placeholder="Buscar membros..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full sm:w-[180px] bg-background">
+            <SelectValue placeholder="Função" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border z-50">
+            <SelectItem value="all">Todas as funções</SelectItem>
+            {allRoles.map((role) => (
+              <SelectItem key={role} value={role}>
+                {role}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={permissionFilter} onValueChange={setPermissionFilter}>
+          <SelectTrigger className="w-full sm:w-[150px] bg-background">
+            <SelectValue placeholder="Permissão" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border z-50">
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="operational">Operacional</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+          <SelectTrigger className="w-full sm:w-[150px] bg-background">
+            <SelectValue placeholder="Capacidade" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border z-50">
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="normal">Normal</SelectItem>
+            <SelectItem value="attention">Atenção</SelectItem>
+            <SelectItem value="critical">Crítico</SelectItem>
+          </SelectContent>
+        </Select>
       </motion.div>
 
       {/* Capacity Overview */}
@@ -168,7 +243,7 @@ export default function Team() {
         transition={{ delay: 0.3 }}
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
-        {mockTeam.map((member, index) => {
+        {filteredTeam.map((member, index) => {
           const status = getCapacityStatus(member.currentWeight, member.maxWeight);
           const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
 
@@ -249,6 +324,11 @@ export default function Team() {
             </motion.div>
           );
         })}
+        {filteredTeam.length === 0 && (
+          <div className="col-span-full glass rounded-xl p-12 text-center">
+            <p className="text-muted-foreground">Nenhum membro encontrado</p>
+          </div>
+        )}
       </motion.div>
     </div>
   );

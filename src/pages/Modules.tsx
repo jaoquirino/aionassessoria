@@ -1,8 +1,16 @@
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Edit2, Trash2, MoreHorizontal } from "lucide-react";
+import { Plus, Search, Edit2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 interface ServiceModule {
@@ -82,6 +90,33 @@ const mockModules: ServiceModule[] = [
 ];
 
 export default function Modules() {
+  const [search, setSearch] = useState("");
+  const [recurrenceFilter, setRecurrenceFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+
+  const allRoles = useMemo(() => {
+    const roles = new Set(mockModules.map((m) => m.mainRole));
+    return Array.from(roles).sort();
+  }, []);
+
+  const filteredModules = useMemo(() => {
+    return mockModules.filter((module) => {
+      const matchesSearch =
+        search === "" ||
+        module.name.toLowerCase().includes(search.toLowerCase()) ||
+        module.description.toLowerCase().includes(search.toLowerCase());
+
+      const matchesRecurrence =
+        recurrenceFilter === "all" ||
+        (recurrenceFilter === "recurring" && module.monthlyRecurrence) ||
+        (recurrenceFilter === "one_time" && !module.monthlyRecurrence);
+
+      const matchesRole = roleFilter === "all" || module.mainRole === roleFilter;
+
+      return matchesSearch && matchesRecurrence && matchesRole;
+    });
+  }, [search, recurrenceFilter, roleFilter]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -102,16 +137,45 @@ export default function Modules() {
         </Button>
       </motion.div>
 
-      {/* Search */}
+      {/* Filters */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
+        className="flex flex-col gap-4 sm:flex-row"
       >
-        <div className="relative max-w-md">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar módulos..." className="pl-9" />
+          <Input
+            placeholder="Buscar módulos..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
+        <Select value={recurrenceFilter} onValueChange={setRecurrenceFilter}>
+          <SelectTrigger className="w-full sm:w-[160px] bg-background">
+            <SelectValue placeholder="Recorrência" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border z-50">
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="recurring">Recorrente</SelectItem>
+            <SelectItem value="one_time">Pontual</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full sm:w-[180px] bg-background">
+            <SelectValue placeholder="Função" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border z-50">
+            <SelectItem value="all">Todas as funções</SelectItem>
+            {allRoles.map((role) => (
+              <SelectItem key={role} value={role}>
+                {role}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </motion.div>
 
       {/* Stats */}
@@ -146,7 +210,7 @@ export default function Modules() {
         transition={{ delay: 0.3 }}
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
-        {mockModules.map((module, index) => (
+        {filteredModules.map((module, index) => (
           <motion.div
             key={module.id}
             initial={{ opacity: 0, y: 20 }}
@@ -198,6 +262,11 @@ export default function Modules() {
             </div>
           </motion.div>
         ))}
+        {filteredModules.length === 0 && (
+          <div className="col-span-full glass rounded-xl p-12 text-center">
+            <p className="text-muted-foreground">Nenhum módulo encontrado</p>
+          </div>
+        )}
       </motion.div>
     </div>
   );
