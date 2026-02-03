@@ -156,12 +156,6 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask }: T
                 </motion.div>
               ))}
 
-              {columnTasks.length === 0 && (
-                <div className="flex items-center justify-center h-20 text-sm text-muted-foreground">
-                  Nenhuma tarefa
-                </div>
-              )}
-
               {/* Add Task Button - Trello Style */}
               {column !== "done" && onAddTask && (
                 <button
