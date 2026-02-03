@@ -62,6 +62,14 @@
     --status-attention: 38 92% 50%;
     --status-critical: 0 72% 51%;
 
+    /* Task type colors */
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+    --purple: 262 83% 58%;
+    --purple-foreground: 0 0% 100%;
+    --orange: 25 95% 53%;
+    --orange-foreground: 0 0% 100%;
+
     /* Custom gradients */
     --gradient-primary: linear-gradient(135deg, hsl(45, 100%, 50%), hsl(35, 100%, 45%));
     --gradient-dark: linear-gradient(180deg, hsl(0, 0%, 8%), hsl(0, 0%, 4%));
@@ -110,6 +118,14 @@
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 0 0% 18%;
     --sidebar-ring: 45 100% 50%;
+
+    /* Task type colors - dark mode */
+    --info: 217 91% 65%;
+    --info-foreground: 0 0% 100%;
+    --purple: 262 83% 68%;
+    --purple-foreground: 0 0% 100%;
+    --orange: 25 95% 60%;
+    --orange-foreground: 0 0% 100%;
   }
 }
 

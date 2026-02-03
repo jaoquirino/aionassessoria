@@ -184,10 +184,10 @@ export default function Tasks() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="flex items-center gap-4 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4"
+          className="flex items-center gap-4 rounded-xl border border-info/30 bg-info/10 p-4"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/20">
-            <Clock className="h-5 w-5 text-blue-500" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-info/20">
+            <Clock className="h-5 w-5 text-info" />
           </div>
           <div>
             <p className="font-medium text-foreground">
@@ -225,7 +225,7 @@ export default function Tasks() {
         </div>
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Aguardando</p>
-          <p className="text-2xl font-bold text-blue-500">{waitingClientTasks.length}</p>
+          <p className="text-2xl font-bold text-info">{waitingClientTasks.length}</p>
         </div>
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Peso Total</p>
