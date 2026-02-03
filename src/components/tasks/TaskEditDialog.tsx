@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  X,
   Clock,
   User,
   Building2,
@@ -19,16 +18,19 @@ import {
   Package,
   Link as LinkIcon,
   StickyNote,
+  CalendarIcon,
 } from "lucide-react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -36,6 +38,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
   useTask,
@@ -49,15 +53,15 @@ import {
   useAddComment,
   useTeamMembers,
 } from "@/hooks/useTasks";
-import { taskStatusConfig, taskTypeConfig, type TaskStatusDB } from "@/types/tasks";
+import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
 
-interface TaskDetailSheetProps {
+interface TaskEditDialogProps {
   taskId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function TaskDetailSheet({ taskId, open, onOpenChange }: TaskDetailSheetProps) {
+export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogProps) {
   const { data: task, isLoading } = useTask(taskId);
   const { data: teamMembers = [] } = useTeamMembers();
   
@@ -70,30 +74,78 @@ export function TaskDetailSheet({ taskId, open, onOpenChange }: TaskDetailSheetP
   const deleteAttachment = useDeleteAttachment();
   const addComment = useAddComment();
 
+  // Form state
+  const [title, setTitle] = useState("");
+  const [status, setStatus] = useState<TaskStatusDB>("todo");
+  const [assignedTo, setAssignedTo] = useState<string>("");
+  const [dueDate, setDueDate] = useState<Date | undefined>();
+  const [descriptionObjective, setDescriptionObjective] = useState("");
+  const [descriptionDeliverable, setDescriptionDeliverable] = useState("");
+  const [descriptionReferences, setDescriptionReferences] = useState("");
+  const [descriptionNotes, setDescriptionNotes] = useState("");
+
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [newAttachmentName, setNewAttachmentName] = useState("");
   const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [newComment, setNewComment] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  if (!open) return null;
-
-  const handleStatusChange = (newStatus: TaskStatusDB) => {
-    if (!task) return;
-    
-    // Validate completion rules
-    if (newStatus === "done") {
-      const allChecklistCompleted = !task.checklist?.length || task.checklist.every(item => item.is_completed);
-      const hasAttachment = task.attachments && task.attachments.length > 0;
-      
-      if (!allChecklistCompleted) {
-        return; // Don't allow completion if checklist not done
-      }
-      if (!hasAttachment) {
-        return; // Don't allow completion without attachment/link
-      }
+  // Sync form state when task changes
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title);
+      setStatus(task.status);
+      setAssignedTo(task.assigned_to || "");
+      setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setDescriptionObjective(task.description_objective || "");
+      setDescriptionDeliverable(task.description_deliverable || "");
+      setDescriptionReferences(task.description_references || "");
+      setDescriptionNotes(task.description_notes || "");
     }
-    
-    updateStatus.mutate({ taskId: task.id, status: newStatus });
+  }, [task]);
+
+  const handleSave = async () => {
+    if (!task) return;
+
+    setIsSaving(true);
+    try {
+      await updateTask.mutateAsync({
+        id: task.id,
+        title,
+        status,
+        assigned_to: assignedTo || null,
+        due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : task.due_date,
+        description_objective: descriptionObjective || null,
+        description_deliverable: descriptionDeliverable || null,
+        description_references: descriptionReferences || null,
+        description_notes: descriptionNotes || null,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    // Reset to original values
+    if (task) {
+      setTitle(task.title);
+      setStatus(task.status);
+      setAssignedTo(task.assigned_to || "");
+      setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setDescriptionObjective(task.description_objective || "");
+      setDescriptionDeliverable(task.description_deliverable || "");
+      setDescriptionReferences(task.description_references || "");
+      setDescriptionNotes(task.description_notes || "");
+    }
+    onOpenChange(false);
+  };
+
+  // Auto-save on outside click
+  const handleOpenChange = async (newOpen: boolean) => {
+    if (!newOpen && task) {
+      await handleSave();
+    }
+    onOpenChange(newOpen);
   };
 
   const handleAddChecklistItem = () => {
@@ -129,9 +181,11 @@ export function TaskDetailSheet({ taskId, open, onOpenChange }: TaskDetailSheetP
     task.attachments && task.attachments.length > 0
   );
 
+  if (!open) return null;
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl p-0">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden">
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-8 w-3/4" />
@@ -139,74 +193,29 @@ export function TaskDetailSheet({ taskId, open, onOpenChange }: TaskDetailSheetP
             <Skeleton className="h-32 w-full" />
           </div>
         ) : task ? (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full max-h-[90vh]">
             {/* Header */}
-            <SheetHeader className="p-6 pb-4 border-b">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="outline" className={cn("text-xs", taskTypeConfig[task.type].color)}>
-                      {taskTypeConfig[task.type].label}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Peso: {task.weight}
-                    </Badge>
-                    {isOverdue && (
-                      <Badge variant="destructive" className="text-xs gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        Atrasada
-                      </Badge>
-                    )}
-                  </div>
-                  <SheetTitle className="text-lg">{task.title}</SheetTitle>
-                </div>
+            <DialogHeader className="p-6 pb-4 border-b shrink-0">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="outline" className={cn("text-xs", taskTypeConfig[task.type].color)}>
+                  {taskTypeConfig[task.type].label}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  Peso: {task.weight}
+                </Badge>
+                {isOverdue && (
+                  <Badge variant="destructive" className="text-xs gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Atrasada
+                  </Badge>
+                )}
               </div>
-
-              {/* Status Selector */}
-              <div className="mt-4">
-                <Select value={task.status} onValueChange={(v) => handleStatusChange(v as TaskStatusDB)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(taskStatusConfig) as [TaskStatusDB, typeof taskStatusConfig[TaskStatusDB]][]).map(([key, config]) => (
-                      <SelectItem 
-                        key={key} 
-                        value={key}
-                        disabled={key === "done" && !canComplete}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-2 h-2 rounded-full", config.color.replace("text-", "bg-"))} />
-                          {config.label}
-                          {key === "done" && !canComplete && (
-                            <span className="text-xs text-muted-foreground ml-2">(checklist e anexo obrigatórios)</span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Completion Warning */}
-              {task.status !== "done" && !canComplete && (
-                <div className="mt-3 p-3 rounded-lg bg-warning/10 border border-warning/30 text-sm">
-                  <p className="font-medium text-warning">Para marcar como Entregue:</p>
-                  <ul className="mt-1 text-muted-foreground text-xs space-y-1">
-                    {task.checklist?.length && !task.checklist.every(i => i.is_completed) && (
-                      <li>• Complete todos os itens do checklist</li>
-                    )}
-                    {(!task.attachments || task.attachments.length === 0) && (
-                      <li>• Adicione pelo menos um anexo ou link de entrega</li>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </SheetHeader>
+              <DialogTitle className="text-lg">Editar Tarefa</DialogTitle>
+            </DialogHeader>
 
             <ScrollArea className="flex-1">
               <Tabs defaultValue="details" className="w-full">
-                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
+                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 sticky top-0 bg-background z-10">
                   <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <FileText className="h-4 w-4 mr-2" />
                     Detalhes
@@ -237,31 +246,59 @@ export function TaskDetailSheet({ taskId, open, onOpenChange }: TaskDetailSheetP
 
                 {/* Details Tab */}
                 <TabsContent value="details" className="p-6 space-y-6 mt-0">
+                  {/* Title */}
+                  <div className="space-y-2">
+                    <Label>Título</Label>
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                  </div>
+
+                  {/* Status */}
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={status} onValueChange={(v) => setStatus(v as TaskStatusDB)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.entries(taskStatusConfig) as [TaskStatusDB, typeof taskStatusConfig[TaskStatusDB]][]).map(([key, config]) => (
+                          <SelectItem 
+                            key={key} 
+                            value={key}
+                            disabled={key === "done" && !canComplete}
+                          >
+                            {config.label}
+                            {key === "done" && !canComplete && (
+                              <span className="text-xs text-muted-foreground ml-2">(checklist e anexo obrigatórios)</span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Completion Warning */}
+                  {status !== "done" && !canComplete && (
+                    <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 text-sm">
+                      <p className="font-medium text-warning">Para marcar como Entregue:</p>
+                      <ul className="mt-1 text-muted-foreground text-xs space-y-1">
+                        {task.checklist?.length && !task.checklist.every(i => i.is_completed) && (
+                          <li>• Complete todos os itens do checklist</li>
+                        )}
+                        {(!task.attachments || task.attachments.length === 0) && (
+                          <li>• Adicione pelo menos um anexo ou link de entrega</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+
                   {/* Meta Info */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Building2 className="h-3 w-3" /> Cliente
-                      </p>
-                      <p className="text-sm font-medium">{task.client?.name || "-"}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Package className="h-3 w-3" /> Módulo
-                      </p>
-                      <p className="text-sm font-medium">
-                        {task.contract_module?.service_module?.name || "-"}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
                         <User className="h-3 w-3" /> Responsável
-                      </p>
-                      <Select
-                        value={task.assigned_to || ""}
-                        onValueChange={(v) => updateTask.mutate({ id: task.id, assigned_to: v || null })}
-                      >
-                        <SelectTrigger className="h-8 text-sm">
+                      </Label>
+                      <Select value={assignedTo} onValueChange={setAssignedTo}>
+                        <SelectTrigger>
                           <SelectValue placeholder="Não atribuído" />
                         </SelectTrigger>
                         <SelectContent>
@@ -273,94 +310,55 @@ export function TaskDetailSheet({ taskId, open, onOpenChange }: TaskDetailSheetP
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
                         <Clock className="h-3 w-3" /> Prazo
-                      </p>
-                      <p className={cn("text-sm font-medium", isOverdue && "text-destructive")}>
-                        {format(new Date(task.due_date), "dd/MM/yyyy")}
-                        {isOverdue && " (Atrasada)"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Deliverable Info */}
-                  {task.contract_module?.deliverable_limit && (
-                    <div className={cn(
-                      "p-3 rounded-lg border",
-                      task.contract_module.deliverable_used >= task.contract_module.deliverable_limit 
-                        ? "border-destructive/50 bg-destructive/5" 
-                        : "border-primary/30 bg-primary/5"
-                    )}>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Entregáveis do Módulo</span>
-                        <Badge variant={task.is_deliverable ? "default" : "outline"}>
-                          {task.is_deliverable ? "Conta como entregável" : "Não conta"}
-                        </Badge>
-                      </div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                          <div 
+                      </Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
                             className={cn(
-                              "h-full transition-all",
-                              task.contract_module.deliverable_used >= task.contract_module.deliverable_limit 
-                                ? "bg-destructive" 
-                                : "bg-primary"
+                              "w-full justify-start text-left font-normal",
+                              !dueDate && "text-muted-foreground",
+                              isOverdue && "border-destructive text-destructive"
                             )}
-                            style={{ 
-                              width: `${Math.min(100, (task.contract_module.deliverable_used / task.contract_module.deliverable_limit) * 100)}%` 
-                            }}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dueDate ? format(dueDate, "dd/MM/yyyy") : "Selecionar data"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dueDate}
+                            onSelect={setDueDate}
+                            initialFocus
+                            className="pointer-events-auto"
                           />
-                        </div>
-                        <span className="text-sm font-medium">
-                          {task.contract_module.deliverable_used}/{task.contract_module.deliverable_limit}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <Separator />
-
-                  {/* Description Sections */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Target className="h-3 w-3" /> Objetivo
-                      </p>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {task.description_objective || <span className="text-muted-foreground italic">Não definido</span>}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Package className="h-3 w-3" /> O que deve ser entregue
-                      </p>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {task.description_deliverable || <span className="text-muted-foreground italic">Não definido</span>}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <LinkIcon className="h-3 w-3" /> Referências
-                      </p>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {task.description_references || <span className="text-muted-foreground italic">Não definido</span>}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <StickyNote className="h-3 w-3" /> Observações
-                      </p>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {task.description_notes || <span className="text-muted-foreground italic">Não definido</span>}
-                      </p>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
 
-                  <Separator />
+                  {/* Client & Module Info (read-only) */}
+                  <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-muted/50">
+                    <div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Building2 className="h-3 w-3" /> Cliente
+                      </p>
+                      <p className="text-sm font-medium">{task.client?.name || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Package className="h-3 w-3" /> Módulo
+                      </p>
+                      <p className="text-sm font-medium">
+                        {task.contract_module?.service_module?.name || "-"}
+                      </p>
+                    </div>
+                  </div>
 
                   {/* Required Role Display */}
                   <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
@@ -368,6 +366,59 @@ export function TaskDetailSheet({ taskId, open, onOpenChange }: TaskDetailSheetP
                     <Badge variant="secondary" className="text-sm">
                       {task.required_role}
                     </Badge>
+                  </div>
+
+                  <Separator />
+
+                  {/* Description Sections */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        <Target className="h-3 w-3" /> Objetivo
+                      </Label>
+                      <Textarea 
+                        value={descriptionObjective}
+                        onChange={(e) => setDescriptionObjective(e.target.value)}
+                        placeholder="O que queremos alcançar?"
+                        className="resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        <Package className="h-3 w-3" /> O que deve ser entregue
+                      </Label>
+                      <Textarea 
+                        value={descriptionDeliverable}
+                        onChange={(e) => setDescriptionDeliverable(e.target.value)}
+                        placeholder="Descreva os entregáveis"
+                        className="resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        <LinkIcon className="h-3 w-3" /> Referências
+                      </Label>
+                      <Textarea 
+                        value={descriptionReferences}
+                        onChange={(e) => setDescriptionReferences(e.target.value)}
+                        placeholder="Links e referências"
+                        className="resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        <StickyNote className="h-3 w-3" /> Observações
+                      </Label>
+                      <Textarea 
+                        value={descriptionNotes}
+                        onChange={(e) => setDescriptionNotes(e.target.value)}
+                        placeholder="Notas adicionais"
+                        className="resize-none"
+                      />
+                    </div>
                   </div>
                 </TabsContent>
 
@@ -577,13 +628,23 @@ export function TaskDetailSheet({ taskId, open, onOpenChange }: TaskDetailSheetP
                 </TabsContent>
               </Tabs>
             </ScrollArea>
+
+            {/* Footer */}
+            <DialogFooter className="p-4 border-t shrink-0 gap-2 sm:gap-0">
+              <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+                Cancelar
+              </Button>
+              <Button onClick={async () => { await handleSave(); onOpenChange(false); }} disabled={isSaving}>
+                {isSaving ? "Salvando..." : "Salvar"}
+              </Button>
+            </DialogFooter>
           </div>
         ) : (
           <div className="p-6 text-center text-muted-foreground">
             Tarefa não encontrada
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
