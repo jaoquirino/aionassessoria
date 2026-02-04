@@ -174,8 +174,7 @@ export function OnboardingStepsDialog({
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6">
             <div className="space-y-3 py-4">
-              <AnimatePresence mode="wait">
-                {steps.map((step, index) => {
+              {steps.map((step, index) => {
                   const response = localResponses.get(step.id);
                   const isExpanded = expandedSteps.has(step.id);
                   const stepIsCompleted = response?.isCompleted || false;
