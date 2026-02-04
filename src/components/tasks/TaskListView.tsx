@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, User, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
 import type { Task, TeamMember, TaskPriority } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig, priorityConfig } from "@/types/tasks";
 import { AssigneePopover, DatePopover, RolePopover, PriorityPopover } from "./InlineFieldPopover";
@@ -16,7 +16,7 @@ interface TaskListViewProps {
 
 export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = [] }: TaskListViewProps) {
   const isOverdue = (task: Task) => {
-    return new Date(task.due_date) < new Date() && task.status !== "done";
+    return parseLocalDate(task.due_date) < new Date() && task.status !== "done";
   };
 
   const handleFieldClick = (e: React.MouseEvent) => {
@@ -126,7 +126,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                   {/* Data - Clicável */}
                   <div onClick={handleFieldClick}>
                     <DatePopover
-                      currentDate={new Date(task.due_date)}
+                      currentDate={parseLocalDate(task.due_date)}
                       onSelect={(date) => onUpdateField?.(task.id, "due_date", format(date, "yyyy-MM-dd"))}
                     >
                       <p className={cn(
@@ -134,7 +134,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                         isOverdue(task) ? "text-destructive font-medium" : "text-muted-foreground"
                       )}>
                         <Calendar className="h-3 w-3" />
-                        {isOverdue(task) ? "Atrasada" : `Prazo: ${new Date(task.due_date).toLocaleDateString("pt-BR")}`}
+                        {isOverdue(task) ? "Atrasada" : `Prazo: ${parseLocalDate(task.due_date).toLocaleDateString("pt-BR")}`}
                       </p>
                     </DatePopover>
                   </div>

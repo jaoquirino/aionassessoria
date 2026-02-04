@@ -7,7 +7,7 @@ import { TaskKanbanBoard } from "@/components/tasks/TaskKanbanBoard";
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { CollapsibleFilters, type FiltersState } from "@/components/tasks/CollapsibleFilters";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
-import { useTasks, useUpdateTaskStatus, useUpdateTaskField, useTeamMembers, useClients, useCreateTask } from "@/hooks/useTasks";
+import { useTasks, useUpdateTaskStatus, useUpdateTaskField, useTeamMembers, useClients, useCreateTask, useArchiveTask } from "@/hooks/useTasks";
 import type { TaskStatusDB } from "@/types/tasks";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
@@ -44,6 +44,7 @@ export default function Tasks() {
   const updateStatus = useUpdateTaskStatus();
   const updateField = useUpdateTaskField();
   const createTask = useCreateTask();
+  const archiveTask = useArchiveTask();
 
   const assigneeOptions = useMemo(() => {
     return teamMembers.map((m) => ({ value: m.id, label: m.name }));
@@ -257,6 +258,7 @@ export default function Tasks() {
               onTaskClick={handleTaskClick}
               onAddTask={handleQuickAddTask}
               onUpdateField={handleUpdateField}
+              onArchiveTask={(taskId) => archiveTask.mutate(taskId)}
               teamMembers={teamMembers}
             />
           ) : (

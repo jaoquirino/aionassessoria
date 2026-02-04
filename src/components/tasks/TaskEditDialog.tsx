@@ -19,6 +19,7 @@ import {
   Link as LinkIcon,
   StickyNote,
   CalendarIcon,
+  Archive,
 } from "lucide-react";
 import {
   Dialog,
@@ -40,7 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
 import {
   useTask,
   useUpdateTask,
@@ -52,6 +53,7 @@ import {
   useDeleteAttachment,
   useAddComment,
   useTeamMembers,
+  useArchiveTask,
 } from "@/hooks/useTasks";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
@@ -76,6 +78,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
   const addAttachment = useAddAttachment();
   const deleteAttachment = useDeleteAttachment();
   const addComment = useAddComment();
+  const archiveTask = useArchiveTask();
 
   // Form state
   const [title, setTitle] = useState("");
@@ -99,7 +102,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
       setTitle(task.title);
       setStatus(task.status);
       setAssignedTo(task.assigned_to || "");
-      setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
       setDescriptionObjective(task.description_objective || "");
       setDescriptionDeliverable(task.description_deliverable || "");
       setDescriptionReferences(task.description_references || "");
@@ -134,7 +137,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
       setTitle(task.title);
       setStatus(task.status);
       setAssignedTo(task.assigned_to || "");
-      setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
       setDescriptionObjective(task.description_objective || "");
       setDescriptionDeliverable(task.description_deliverable || "");
       setDescriptionReferences(task.description_references || "");
@@ -649,7 +652,19 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
             </ScrollArea>
 
             {/* Footer */}
-            <DialogFooter className="p-4 border-t shrink-0 gap-2 sm:gap-0">
+            <DialogFooter className="p-4 border-t shrink-0 flex-wrap gap-2">
+              <Button 
+                variant="ghost" 
+                onClick={async () => { 
+                  await archiveTask.mutateAsync(task.id); 
+                  onOpenChange(false); 
+                }}
+                disabled={isSaving || archiveTask.isPending}
+                className="text-muted-foreground hover:text-foreground gap-1 mr-auto"
+              >
+                <Archive className="h-4 w-4" />
+                Arquivar
+              </Button>
               <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
                 Cancelar
               </Button>

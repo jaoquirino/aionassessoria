@@ -1,10 +1,18 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, GripVertical, Plus, User, Calendar } from "lucide-react";
+import { AlertTriangle, GripVertical, Plus, User, Calendar, MoreHorizontal, Archive, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn, parseLocalDate } from "@/lib/utils";
 import type { Task, TaskStatusDB, TaskPriority, TeamMember } from "@/types/tasks";
-import { taskStatusConfig, priorityConfig, roleOptions } from "@/types/tasks";
+import { taskStatusConfig, priorityConfig } from "@/types/tasks";
 import { AssigneePopover, DatePopover, RolePopover, PriorityPopover } from "./InlineFieldPopover";
 import { format } from "date-fns";
 
@@ -14,6 +22,7 @@ interface TaskKanbanBoardProps {
   onTaskClick?: (taskId: string) => void;
   onAddTask?: (status: TaskStatusDB) => void;
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
+  onArchiveTask?: (taskId: string) => void;
   teamMembers?: TeamMember[];
 }
 
@@ -21,7 +30,7 @@ interface TaskKanbanBoardProps {
 type KanbanColumn = "overdue" | TaskStatusDB;
 const columns: KanbanColumn[] = ["overdue", "todo", "in_progress", "review", "waiting_client", "done"];
 
-export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onUpdateField, teamMembers = [] }: TaskKanbanBoardProps) {
+export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onUpdateField, onArchiveTask, teamMembers = [] }: TaskKanbanBoardProps) {
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<KanbanColumn | null>(null);
 
@@ -51,7 +60,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
   };
 
   const isOverdue = (task: Task) => {
-    return new Date(task.due_date) < new Date() && task.status !== "done";
+    return parseLocalDate(task.due_date) < new Date() && task.status !== "done";
   };
 
   // Organizar tarefas por coluna
@@ -153,6 +162,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
                   onDragEnd={handleDragEnd}
                   onClick={() => onTaskClick?.(task.id)}
                   onUpdateField={onUpdateField}
+                  onArchive={onArchiveTask}
                   teamMembers={teamMembers}
                 />
               ))}
@@ -184,10 +194,11 @@ interface TaskCardProps {
   onDragEnd: () => void;
   onClick: () => void;
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
+  onArchive?: (taskId: string) => void;
   teamMembers: TeamMember[];
 }
 
-function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, teamMembers }: TaskCardProps) {
+function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, onArchive, teamMembers }: TaskCardProps) {
   const priority = task.priority as TaskPriority || "medium";
   const priorityInfo = priorityConfig[priority];
 
@@ -223,9 +234,32 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
             <p className="font-medium text-foreground text-sm line-clamp-2">
               {task.title}
             </p>
-            {isOverdue && (
-              <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-            )}
+            <div className="flex items-center gap-1 shrink-0">
+              {isOverdue && (
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={handleFieldClick}>
+                  <button className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-background border-border">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onClick(); }}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={(e) => { e.stopPropagation(); onArchive?.(task.id); }}
+                    className="text-muted-foreground"
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Arquivar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {/* Cliente */}
@@ -276,7 +310,7 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
           {/* Data de entrega - Clicável */}
           <div onClick={handleFieldClick}>
             <DatePopover
-              currentDate={new Date(task.due_date)}
+              currentDate={parseLocalDate(task.due_date)}
               onSelect={(date) => onUpdateField?.(task.id, "due_date", format(date, "yyyy-MM-dd"))}
             >
               <div className={cn(

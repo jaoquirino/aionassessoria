@@ -98,6 +98,7 @@ export interface Task {
   description_references: string | null;
   description_notes: string | null;
   is_deliverable: boolean;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
   // Joined data

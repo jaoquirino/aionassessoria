@@ -592,6 +592,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          archived_at: string | null
           assigned_to: string | null
           client_id: string
           contract_id: string | null
@@ -614,6 +615,7 @@ export type Database = {
           weight: number
         }
         Insert: {
+          archived_at?: string | null
           assigned_to?: string | null
           client_id: string
           contract_id?: string | null
@@ -636,6 +638,7 @@ export type Database = {
           weight: number
         }
         Update: {
+          archived_at?: string | null
           assigned_to?: string | null
           client_id?: string
           contract_id?: string | null
