@@ -279,45 +279,58 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
           </div>
 
           {/* Cliente - Clicável */}
-          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-            <ClientPopover
-              currentClient={task.client}
-              clients={clients}
-              onSelect={(clientId) => onUpdateField?.(task.id, "client_id", clientId)}
+          <ClientPopover
+            currentClient={task.client}
+            clients={clients}
+            onSelect={(clientId) => onUpdateField?.(task.id, "client_id", clientId)}
+          >
+            <button 
+              type="button"
+              onClick={handleFieldClick} 
+              onPointerDown={handleFieldClick}
+              className="text-left"
             >
               <p className="text-xs text-muted-foreground truncate font-medium cursor-pointer hover:text-foreground transition-colors">
                 {task.client?.name || "Sem cliente"}
               </p>
-            </ClientPopover>
-          </div>
+            </button>
+          </ClientPopover>
 
           {/* Prioridade - Clicável */}
-          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-            <PriorityPopover
-              currentPriority={priority}
-              onSelect={(newPriority) => onUpdateField?.(task.id, "priority", newPriority)}
+          <PriorityPopover
+            currentPriority={priority}
+            onSelect={(newPriority) => onUpdateField?.(task.id, "priority", newPriority)}
+          >
+            <button 
+              type="button"
+              onClick={handleFieldClick} 
+              onPointerDown={handleFieldClick}
+              className="inline-flex"
             >
               <Badge className={cn("text-xs cursor-pointer hover:opacity-80 transition-opacity", priorityInfo.color)}>
                 {priorityInfo.label}
               </Badge>
-            </PriorityPopover>
-          </div>
+            </button>
+          </PriorityPopover>
 
           {/* Responsável - Clicável */}
-          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-            <AssigneePopover
-              currentAssignee={task.assignee}
-              teamMembers={teamMembers}
-              onSelect={(memberId) => onUpdateField?.(task.id, "assigned_to", memberId)}
+          <AssigneePopover
+            currentAssignee={task.assignee}
+            teamMembers={teamMembers}
+            onSelect={(memberId) => onUpdateField?.(task.id, "assigned_to", memberId)}
+          >
+            <button 
+              type="button"
+              onClick={handleFieldClick} 
+              onPointerDown={handleFieldClick}
+              className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
             >
-              <div className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-                <User className="h-3 w-3" />
-                <span className="truncate">
-                  {task.assignee?.name || "Não atribuído"}
-                </span>
-              </div>
-            </AssigneePopover>
-          </div>
+              <User className="h-3 w-3" />
+              <span className="truncate">
+                {task.assignee?.name || "Não atribuído"}
+              </span>
+            </button>
+          </AssigneePopover>
 
           {/* Checklist Progress - Clickable */}
           {checklistTotal > 0 && (
@@ -337,25 +350,28 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
           )}
 
           {/* Data de entrega - Clicável */}
-          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-            <DatePopover
-              currentDate={parseLocalDate(task.due_date)}
-              onSelect={(date) => onUpdateField?.(task.id, "due_date", format(date, "yyyy-MM-dd"))}
-            >
-              <div className={cn(
-                "flex items-center gap-1 text-xs pt-1 border-t border-border/50 cursor-pointer hover:opacity-80 transition-opacity",
+          <DatePopover
+            currentDate={parseLocalDate(task.due_date)}
+            onSelect={(date) => onUpdateField?.(task.id, "due_date", format(date, "yyyy-MM-dd"))}
+          >
+            <button 
+              type="button"
+              onClick={handleFieldClick} 
+              onPointerDown={handleFieldClick}
+              className={cn(
+                "flex items-center gap-1 text-xs pt-1 border-t border-border/50 cursor-pointer hover:opacity-80 transition-opacity w-full",
                 isOverdue ? "text-destructive font-medium" : "text-muted-foreground"
-              )}>
-                <Calendar className="h-3 w-3" />
-                <span>{formatDate(task.due_date)}</span>
-                {isOverdue && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded bg-destructive/20 text-destructive text-[10px] font-semibold">
-                    ATRASADA
-                  </span>
-                )}
-              </div>
-            </DatePopover>
-          </div>
+              )}
+            >
+              <Calendar className="h-3 w-3" />
+              <span>{formatDate(task.due_date)}</span>
+              {isOverdue && (
+                <span className="ml-1 px-1.5 py-0.5 rounded bg-destructive/20 text-destructive text-[10px] font-semibold">
+                  ATRASADA
+                </span>
+              )}
+            </button>
+          </DatePopover>
         </div>
       </div>
     </motion.div>
