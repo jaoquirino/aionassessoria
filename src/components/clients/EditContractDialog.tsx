@@ -155,7 +155,7 @@ export function EditContractDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="renewal-date">Data de Renovação</Label>
+              <Label htmlFor="renewal-date">Renovação</Label>
               <Input
                 id="renewal-date"
                 type="date"
