@@ -44,7 +44,6 @@ export function useDeliveriesByClient(clientId?: string) {
             service_module:service_modules(name)
           )
         `)
-        .eq("is_deliverable", true)
         .is("archived_at", null)
         .neq("type", "project")
         .order("due_date", { ascending: false });

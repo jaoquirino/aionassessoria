@@ -302,18 +302,6 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
             </PriorityPopover>
           </div>
 
-          {/* Área (required_role) - Clicável */}
-          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-            <RolePopover
-              currentRole={task.required_role}
-              onSelect={(newRole) => onUpdateField?.(task.id, "required_role", newRole)}
-            >
-              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20 cursor-pointer hover:opacity-80 transition-opacity">
-                {task.required_role}
-              </Badge>
-            </RolePopover>
-          </div>
-
           {/* Responsável - Clicável */}
           <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
             <AssigneePopover
