@@ -3,8 +3,16 @@ import { Download, FileSpreadsheet, FileCode, Loader2, Building2 } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAllClients } from "@/hooks/useClients";
+import { useAllClientOnboardingResponses } from "@/hooks/useOnboardingResponses";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+const statusLabels: Record<string, string> = {
+  onboarding: "Em Onboarding",
+  active: "Ativo",
+  paused: "Pausado",
+  ended: "Cancelado",
+};
 
 export function ClientDataExportTab() {
   const [isExporting, setIsExporting] = useState<"csv" | "xml" | null>(null);
@@ -27,7 +35,23 @@ export function ClientDataExportTab() {
       .order("name");
 
     if (error) throw error;
-    return data;
+
+    // Fetch onboarding responses for each client
+    const clientsWithResponses = await Promise.all(
+      (data || []).map(async (client) => {
+        const { data: responses } = await supabase
+          .from("client_onboarding_responses")
+          .select(`
+            *,
+            template_step:onboarding_template_steps(title, description)
+          `)
+          .eq("client_id", client.id);
+        
+        return { ...client, onboarding_responses: responses || [] };
+      })
+    );
+
+    return clientsWithResponses;
   };
 
   const exportToCSV = async () => {
@@ -38,17 +62,19 @@ export function ClientDataExportTab() {
       // Flatten data for CSV
       const rows: string[][] = [];
       
-      // Header row
+      // Header row - organized format
       rows.push([
         "Nome",
-        "Status",
         "CNPJ",
         "Telefone",
         "Email",
+        "Situação",
         "Cliente Desde",
         "Valor Mensal Total",
         "Contratos Ativos",
         "Módulos",
+        "Onboarding - Etapas",
+        "Onboarding - Respostas",
       ]);
 
       // Data rows
@@ -60,16 +86,29 @@ export function ClientDataExportTab() {
           .filter(Boolean)
           .join(", ");
 
+        // Format onboarding responses
+        const onboardingSteps = client.onboarding_responses
+          ?.map(r => r.template_step?.title)
+          .filter(Boolean)
+          .join("; ");
+        
+        const onboardingAnswers = client.onboarding_responses
+          ?.filter(r => r.response_value)
+          .map(r => `${r.template_step?.title}: ${r.response_value}`)
+          .join("; ");
+
         rows.push([
           client.name || "",
-          client.status || "",
           client.cnpj || "",
           client.phone || "",
           client.email || "",
+          statusLabels[client.status] || client.status || "",
           client.created_at ? new Date(client.created_at).toLocaleDateString("pt-BR") : "",
           totalValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
           String(activeContracts.length),
           modules || "",
+          onboardingSteps || "",
+          onboardingAnswers || "",
         ]);
       });
 
@@ -100,20 +139,28 @@ export function ClientDataExportTab() {
     try {
       const data = await fetchFullClientData();
 
-      // Build XML
+      // Build XML - organized format
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
       xml += '<clientes>\n';
 
       data?.forEach((client) => {
         xml += '  <cliente>\n';
-        xml += `    <id>${escapeXml(client.id)}</id>\n`;
-        xml += `    <nome>${escapeXml(client.name)}</nome>\n`;
-        xml += `    <status>${escapeXml(client.status)}</status>\n`;
-        xml += `    <cnpj>${escapeXml(client.cnpj || "")}</cnpj>\n`;
-        xml += `    <telefone>${escapeXml(client.phone || "")}</telefone>\n`;
-        xml += `    <email>${escapeXml(client.email || "")}</email>\n`;
-        xml += `    <cliente_desde>${client.created_at || ""}</cliente_desde>\n`;
         
+        // Client identification
+        xml += '    <identificacao>\n';
+        xml += `      <nome>${escapeXml(client.name)}</nome>\n`;
+        xml += `      <cnpj>${escapeXml(client.cnpj || "")}</cnpj>\n`;
+        xml += `      <telefone>${escapeXml(client.phone || "")}</telefone>\n`;
+        xml += `      <email>${escapeXml(client.email || "")}</email>\n`;
+        xml += '    </identificacao>\n';
+        
+        // Status
+        xml += '    <situacao>\n';
+        xml += `      <status>${escapeXml(statusLabels[client.status] || client.status)}</status>\n`;
+        xml += `      <cliente_desde>${client.created_at || ""}</cliente_desde>\n`;
+        xml += '    </situacao>\n';
+        
+        // Contracts
         if (client.contracts && client.contracts.length > 0) {
           xml += '    <contratos>\n';
           client.contracts.forEach((contract) => {
@@ -140,6 +187,20 @@ export function ClientDataExportTab() {
             xml += '      </contrato>\n';
           });
           xml += '    </contratos>\n';
+        }
+
+        // Onboarding responses
+        if (client.onboarding_responses && client.onboarding_responses.length > 0) {
+          xml += '    <onboarding>\n';
+          client.onboarding_responses.forEach((response) => {
+            xml += '      <etapa>\n';
+            xml += `        <titulo>${escapeXml(response.template_step?.title || "")}</titulo>\n`;
+            xml += `        <resposta>${escapeXml(response.response_value || "")}</resposta>\n`;
+            xml += `        <concluido>${response.is_completed ? "Sim" : "Não"}</concluido>\n`;
+            xml += `        <data_conclusao>${response.completed_at || ""}</data_conclusao>\n`;
+            xml += '      </etapa>\n';
+          });
+          xml += '    </onboarding>\n';
         }
         
         xml += '  </cliente>\n';
@@ -182,7 +243,7 @@ export function ClientDataExportTab() {
             Exportar Dados de Clientes
           </h3>
           <p className="text-sm text-muted-foreground">
-            Exporte todos os dados de clientes, contratos e módulos para análise externa
+            Exporte todos os dados de clientes, contratos, módulos e respostas de onboarding
           </p>
         </div>
 

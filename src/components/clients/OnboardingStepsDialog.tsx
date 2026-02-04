@@ -22,7 +22,6 @@ interface OnboardingStepsDialogProps {
   templateId: string;
   moduleName: string;
   isCompleted?: boolean;
-  readOnly?: boolean;
 }
 
 interface LocalResponse {
