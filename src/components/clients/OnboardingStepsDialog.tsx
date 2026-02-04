@@ -139,8 +139,8 @@ export function OnboardingStepsDialog({
   const isSaving = upsertResponse.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col min-h-0 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {moduleName} - Onboarding
