@@ -158,18 +158,20 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
       </div>
 
       {/* New Comment Form with @ mentions */}
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <MentionTextarea
-          placeholder="Escreva um comentário... Use @ para mencionar alguém"
-          value={newComment}
-          onValueChange={setNewComment}
-          className="min-h-[60px] resize-none"
-        />
+      <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+        <div className="flex-1">
+          <MentionTextarea
+            placeholder="Escreva um comentário... Use @ para mencionar alguém"
+            value={newComment}
+            onValueChange={setNewComment}
+            className="min-h-[60px] resize-none w-full"
+          />
+        </div>
         <Button 
           type="submit" 
           size="icon" 
           disabled={!newComment.trim() || addComment.isPending}
-          className="shrink-0"
+          className="shrink-0 h-10 w-10"
         >
           {addComment.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
