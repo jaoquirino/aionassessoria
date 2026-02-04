@@ -455,7 +455,10 @@ export default function Settings() {
               {/* Username - readonly */}
               {username && (
                 <div className="space-y-2">
-                  <Label>Usuário</Label>
+                  <Label className="flex items-center gap-2">
+                    <AtSign className="h-4 w-4" />
+                    Usuário
+                  </Label>
                   <Input
                     value={username}
                     disabled
