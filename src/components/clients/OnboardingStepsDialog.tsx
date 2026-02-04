@@ -65,18 +65,16 @@ export function OnboardingStepsDialog({
       setLocalResponses(map);
       setHasChanges(false);
       
-      // Auto-expand first incomplete step if not in read-only mode
-      if (!readOnly) {
-        const firstIncomplete = steps.find(s => {
-          const response = map.get(s.id);
-          return !response?.isCompleted;
-        });
-        if (firstIncomplete) {
-          setExpandedSteps(new Set([firstIncomplete.id]));
-        }
+      // Auto-expand first incomplete step
+      const firstIncomplete = steps.find(s => {
+        const response = map.get(s.id);
+        return !response?.isCompleted;
+      });
+      if (firstIncomplete) {
+        setExpandedSteps(new Set([firstIncomplete.id]));
       }
     }
-  }, [steps, existingResponses, responsesLoading, readOnly]);
+  }, [steps, existingResponses, responsesLoading]);
 
   const handleResponseChange = (stepId: string, value: string) => {
     setLocalResponses(prev => {
