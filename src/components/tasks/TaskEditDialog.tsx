@@ -51,7 +51,7 @@ import {
   useClients,
   useArchiveTask,
 } from "@/hooks/useTasks";
-import { taskStatusConfig, taskTypeConfig, type TaskStatusDB } from "@/types/tasks";
+import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,7 +83,8 @@ function useClientModules(clientId: string | null) {
               id,
               name,
               primary_role,
-              default_weight
+              default_weight,
+              is_recurring
             )
           )
         `)
@@ -96,6 +97,8 @@ function useClientModules(clientId: string | null) {
         moduleId: string;
         moduleName: string;
         primaryRole: string;
+        defaultWeight: number;
+        isRecurring: boolean;
       }> = [];
       
       contracts?.forEach(contract => {
@@ -106,6 +109,8 @@ function useClientModules(clientId: string | null) {
               moduleId: cm.module_id,
               moduleName: cm.service_module.name,
               primaryRole: cm.service_module.primary_role,
+              defaultWeight: cm.service_module.default_weight,
+              isRecurring: cm.service_module.is_recurring,
             });
           }
         });
@@ -141,6 +146,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const [descriptionNotes, setDescriptionNotes] = useState("");
   const [clientId, setClientId] = useState<string>("");
   const [contractModuleId, setContractModuleId] = useState<string>("");
+  const [taskType, setTaskType] = useState<TaskType>("recurring");
+  const [weight, setWeight] = useState<number>(2);
 
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [newAttachmentName, setNewAttachmentName] = useState("");
@@ -161,8 +168,22 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       setDescriptionNotes(task.description_notes || "");
       setClientId(task.client_id || "");
       setContractModuleId(task.contract_module_id || "");
+      setTaskType(task.type);
+      setWeight(task.weight);
     }
   }, [task]);
+
+  // Handler para mudar módulo e atualizar tipo/peso automaticamente
+  const handleModuleChange = (newModuleId: string) => {
+    setContractModuleId(newModuleId);
+    const selectedModule = clientModules.find(m => m.contractModuleId === newModuleId);
+    if (selectedModule) {
+      // Atualizar peso com o default_weight do módulo
+      setWeight(selectedModule.defaultWeight);
+      // Atualizar tipo: recorrente → recurring, senão project
+      setTaskType(selectedModule.isRecurring ? "recurring" : "project");
+    }
+  };
 
   const handleSave = async () => {
     if (!task) return;
@@ -197,6 +218,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         description_notes: descriptionNotes || null,
         contract_module_id: contractModuleId || null,
         contract_id: contractId,
+        type: taskType,
+        weight,
       });
     } finally {
       setIsSaving(false);
@@ -287,11 +310,11 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
             {/* Header - Inline editable title */}
             <div className="p-6 pb-4 border-b shrink-0">
               <div className="flex items-center gap-2 mb-3">
-                <Badge variant="outline" className={cn("text-xs", taskTypeConfig[task.type].color)}>
-                  {taskTypeConfig[task.type].label}
+                <Badge variant="outline" className={cn("text-xs", taskTypeConfig[taskType].color)}>
+                  {taskTypeConfig[taskType].label}
                 </Badge>
                 <Badge variant="outline" className="text-xs">
-                  Peso: {task.weight}
+                  Peso: {weight}
                 </Badge>
                 {isOverdue && (
                   <Badge variant="destructive" className="text-xs gap-1">
@@ -475,7 +498,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       </Label>
                       <Select 
                         value={contractModuleId} 
-                        onValueChange={setContractModuleId}
+                        onValueChange={handleModuleChange}
                         disabled={!clientId || clientModules.length === 0}
                       >
                         <SelectTrigger>
