@@ -731,11 +731,19 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   {/* History List */}
                   <div className="space-y-3">
                     {task.history?.map((entry) => {
+                      const priorityLabels: Record<string, string> = {
+                        low: "Baixa",
+                        medium: "Média",
+                        high: "Alta",
+                        urgent: "Pra ontem",
+                      };
+
                       const getHistoryMessage = () => {
                         switch (entry.action_type) {
                           case "comment":
                             return <span className="text-foreground">{entry.comment}</span>;
                           case "status_change":
+                          case "status_changed":
                             return (
                               <>
                                 Status alterado de{" "}
@@ -748,8 +756,65 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                                 </span>
                               </>
                             );
+                          case "priority_changed":
+                            return (
+                              <>
+                                Prioridade alterada de{" "}
+                                <span className="font-medium text-foreground">
+                                  {priorityLabels[entry.old_value || ""] || entry.old_value}
+                                </span>{" "}
+                                para{" "}
+                                <span className="font-medium text-foreground">
+                                  {priorityLabels[entry.new_value || ""] || entry.new_value}
+                                </span>
+                              </>
+                            );
                           case "assignee_change":
+                          case "assignee_changed":
                             return "Responsável alterado";
+                          case "title_changed":
+                            return (
+                              <>
+                                Título alterado de{" "}
+                                <span className="font-medium text-foreground">"{entry.old_value}"</span>{" "}
+                                para{" "}
+                                <span className="font-medium text-foreground">"{entry.new_value}"</span>
+                              </>
+                            );
+                          case "due_date_changed":
+                            return (
+                              <>
+                                Prazo alterado de{" "}
+                                <span className="font-medium text-foreground">{entry.old_value}</span>{" "}
+                                para{" "}
+                                <span className="font-medium text-foreground">{entry.new_value}</span>
+                              </>
+                            );
+                          case "type_changed":
+                            const typeLabels: Record<string, string> = {
+                              recurring: "Recorrente",
+                              planning: "Planejamento",
+                              project: "Projeto",
+                              extra: "Extra",
+                            };
+                            return (
+                              <>
+                                Tipo alterado de{" "}
+                                <span className="font-medium text-foreground">{typeLabels[entry.old_value || ""] || entry.old_value}</span>{" "}
+                                para{" "}
+                                <span className="font-medium text-foreground">{typeLabels[entry.new_value || ""] || entry.new_value}</span>
+                              </>
+                            );
+                          case "module_changed":
+                            return "Módulo alterado";
+                          case "client_changed":
+                            return "Cliente alterado";
+                          case "contract_changed":
+                            return "Contrato alterado";
+                          case "notes_changed":
+                            return "Observações atualizadas";
+                          case "objective_changed":
+                            return "Objetivo atualizado";
                           case "field_change":
                             const fieldLabels: Record<string, string> = {
                               title: "Título",
@@ -769,7 +834,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           case "unarchived":
                             return "Tarefa restaurada";
                           default:
-                            return entry.action_type;
+                            return entry.action_type.replace(/_/g, " ");
                         }
                       };
 
