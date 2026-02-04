@@ -217,6 +217,52 @@ export function useUpdateTaskStatus() {
   });
 }
 
+// Update single task field inline (optimistic update)
+export function useUpdateTaskField() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ taskId, field, value }: { taskId: string; field: string; value: unknown }) => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .update({ [field]: value })
+        .eq("id", taskId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async ({ taskId, field, value }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      
+      // Snapshot previous value
+      const previousTasks = queryClient.getQueryData(["tasks"]);
+      
+      // Optimistically update the cache
+      queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.map((task) =>
+          task.id === taskId ? { ...task, [field]: value } : task
+        );
+      });
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      // Rollback on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks);
+      }
+      toast.error("Erro ao atualizar: " + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
 // Delete task
 export function useDeleteTask() {
   const queryClient = useQueryClient();
