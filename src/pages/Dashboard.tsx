@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,14 +9,18 @@ import {
   Users,
   DollarSign,
   ArrowRight,
+  Package,
+  TrendingUp,
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useDashboardData } from "@/hooks/useDashboard";
+import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
@@ -49,6 +54,7 @@ function getCapacityStatus(current: number, max: number) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { data, isLoading } = useDashboardData();
+  const [activeTab, setActiveTab] = useState("overview");
 
   if (isLoading || !data) {
     return (
@@ -67,20 +73,9 @@ export default function Dashboard() {
 
   const { stats, tasks, team, contracts, clients, isAdmin } = data;
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col gap-1"
-      >
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">
-          {isAdmin ? "Visão geral da operação em tempo real" : "Sua visão operacional"}
-        </p>
-      </motion.div>
-
+  // Overview content component
+  const OverviewContent = () => (
+    <>
       {/* Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
@@ -463,90 +458,58 @@ export default function Dashboard() {
           </motion.div>
         </div>
       )}
+    </>
+  );
 
-      {/* Member-only: Client Health */}
-      {!isAdmin && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="glass rounded-xl p-6"
-        >
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-foreground">Saúde dos Clientes</h3>
-            <p className="text-sm text-muted-foreground">Relação valor × peso operacional</p>
-          </div>
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col gap-1"
+      >
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-muted-foreground">
+          {isAdmin ? "Visão geral da operação em tempo real" : "Sua visão operacional"}
+        </p>
+      </motion.div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Cliente</th>
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Peso</th>
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Entregas</th>
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {clients.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-muted-foreground">Nenhum cliente</td>
-                  </tr>
-                ) : (
-                  clients.map((client, index) => (
-                    <motion.tr
-                      key={client.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 * index }}
-                    >
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "h-2 w-2 rounded-full",
-                              client.healthStatus === "normal" && "bg-success",
-                              client.healthStatus === "attention" && "bg-warning",
-                              client.healthStatus === "critical" && "bg-destructive"
-                            )}
-                          />
-                          <span className="font-medium text-foreground">{client.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-4">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                            client.operationalWeight > 15
-                              ? "bg-destructive/10 text-destructive"
-                              : client.operationalWeight > 10
-                              ? "bg-warning/10 text-warning"
-                              : "bg-success/10 text-success"
-                          )}
-                        >
-                          {client.operationalWeight}
-                        </span>
-                      </td>
-                      <td className="py-4 text-sm text-muted-foreground">{client.deliveriesThisMonth} este mês</td>
-                      <td className="py-4">
-                        <span
-                          className={cn(
-                            "text-xs font-medium capitalize",
-                            client.healthStatus === "normal" && "text-success",
-                            client.healthStatus === "attention" && "text-warning",
-                            client.healthStatus === "critical" && "text-destructive"
-                          )}
-                        >
-                          {client.healthStatus === "normal" ? "Saudável" : client.healthStatus === "attention" ? "Atenção" : "Crítico"}
-                        </span>
-                      </td>
-                    </motion.tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
+      {/* Admin Dashboard with Tabs */}
+      {isAdmin ? (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="glass">
+            <TabsTrigger value="overview" className="gap-2">
+              <Clock className="h-4 w-4" />
+              Visão Geral
+            </TabsTrigger>
+            <TabsTrigger value="deliveries" className="gap-2">
+              <Package className="h-4 w-4" />
+              Entregas
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Evolução Financeira
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <OverviewContent />
+          </TabsContent>
+
+          <TabsContent value="deliveries" className="space-y-6">
+            <DeliveriesDashboard />
+          </TabsContent>
+
+          <TabsContent value="financial" className="space-y-6">
+            <FinancialEvolutionDashboard />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        // Member view without tabs
+        <div className="space-y-6">
+          <OverviewContent />
+        </div>
       )}
     </div>
   );
