@@ -9,14 +9,12 @@ import { Loader2 } from "lucide-react";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import ClientOnboarding from "./pages/ClientOnboarding";
-import Contracts from "./pages/Contracts";
 import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
 import Modules from "./pages/Modules";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
-import Permissions from "./pages/Permissions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,12 +50,13 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/clientes" element={<Clients />} />
             <Route path="/clientes/:clientId/onboarding" element={<ClientOnboarding />} />
-            <Route path="/contratos" element={<Contracts />} />
             <Route path="/tarefas" element={<Tasks />} />
             <Route path="/equipe" element={<Team />} />
             <Route path="/modulos" element={<Modules />} />
             <Route path="/configuracoes" element={<Settings />} />
-            <Route path="/permissoes" element={<Permissions />} />
+            {/* Redirect old routes */}
+            <Route path="/contratos" element={<Navigate to="/clientes" replace />} />
+            <Route path="/permissoes" element={<Navigate to="/configuracoes" replace />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

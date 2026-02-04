@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, MoreHorizontal, UserCheck, Clock, Loader2, Pencil } from "lucide-react";
+import { Search, UserCheck, Clock, Loader2, Pencil, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,24 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { AddClientDialog } from "@/components/clients/AddClientDialog";
 import { EditClientDialog } from "@/components/clients/EditClientDialog";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-interface Client {
-  id: string;
-  name: string;
-  status: "onboarding" | "active" | "paused" | "ended";
-  created_at: string;
-}
+import { useAllClients, type ClientWithContracts } from "@/hooks/useClients";
+import { differenceInDays } from "date-fns";
 
 const statusConfig = {
   onboarding: { label: "Em Onboarding", color: "bg-blue-500/20 text-blue-500 border-blue-500/30", icon: Clock },
@@ -40,34 +27,11 @@ const statusConfig = {
 
 export default function Clients() {
   const navigate = useNavigate();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [editingClient, setEditingClient] = useState<ClientWithContracts | null>(null);
 
-  const fetchClients = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setClients(data || []);
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error("Error fetching clients:", error);
-      }
-      toast.error("Erro ao carregar clientes");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchClients();
-  }, []);
+  const { data: clients = [], isLoading, refetch } = useAllClients();
 
   const filteredClients = useMemo(() => {
     return clients.filter((client) => {
@@ -85,8 +49,38 @@ export default function Clients() {
   const onboardingClients = filteredClients.filter((c) => c.status === "onboarding");
   const otherClients = filteredClients.filter((c) => c.status !== "onboarding");
 
+  // Calculate contracts needing attention
+  const contractsNeedingAttention = useMemo(() => {
+    let count = 0;
+    clients.forEach(client => {
+      client.contracts?.forEach(contract => {
+        if (contract.renewal_date && contract.status !== "ended") {
+          const daysUntilRenewal = differenceInDays(new Date(contract.renewal_date), new Date());
+          if (daysUntilRenewal <= 30 && daysUntilRenewal > 0) {
+            count++;
+          }
+        }
+      });
+    });
+    return count;
+  }, [clients]);
+
+  const totalMRR = useMemo(() => {
+    return clients.reduce((acc, client) => {
+      const activeContracts = client.contracts?.filter(c => c.status === "active") || [];
+      return acc + activeContracts.reduce((sum, c) => sum + c.monthly_value, 0);
+    }, 0);
+  }, [clients]);
+
   const handleContinueOnboarding = (clientId: string) => {
     navigate(`/clientes/${clientId}/onboarding`);
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
   };
 
   if (isLoading) {
@@ -108,11 +102,33 @@ export default function Clients() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
           <p className="text-muted-foreground">
-            Gerencie sua base de clientes
+            Gerencie clientes e contratos
           </p>
         </div>
-        <AddClientDialog onClientAdded={fetchClients} />
+        <AddClientDialog onClientAdded={() => refetch()} />
       </motion.div>
+
+      {/* Contract Alert */}
+      {contractsNeedingAttention > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex items-center gap-4 rounded-xl border border-warning/30 bg-warning/10 p-4"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warning/20">
+            <AlertTriangle className="h-5 w-5 text-warning" />
+          </div>
+          <div>
+            <p className="font-medium text-foreground">
+              {contractsNeedingAttention} contrato{contractsNeedingAttention > 1 ? "s" : ""} próximo{contractsNeedingAttention > 1 ? "s" : ""} da renovação
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Clique em um cliente para ver detalhes do contrato
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Filters */}
       <motion.div
@@ -149,7 +165,7 @@ export default function Clients() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="grid grid-cols-2 gap-4 lg:grid-cols-4"
+        className="grid grid-cols-2 gap-4 lg:grid-cols-5"
       >
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Em Onboarding</p>
@@ -167,6 +183,12 @@ export default function Clients() {
           <p className="text-sm text-muted-foreground">Pausados</p>
           <p className="text-2xl font-bold text-warning">
             {clients.filter((c) => c.status === "paused").length}
+          </p>
+        </div>
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
+          <p className="text-sm text-muted-foreground">MRR Total</p>
+          <p className="text-2xl font-bold text-success">
+            {formatCurrency(totalMRR)}
           </p>
         </div>
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
@@ -234,55 +256,72 @@ export default function Clients() {
                   Status
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Contratos
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  MRR
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Cliente Desde
                 </th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {otherClients.map((client, index) => (
-                <motion.tr
-                  key={client.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.05 * index }}
-                  className="group hover:bg-muted/30 transition-colors cursor-pointer"
-                  onClick={() => setEditingClient(client)}
-                >
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-foreground">
-                      {client.name}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge
-                      variant="outline"
-                      className={cn(statusConfig[client.status].color)}
-                    >
-                      {statusConfig[client.status].label}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">
-                    {new Date(client.created_at).toLocaleDateString("pt-BR")}
-                  </td>
-                  <td className="px-6 py-4">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingClient(client);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </motion.tr>
-              ))}
+              {otherClients.map((client, index) => {
+                const activeContracts = client.contracts?.filter(c => c.status === "active") || [];
+                const mrr = activeContracts.reduce((sum, c) => sum + c.monthly_value, 0);
+
+                return (
+                  <motion.tr
+                    key={client.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.05 * index }}
+                    className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => setEditingClient(client)}
+                  >
+                    <td className="px-6 py-4">
+                      <span className="font-medium text-foreground">
+                        {client.name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge
+                        variant="outline"
+                        className={cn(statusConfig[client.status].color)}
+                      >
+                        {statusConfig[client.status].label}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
+                      {activeContracts.length} ativo{activeContracts.length !== 1 ? "s" : ""}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-foreground">
+                      {formatCurrency(mrr)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
+                      {new Date(client.created_at).toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingClient(client);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </motion.tr>
+                );
+              })}
               {filteredClients.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                     Nenhum cliente encontrado
                   </td>
                 </tr>
@@ -297,7 +336,7 @@ export default function Clients() {
         client={editingClient}
         open={!!editingClient}
         onOpenChange={(open) => !open && setEditingClient(null)}
-        onClientUpdated={fetchClients}
+        onClientUpdated={() => refetch()}
       />
     </div>
   );

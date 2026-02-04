@@ -1,13 +1,87 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Shield, Palette, Database } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, useIsAdmin, type AppRole } from "@/hooks/useUserRoles";
+import { cn } from "@/lib/utils";
 
 export default function Settings() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<AppRole>("member");
+
+  const { data: users, isLoading: usersLoading } = useUsersWithRoles();
+  const { data: isAdmin } = useIsAdmin();
+  const setRole = useSetUserRole();
+  const removeRole = useRemoveUserRole();
+
+  const filteredUsers = users?.filter(
+    (user) =>
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  const handleRoleChange = (userId: string, role: string) => {
+    if (role === "none") {
+      removeRole.mutate(userId);
+    } else {
+      setRole.mutate({ userId, role: role as AppRole });
+    }
+  };
+
+  const getRoleBadge = (role: AppRole | null) => {
+    if (!role) {
+      return (
+        <Badge variant="outline" className="text-muted-foreground">
+          <UserX className="h-3 w-3 mr-1" />
+          Sem acesso
+        </Badge>
+      );
+    }
+    if (role === "admin") {
+      return (
+        <Badge className="bg-primary text-primary-foreground">
+          <ShieldCheck className="h-3 w-3 mr-1" />
+          Admin
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="secondary">
+        <Shield className="h-3 w-3 mr-1" />
+        Membro
+      </Badge>
+    );
+  };
+
+  const getInitials = (name: string | null) => {
+    if (!name) return "?";
+    return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -28,23 +102,29 @@ export default function Settings() {
         transition={{ delay: 0.1 }}
       >
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="glass">
+          <TabsList className="glass flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="general" className="gap-2">
               <User className="h-4 w-4" />
-              Geral
+              <span className="hidden sm:inline">Geral</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
-              Notificações
+              <span className="hidden sm:inline">Notificações</span>
             </TabsTrigger>
             <TabsTrigger value="capacity" className="gap-2">
               <Database className="h-4 w-4" />
-              Capacidade
+              <span className="hidden sm:inline">Capacidade</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="gap-2">
               <Palette className="h-4 w-4" />
-              Aparência
+              <span className="hidden sm:inline">Aparência</span>
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="permissions" className="gap-2">
+                <Shield className="h-4 w-4" />
+                <span className="hidden sm:inline">Permissões</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
@@ -198,8 +278,231 @@ export default function Settings() {
               </div>
             </div>
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="permissions" className="space-y-6">
+              {/* Info Cards */}
+              <div className="grid gap-4 md:grid-cols-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      Administradores
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {users?.filter(u => u.role === "admin").length || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Acesso total ao sistema
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-info" />
+                      Membros
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {users?.filter(u => u.role === "member").length || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Acesso operacional
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <UserX className="h-4 w-4 text-muted-foreground" />
+                      Sem acesso
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {users?.filter(u => !u.role).length || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Cadastrados sem permissão
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Search and Add */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar usuário..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Convidar Membro
+                </Button>
+              </div>
+
+              {/* Users List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Usuários cadastrados</CardTitle>
+                  <CardDescription>
+                    Configure o nível de acesso para cada usuário do sistema
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {usersLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredUsers.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">
+                          Nenhum usuário encontrado
+                        </p>
+                      ) : (
+                        filteredUsers.map((user, index) => (
+                          <motion.div
+                            key={user.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                          >
+                            <div className="flex items-center gap-4">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={user.avatar_url || undefined} />
+                                <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-foreground">
+                                  {user.full_name || "Nome não informado"}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Cadastrado em {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                              {getRoleBadge(user.role)}
+                              
+                              <Select
+                                value={user.role || "none"}
+                                onValueChange={(value) => handleRoleChange(user.id, value)}
+                              >
+                                <SelectTrigger className="w-[140px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  <SelectItem value="member">Membro</SelectItem>
+                                  <SelectItem value="none">Sem acesso</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </motion.div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Legend */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Níveis de permissão</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Badge className="bg-primary text-primary-foreground shrink-0">
+                      <ShieldCheck className="h-3 w-3 mr-1" />
+                      Admin
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Acesso total: pode criar, editar e excluir clientes, contratos, tarefas, módulos e membros. Gerencia permissões.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Badge variant="secondary" className="shrink-0">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Membro
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Acesso operacional: pode visualizar e editar dados, criar tarefas. Não pode excluir ou gerenciar equipe.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Badge variant="outline" className="text-muted-foreground shrink-0">
+                      <UserX className="h-3 w-3 mr-1" />
+                      Sem acesso
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Usuário cadastrado mas sem permissão para acessar o sistema.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </motion.div>
+
+      {/* Invite Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Convidar Membro</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">Email</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite-role">Nível de Acesso</Label>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as AppRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="member">Membro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              O usuário precisará criar uma conta com este email para ter acesso ao sistema.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => setInviteDialogOpen(false)}>
+              Enviar Convite
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

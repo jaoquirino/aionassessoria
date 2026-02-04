@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
-  FileText,
   CheckSquare,
   UserCircle,
   Settings,
@@ -13,12 +12,10 @@ import {
   Sun,
   Moon,
   LogOut,
-  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useUserRoles";
 import { toast } from "sonner";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
@@ -31,12 +28,10 @@ interface SidebarProps {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Clientes", href: "/clientes", icon: Users },
-  { name: "Contratos", href: "/contratos", icon: FileText },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
   { name: "Equipe", href: "/equipe", icon: UserCircle },
   { name: "Módulos", href: "/modulos", icon: Puzzle },
   { name: "Configurações", href: "/configuracoes", icon: Settings },
-  { name: "Permissões", href: "/permissoes", icon: ShieldCheck, adminOnly: true },
 ];
 
 export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
@@ -44,7 +39,6 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const { data: isAdmin } = useIsAdmin();
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -98,39 +92,37 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 p-3">
-          {navigation
-            .filter((item) => !item.adminOnly || isAdmin)
-            .map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <NavLink
-                  key={item.name}
-                  to={item.href}
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <NavLink
+                key={item.name}
+                to={item.href}
+                className={cn(
+                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <item.icon
                   className={cn(
-                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    "h-5 w-5 shrink-0 transition-colors",
+                    isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-sidebar-accent-foreground"
                   )}
-                >
-                  <item.icon
-                    className={cn(
-                      "h-5 w-5 shrink-0 transition-colors",
-                      isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-sidebar-accent-foreground"
-                    )}
-                  />
-                  {!isCollapsed && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      {item.name}
-                    </motion.span>
-                  )}
-                </NavLink>
-              );
-            })}
+                />
+                {!isCollapsed && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    {item.name}
+                  </motion.span>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
 
         {/* Footer */}
