@@ -60,15 +60,26 @@ export function EditClientDialog({
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ClientStatus>("active");
   const [startDate, setStartDate] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractWithModules | null>(null);
   const [deleteClientOpen, setDeleteClientOpen] = useState(false);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+  const [onboardingDialogOpen, setOnboardingDialogOpen] = useState(false);
+  const [selectedOnboardingModule, setSelectedOnboardingModule] = useState<{
+    contractModuleId: string;
+    templateId: string;
+    moduleName: string;
+    isCompleted: boolean;
+  } | null>(null);
 
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const deleteContract = useDeleteContract();
   const { data: contracts = [] } = useClientContractsWithModules(client?.id || null);
+  const { data: onboardingProgress } = useClientOnboardingProgress(client?.id || "");
 
   // Sync form state when client changes
   useEffect(() => {
@@ -76,6 +87,9 @@ export function EditClientDialog({
       setName(client.name);
       setStatus(client.status);
       setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
+      setCnpj(client.cnpj || "");
+      setPhone(client.phone || "");
+      setEmail(client.email || "");
     }
   }, [client]);
 
