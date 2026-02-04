@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Mail, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,12 +37,18 @@ export default function Settings() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("member");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // User profile state
   const { user } = useAuth();
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  
+  // Email change
+  const [newEmail, setNewEmail] = useState("");
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -62,6 +68,7 @@ export default function Settings() {
   useEffect(() => {
     if (user) {
       loadProfile();
+      setNewEmail(user.email || "");
     }
   }, [user]);
 
@@ -80,6 +87,57 @@ export default function Settings() {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione uma imagem");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 5MB");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      // Add cache buster
+      const urlWithBuster = `${publicUrl}?t=${Date.now()}`;
+      setAvatarUrl(urlWithBuster);
+
+      // Update profile
+      await supabase
+        .from("profiles")
+        .upsert({
+          user_id: user.id,
+          avatar_url: urlWithBuster,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+
+      toast.success("Foto atualizada");
+    } catch (error: any) {
+      toast.error("Erro ao enviar foto: " + error.message);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!user) return;
     
@@ -90,7 +148,7 @@ export default function Settings() {
         .upsert({
           user_id: user.id,
           full_name: fullName.trim() || null,
-          avatar_url: avatarUrl.trim() || null,
+          avatar_url: avatarUrl || null,
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
 
@@ -100,6 +158,28 @@ export default function Settings() {
       toast.error("Erro ao atualizar perfil: " + error.message);
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleChangeEmail = async () => {
+    if (!newEmail || newEmail === user?.email) {
+      toast.error("Digite um novo email");
+      return;
+    }
+
+    setIsChangingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: newEmail,
+      });
+
+      if (error) throw error;
+      
+      toast.success("Email de confirmação enviado para o novo endereço");
+    } catch (error: any) {
+      toast.error("Erro ao alterar email: " + error.message);
+    } finally {
+      setIsChangingEmail(false);
     }
   };
 
@@ -114,8 +194,26 @@ export default function Settings() {
       return;
     }
 
+    if (!currentPassword) {
+      toast.error("Digite sua senha atual");
+      return;
+    }
+
     setIsChangingPassword(true);
     try {
+      // First verify current password by re-authenticating
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast.error("Senha atual incorreta");
+        setIsChangingPassword(false);
+        return;
+      }
+
+      // Then update password
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -134,9 +232,9 @@ export default function Settings() {
   };
 
   const filteredUsers = users?.filter(
-    (user) =>
-      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    (u) =>
+      u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const handleRoleChange = (userId: string, role: string) => {
@@ -242,18 +340,29 @@ export default function Settings() {
                       {getInitials(fullName)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5">
-                    <Camera className="h-3 w-3 text-primary-foreground" />
-                  </div>
-                </div>
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="avatarUrl">URL da foto</Label>
-                  <Input
-                    id="avatarUrl"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://..."
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5 hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {isUploadingAvatar ? (
+                      <Loader2 className="h-3 w-3 text-primary-foreground animate-spin" />
+                    ) : (
+                      <Camera className="h-3 w-3 text-primary-foreground" />
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
                   />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Clique no ícone para alterar sua foto</p>
+                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG ou GIF. Máximo 5MB.</p>
                 </div>
               </div>
 
@@ -268,21 +377,46 @@ export default function Settings() {
                 />
               </div>
 
-              {/* Email (read-only) */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  value={user?.email || ""}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
-              </div>
-
               <Button onClick={handleSaveProfile} disabled={isSavingProfile} className="gap-2">
                 <Save className="h-4 w-4" />
                 {isSavingProfile ? "Salvando..." : "Salvar Perfil"}
+              </Button>
+            </div>
+
+            {/* Email Change */}
+            <div className="glass rounded-xl p-6 space-y-6">
+              <div>
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Alterar Email
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Um email de confirmação será enviado para o novo endereço
+                </p>
+              </div>
+              <Separator />
+              
+              <div className="space-y-4 max-w-sm">
+                <div className="space-y-2">
+                  <Label htmlFor="newEmail">Novo email</Label>
+                  <Input
+                    id="newEmail"
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="novo@email.com"
+                  />
+                </div>
+              </div>
+
+              <Button 
+                onClick={handleChangeEmail} 
+                disabled={isChangingEmail || !newEmail || newEmail === user?.email}
+                variant="outline"
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                {isChangingEmail ? "Enviando..." : "Alterar Email"}
               </Button>
             </div>
 
@@ -300,6 +434,16 @@ export default function Settings() {
               <Separator />
               
               <div className="space-y-4 max-w-sm">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Senha atual</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">Nova senha</Label>
                   <Input
@@ -324,7 +468,7 @@ export default function Settings() {
 
               <Button 
                 onClick={handleChangePassword} 
-                disabled={isChangingPassword || !newPassword || !confirmPassword}
+                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
                 variant="outline"
                 className="gap-2"
               >
@@ -576,9 +720,9 @@ export default function Settings() {
                           Nenhum usuário encontrado
                         </p>
                       ) : (
-                        filteredUsers.map((user, index) => (
+                        filteredUsers.map((u, index) => (
                           <motion.div
-                            key={user.id}
+                            key={u.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
@@ -586,25 +730,25 @@ export default function Settings() {
                           >
                             <div className="flex items-center gap-4">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage src={user.avatar_url || undefined} />
-                                <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
+                                <AvatarImage src={u.avatar_url || undefined} />
+                                <AvatarFallback>{getInitials(u.full_name)}</AvatarFallback>
                               </Avatar>
                               <div>
                                 <p className="font-medium text-foreground">
-                                  {user.full_name || "Nome não informado"}
+                                  {u.full_name || "Nome não informado"}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                  Cadastrado em {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                                  Cadastrado em {new Date(u.created_at).toLocaleDateString("pt-BR")}
                                 </p>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-4">
-                              {getRoleBadge(user.role)}
+                              {getRoleBadge(u.role)}
                               
                               <Select
-                                value={user.role || "none"}
-                                onValueChange={(value) => handleRoleChange(user.id, value)}
+                                value={u.role || "none"}
+                                onValueChange={(value) => handleRoleChange(u.id, value)}
                               >
                                 <SelectTrigger className="w-[140px]">
                                   <SelectValue />
