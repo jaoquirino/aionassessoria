@@ -205,12 +205,12 @@ export function EditClientDialog({
 
           {/* Contracts Section */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Contratos
               </h3>
-              <Button size="sm" variant="outline" onClick={() => setContractDialogOpen(true)}>
+              <Button size="sm" variant="outline" onClick={() => setContractDialogOpen(true)} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-1" />
                 Novo Contrato
               </Button>
