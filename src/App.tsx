@@ -13,7 +13,7 @@ import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
 import Modules from "./pages/Modules";
 import Settings from "./pages/Settings";
-import OnboardingTemplates from "./pages/OnboardingTemplates";
+
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -55,7 +55,7 @@ const App = () => (
             <Route path="/equipe" element={<Team />} />
             <Route path="/modulos" element={<Modules />} />
             <Route path="/configuracoes" element={<Settings />} />
-            <Route path="/onboarding-templates" element={<OnboardingTemplates />} />
+            <Route path="/onboarding-templates" element={<Navigate to="/configuracoes" replace />} />
             {/* Redirect old routes */}
             <Route path="/contratos" element={<Navigate to="/clientes" replace />} />
             <Route path="/permissoes" element={<Navigate to="/configuracoes" replace />} />
