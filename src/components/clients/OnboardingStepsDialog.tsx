@@ -263,7 +263,7 @@ export function OnboardingStepsDialog({
                                         size="sm"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          handleSaveNotes(task.id);
+                                          handleSaveNotes(task.id, task.status);
                                         }}
                                         disabled={isSaving}
                                         className="h-8"
