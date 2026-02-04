@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Mail, Upload } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Mail, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,10 @@ import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPrefere
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { AvatarCropDialog } from "@/components/settings/AvatarCropDialog";
+import { PasswordInput } from "@/components/settings/PasswordInput";
+import { PasswordRequirements } from "@/components/settings/PasswordRequirements";
+import { isPasswordStrong } from "@/lib/passwordValidation";
 
 export default function Settings() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,6 +49,11 @@ export default function Settings() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
+  
+  // Avatar crop dialog
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState("");
   
   // Email change
   const [newEmail, setNewEmail] = useState("");
@@ -55,6 +64,8 @@ export default function Settings() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPasswordState, setCurrentPasswordState] = useState<"valid" | "invalid" | "verifying" | null>(null);
+  const verifyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Theme preferences
   const { theme, setTheme, isDark } = useUserPreferences();
@@ -87,7 +98,7 @@ export default function Settings() {
     }
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
@@ -102,14 +113,28 @@ export default function Settings() {
       return;
     }
 
+    // Create URL for cropping
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImageSrc(reader.result as string);
+      setCropDialogOpen(true);
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  };
+
+  const handleCroppedImageUpload = async (croppedBlob: Blob) => {
+    if (!user) return;
+    
     setIsUploadingAvatar(true);
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
+      const fileName = `${user.id}/avatar.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, croppedBlob, { upsert: true, contentType: "image/jpeg" });
 
       if (uploadError) throw uploadError;
 
@@ -131,10 +156,44 @@ export default function Settings() {
         }, { onConflict: "user_id" });
 
       toast.success("Foto atualizada");
+      setCropDialogOpen(false);
     } catch (error: any) {
       toast.error("Erro ao enviar foto: " + error.message);
     } finally {
       setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+    
+    setIsRemovingAvatar(true);
+    try {
+      // Remove from storage
+      const { error: deleteError } = await supabase.storage
+        .from("avatars")
+        .remove([`${user.id}/avatar.jpg`]);
+
+      // Ignore error if file doesn't exist
+      if (deleteError && !deleteError.message.includes("not found")) {
+        throw deleteError;
+      }
+
+      // Update profile to remove avatar URL
+      await supabase
+        .from("profiles")
+        .upsert({
+          user_id: user.id,
+          avatar_url: null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+
+      setAvatarUrl("");
+      toast.success("Foto removida");
+    } catch (error: any) {
+      toast.error("Erro ao remover foto: " + error.message);
+    } finally {
+      setIsRemovingAvatar(false);
     }
   };
 
@@ -184,13 +243,13 @@ export default function Settings() {
   };
 
   const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      toast.error("As senhas não coincidem");
+    if (!isPasswordStrong(newPassword)) {
+      toast.error("A nova senha não atende aos requisitos");
       return;
     }
 
-    if (newPassword.length < 12) {
-      toast.error("A senha deve ter pelo menos 12 caracteres");
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem");
       return;
     }
 
@@ -200,6 +259,8 @@ export default function Settings() {
     }
 
     setIsChangingPassword(true);
+    setCurrentPasswordState("verifying");
+    
     try {
       // First verify current password by re-authenticating
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -208,10 +269,13 @@ export default function Settings() {
       });
 
       if (signInError) {
+        setCurrentPasswordState("invalid");
         toast.error("Senha atual incorreta");
         setIsChangingPassword(false);
         return;
       }
+
+      setCurrentPasswordState("valid");
 
       // Then update password
       const { error } = await supabase.auth.updateUser({
@@ -224,6 +288,7 @@ export default function Settings() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      setCurrentPasswordState(null);
     } catch (error: any) {
       toast.error("Erro ao alterar senha: " + error.message);
     } finally {
@@ -356,15 +421,40 @@ export default function Settings() {
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    onChange={handleAvatarUpload}
+                    onChange={handleAvatarFileSelect}
                     className="hidden"
                   />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 space-y-2">
                   <p className="text-sm text-muted-foreground">Clique no ícone para alterar sua foto</p>
-                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG ou GIF. Máximo 5MB.</p>
+                  <p className="text-xs text-muted-foreground">JPG, PNG ou GIF. Máximo 5MB.</p>
+                  {avatarUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveAvatar}
+                      disabled={isRemovingAvatar}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 px-2 h-7"
+                    >
+                      {isRemovingAvatar ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3 w-3" />
+                      )}
+                      Remover foto
+                    </Button>
+                  )}
                 </div>
               </div>
+
+              {/* Avatar Crop Dialog */}
+              <AvatarCropDialog
+                open={cropDialogOpen}
+                onOpenChange={setCropDialogOpen}
+                imageSrc={selectedImageSrc}
+                onCropComplete={handleCroppedImageUpload}
+                isSaving={isUploadingAvatar}
+              />
 
               {/* Name */}
               <div className="space-y-2">
@@ -436,39 +526,52 @@ export default function Settings() {
               <div className="space-y-4 max-w-sm">
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Senha atual</Label>
-                  <Input
+                  <PasswordInput
                     id="currentPassword"
-                    type="password"
                     value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="••••••••••••"
+                    onChange={(val) => {
+                      setCurrentPassword(val);
+                      // Reset validation when typing
+                      if (currentPasswordState !== null) {
+                        setCurrentPasswordState(null);
+                      }
+                    }}
+                    validationState={currentPasswordState}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">Nova senha</Label>
-                  <Input
+                  <PasswordInput
                     id="newPassword"
-                    type="password"
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••••••"
+                    onChange={setNewPassword}
+                    validationState={newPassword ? (isPasswordStrong(newPassword) ? "valid" : "invalid") : null}
                   />
+                  <PasswordRequirements password={newPassword} show={newPassword.length > 0} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
-                  <Input
+                  <PasswordInput
                     id="confirmPassword"
-                    type="password"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••••••"
+                    onChange={setConfirmPassword}
+                    validationState={
+                      confirmPassword
+                        ? confirmPassword === newPassword
+                          ? "valid"
+                          : "invalid"
+                        : null
+                    }
                   />
+                  {confirmPassword && confirmPassword !== newPassword && (
+                    <p className="text-xs text-destructive">As senhas não coincidem</p>
+                  )}
                 </div>
               </div>
 
               <Button 
                 onClick={handleChangePassword} 
-                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword || !isPasswordStrong(newPassword) || newPassword !== confirmPassword}
                 variant="outline"
                 className="gap-2"
               >
