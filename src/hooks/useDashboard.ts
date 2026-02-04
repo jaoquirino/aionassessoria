@@ -69,28 +69,18 @@ export function useDashboardData() {
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-      // Fetch tasks
-      const { data: tasks = [] } = await supabase
-        .from("tasks")
-        .select("*")
-        .order("due_date");
+      // Parallel fetch for all data - much faster
+      const [tasksRes, clientsRes, contractsRes, teamMembersRes] = await Promise.all([
+        supabase.from("tasks").select("*").order("due_date"),
+        supabase.from("clients").select("*"),
+        supabase.from("contracts").select("*, client:clients(name)").eq("status", "active"),
+        supabase.from("team_members_public").select("*").eq("is_active", true),
+      ]);
 
-      // Fetch clients
-      const { data: clients = [] } = await supabase
-        .from("clients")
-        .select("*");
-
-      // Fetch contracts
-      const { data: contracts = [] } = await supabase
-        .from("contracts")
-        .select("*, client:clients(name)")
-        .eq("status", "active");
-
-      // Fetch team members
-      const { data: teamMembers = [] } = await supabase
-        .from("team_members_public")
-        .select("*")
-        .eq("is_active", true);
+      const tasks = tasksRes.data || [];
+      const clients = clientsRes.data || [];
+      const contracts = contractsRes.data || [];
+      const teamMembers = teamMembersRes.data || [];
 
       const now = new Date();
 

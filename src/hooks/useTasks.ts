@@ -118,13 +118,14 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: async (input: CreateTaskInput) => {
-      const { checklist, ...taskData } = input;
+      const { checklist, status, ...taskData } = input;
       
       // Insert task (weight is auto-calculated by trigger)
       const { data: task, error } = await supabase
         .from("tasks")
         .insert({
           ...taskData,
+          status: status || "todo",
           weight: 0, // Will be set by trigger
         })
         .select()

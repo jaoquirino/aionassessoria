@@ -155,6 +155,7 @@ export interface CreateTaskInput {
   assigned_to?: string | null;
   created_by?: string | null;
   due_date: string;
+  status?: TaskStatusDB;
   priority?: TaskPriority;
   description_objective?: string | null;
   description_deliverable?: string | null;
