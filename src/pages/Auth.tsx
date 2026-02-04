@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Loader2, Shield, Key } from "lucide-react";
+import { Lock, User, Eye, EyeOff, Loader2, Shield, Key, AtSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { strongPasswordSchema, getPasswordRequirements } from "@/lib/passwordValidation";
 import { supabase } from "@/integrations/supabase/client";
 
-const emailSchema = z.string().email("Email inválido");
+const usernameSchema = z.string().min(3, "Username deve ter no mínimo 3 caracteres").regex(/^[a-zA-Z0-9_]+$/, "Username pode conter apenas letras, números e _");
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
