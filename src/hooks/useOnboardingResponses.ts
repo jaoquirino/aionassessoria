@@ -72,7 +72,7 @@ export function useAllClientOnboardingResponses(clientId: string | null) {
   });
 }
 
-// Upsert response
+// Upsert response with optimistic update
 export function useUpsertOnboardingResponse() {
   const queryClient = useQueryClient();
 
@@ -103,7 +103,59 @@ export function useUpsertOnboardingResponse() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ 
+        queryKey: ["onboarding_responses", variables.client_id, variables.contract_module_id] 
+      });
+
+      // Snapshot previous value
+      const previousResponses = queryClient.getQueryData([
+        "onboarding_responses", variables.client_id, variables.contract_module_id
+      ]);
+
+      // Optimistically update
+      queryClient.setQueryData(
+        ["onboarding_responses", variables.client_id, variables.contract_module_id],
+        (old: OnboardingResponse[] | undefined) => {
+          if (!old) return old;
+          const existingIndex = old.findIndex(
+            r => r.template_step_id === variables.template_step_id
+          );
+          const newResponse = {
+            id: `temp-${Date.now()}`,
+            client_id: variables.client_id,
+            contract_module_id: variables.contract_module_id,
+            template_step_id: variables.template_step_id,
+            response_value: variables.response_value ?? null,
+            is_completed: variables.is_completed ?? false,
+            completed_at: variables.is_completed ? new Date().toISOString() : null,
+            completed_by: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          
+          if (existingIndex >= 0) {
+            const updated = [...old];
+            updated[existingIndex] = { ...old[existingIndex], ...newResponse };
+            return updated;
+          }
+          return [...old, newResponse];
+        }
+      );
+
+      return { previousResponses };
+    },
+    onError: (_error, variables, context) => {
+      // Rollback on error
+      if (context?.previousResponses) {
+        queryClient.setQueryData(
+          ["onboarding_responses", variables.client_id, variables.contract_module_id],
+          context.previousResponses
+        );
+      }
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ 
         queryKey: ["onboarding_responses", variables.client_id, variables.contract_module_id] 
       });
@@ -111,9 +163,6 @@ export function useUpsertOnboardingResponse() {
         queryKey: ["all_onboarding_responses", variables.client_id] 
       });
       queryClient.invalidateQueries({ queryKey: ["client_onboarding_progress"] });
-    },
-    onError: (error) => {
-      toast.error("Erro ao salvar resposta: " + error.message);
     },
   });
 }

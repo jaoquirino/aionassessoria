@@ -531,7 +531,6 @@ export function EditClientDialog({
           templateId={selectedOnboardingModule.templateId}
           moduleName={selectedOnboardingModule.moduleName}
           isCompleted={selectedOnboardingModule.isCompleted}
-          readOnly={selectedOnboardingModule.isCompleted}
         />
       )}
     </>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import { CheckCircle2, Circle, Save, Loader2, ChevronDown, ChevronUp, Eye } from "lucide-react";
+import { CheckCircle2, Circle, Save, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +22,6 @@ interface OnboardingStepsDialogProps {
   templateId: string;
   moduleName: string;
   isCompleted?: boolean;
-  readOnly?: boolean;
 }
 
 interface LocalResponse {
@@ -39,8 +38,8 @@ export function OnboardingStepsDialog({
   templateId,
   moduleName,
   isCompleted = false,
-  readOnly = false,
 }: OnboardingStepsDialogProps) {
+  // Never read-only - always allow editing even after completion
   const [localResponses, setLocalResponses] = useState<Map<string, LocalResponse>>(new Map());
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [hasChanges, setHasChanges] = useState(false);
@@ -66,18 +65,16 @@ export function OnboardingStepsDialog({
       setLocalResponses(map);
       setHasChanges(false);
       
-      // Auto-expand first incomplete step if not in read-only mode
-      if (!readOnly) {
-        const firstIncomplete = steps.find(s => {
-          const response = map.get(s.id);
-          return !response?.isCompleted;
-        });
-        if (firstIncomplete) {
-          setExpandedSteps(new Set([firstIncomplete.id]));
-        }
+      // Auto-expand first incomplete step
+      const firstIncomplete = steps.find(s => {
+        const response = map.get(s.id);
+        return !response?.isCompleted;
+      });
+      if (firstIncomplete) {
+        setExpandedSteps(new Set([firstIncomplete.id]));
       }
     }
-  }, [steps, existingResponses, responsesLoading, readOnly]);
+  }, [steps, existingResponses, responsesLoading]);
 
   const handleResponseChange = (stepId: string, value: string) => {
     setLocalResponses(prev => {
@@ -100,19 +97,27 @@ export function OnboardingStepsDialog({
   };
 
   const handleSave = async () => {
-    const promises = Array.from(localResponses.values()).map(response => 
-      upsertResponse.mutateAsync({
-        client_id: clientId,
-        contract_module_id: contractModuleId,
-        template_step_id: response.stepId,
-        response_value: response.value,
-        is_completed: response.isCompleted,
-      })
-    );
-
-    await Promise.all(promises);
+    // Optimistic: close immediately, save in background
+    const responsesToSave = Array.from(localResponses.values());
     setHasChanges(false);
     onOpenChange(false);
+    
+    // Save all in background
+    try {
+      await Promise.all(
+        responsesToSave.map(response => 
+          upsertResponse.mutateAsync({
+            client_id: clientId,
+            contract_module_id: contractModuleId,
+            template_step_id: response.stepId,
+            response_value: response.value,
+            is_completed: response.isCompleted,
+          })
+        )
+      );
+    } catch {
+      // Error already handled by mutation
+    }
   };
 
   const toggleStep = (stepId: string) => {
@@ -138,10 +143,9 @@ export function OnboardingStepsDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {readOnly ? <Eye className="h-5 w-5" /> : null}
             {moduleName} - Onboarding
             {isCompleted && (
-              <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
+              <Badge className="bg-success/20 text-success border-success/30">
                 Concluído
               </Badge>
             )}
@@ -239,28 +243,24 @@ export function OnboardingStepsDialog({
                                     onChange={(e) => handleResponseChange(step.id, e.target.value)}
                                     placeholder="Digite as informações coletadas nesta etapa..."
                                     rows={3}
-                                    disabled={readOnly}
-                                    className={cn(readOnly && "opacity-70")}
                                   />
                                 </div>
 
-                                {!readOnly && (
-                                  <div className="flex items-center gap-2">
-                                    <Checkbox
-                                      id={`completed-${step.id}`}
-                                      checked={stepIsCompleted}
-                                      onCheckedChange={(checked) => 
-                                        handleCompletedChange(step.id, checked as boolean)
-                                      }
-                                    />
-                                    <Label 
-                                      htmlFor={`completed-${step.id}`}
-                                      className="text-sm cursor-pointer"
-                                    >
-                                      Marcar como concluída
-                                    </Label>
-                                  </div>
-                                )}
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`completed-${step.id}`}
+                                    checked={stepIsCompleted}
+                                    onCheckedChange={(checked) => 
+                                      handleCompletedChange(step.id, checked as boolean)
+                                    }
+                                  />
+                                  <Label 
+                                    htmlFor={`completed-${step.id}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    Marcar como concluída
+                                  </Label>
+                                </div>
                               </div>
                             </div>
                           </CollapsibleContent>
@@ -276,23 +276,21 @@ export function OnboardingStepsDialog({
 
         <DialogFooter className="gap-2 sm:gap-0 border-t pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {readOnly ? "Fechar" : "Cancelar"}
+            Cancelar
           </Button>
-          {!readOnly && (
-            <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Salvar
-                </>
-              )}
-            </Button>
-          )}
+          <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Salvar
+              </>
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

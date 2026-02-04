@@ -226,7 +226,7 @@ export function useUpdateTask() {
   });
 }
 
-// Update task status
+// Update task status with optimistic update
 export function useUpdateTaskStatus() {
   const queryClient = useQueryClient();
 
@@ -242,12 +242,33 @@ export function useUpdateTaskStatus() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ taskId, status }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      
+      // Snapshot previous value
+      const previousTasks = queryClient.getQueryData(["tasks"]);
+      
+      // Optimistically update the cache
+      queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.map((task) =>
+          task.id === taskId ? { ...task, status } : task
+        );
+      });
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      // Rollback on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks);
+      }
+      toast.error("Erro ao atualizar status: " + error.message);
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
-    },
-    onError: (error) => {
-      toast.error("Erro ao atualizar status: " + error.message);
     },
   });
 }
