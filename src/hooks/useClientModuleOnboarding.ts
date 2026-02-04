@@ -48,6 +48,9 @@ export interface ClientOnboardingProgress {
     totalTasks: number;
     completedTasks: number;
     progressPercent: number;
+    contractModuleId: string;
+    templateId: string | null;
+    onboardingId: string;
   }>;
 }
 
