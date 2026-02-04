@@ -38,7 +38,7 @@ export function useAllTeamMembers() {
   return useQuery({
     queryKey: ["all_team_members"],
     queryFn: async () => {
-      // Fetch members first
+      // Fetch members first (includes user_id for linking)
       const { data: members, error: membersError } = await supabase
         .from("team_members")
         .select("*")
