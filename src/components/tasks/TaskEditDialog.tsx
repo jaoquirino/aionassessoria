@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { format, formatDistanceToNow } from "date-fns";
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Clock,
@@ -41,7 +41,6 @@ import { cn, parseLocalDate } from "@/lib/utils";
 import {
   useTask,
   useUpdateTask,
-  useUpdateTaskStatus,
   useAddChecklistItem,
   useToggleChecklistItem,
   useDeleteChecklistItem,
@@ -52,7 +51,7 @@ import {
   useClients,
   useArchiveTask,
 } from "@/hooks/useTasks";
-import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
+import { taskStatusConfig, taskTypeConfig, type TaskStatusDB } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { supabase } from "@/integrations/supabase/client";
@@ -125,7 +124,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const { data: comments = [] } = useTaskComments(taskId);
   
   const updateTask = useUpdateTask();
-  const updateStatus = useUpdateTaskStatus();
+  // const updateStatus = useUpdateTaskStatus();
   const addChecklistItem = useAddChecklistItem();
   const toggleChecklistItem = useToggleChecklistItem();
   const deleteChecklistItem = useDeleteChecklistItem();
@@ -170,6 +169,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
     setIsSaving(true);
     try {
+      const clientChanged = clientId && clientId !== task.client_id;
+
       // Find the contract_id from the selected module
       let contractId = task.contract_id;
       if (contractModuleId && contractModuleId !== task.contract_module_id) {
@@ -181,10 +182,16 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         if (cm) contractId = cm.contract_id;
       }
 
+      // If client changed and no module selected yet, detach contract
+      if (clientChanged && !contractModuleId) {
+        contractId = null;
+      }
+
       await updateTask.mutateAsync({
         id: task.id,
         title,
         status,
+        client_id: clientId,
         assigned_to: assignedTo || null,
         due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : task.due_date,
         description_notes: descriptionNotes || null,

@@ -287,9 +287,9 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
               type="button"
               onClick={handleFieldClick} 
               onPointerDown={handleFieldClick}
-              className="text-left"
+              className="block w-full text-left"
             >
-              <p className="text-xs text-muted-foreground truncate font-medium cursor-pointer hover:text-foreground transition-colors">
+              <p className="text-xs leading-tight text-muted-foreground truncate font-medium cursor-pointer hover:text-foreground transition-colors">
                 {task.client?.name || "Sem cliente"}
               </p>
             </button>
@@ -304,7 +304,7 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
               type="button"
               onClick={handleFieldClick} 
               onPointerDown={handleFieldClick}
-              className="inline-flex"
+              className="inline-flex self-start"
             >
               <Badge className={cn("text-xs cursor-pointer hover:opacity-80 transition-opacity", priorityInfo.color)}>
                 {priorityInfo.label}

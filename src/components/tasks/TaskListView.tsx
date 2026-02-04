@@ -80,18 +80,21 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     {/* Cliente - Clicável */}
-                    <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-                      <ClientPopover
-                        currentClient={task.client}
-                        clients={clients}
-                        onSelect={(clientId) => onUpdateField?.(task.id, "client_id", clientId)}
+                    <ClientPopover
+                      currentClient={task.client}
+                      clients={clients}
+                      onSelect={(clientId) => onUpdateField?.(task.id, "client_id", clientId)}
+                    >
+                      <button
+                        type="button"
+                        onClick={handleFieldClick}
+                        onPointerDown={handleFieldClick}
+                        className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
                       >
-                        <span className="cursor-pointer hover:text-foreground transition-colors flex items-center gap-1">
-                          <Building2 className="h-3 w-3" />
-                          {task.client?.name || "Sem cliente"}
-                        </span>
-                      </ClientPopover>
-                    </div>
+                        <Building2 className="h-3 w-3" />
+                        <span className="truncate max-w-[220px]">{task.client?.name || "Sem cliente"}</span>
+                      </button>
+                    </ClientPopover>
                     {task.contract_module?.service_module?.name && (
                       <>
                         <span>·</span>
@@ -100,18 +103,21 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                     )}
                     <span>·</span>
                     {/* Responsável - Clicável */}
-                    <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-                      <AssigneePopover
-                        currentAssignee={task.assignee}
-                        teamMembers={teamMembers}
-                        onSelect={(memberId) => onUpdateField?.(task.id, "assigned_to", memberId)}
+                    <AssigneePopover
+                      currentAssignee={task.assignee}
+                      teamMembers={teamMembers}
+                      onSelect={(memberId) => onUpdateField?.(task.id, "assigned_to", memberId)}
+                    >
+                      <button
+                        type="button"
+                        onClick={handleFieldClick}
+                        onPointerDown={handleFieldClick}
+                        className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
                       >
-                        <span className="cursor-pointer hover:text-foreground transition-colors flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {task.assignee?.name || "Não atribuído"}
-                        </span>
-                      </AssigneePopover>
-                    </div>
+                        <User className="h-3 w-3" />
+                        <span className="truncate max-w-[220px]">{task.assignee?.name || "Não atribuído"}</span>
+                      </button>
+                    </AssigneePopover>
                   </div>
                 </div>
               </div>
@@ -121,18 +127,16 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                     {taskStatusConfig[task.status].label}
                   </Badge>
                   {/* Prioridade - Clicável */}
-                  <div onClick={handleFieldClick} onPointerDown={handleFieldClick} className="inline-block ml-2">
-                    <PriorityPopover
-                      currentPriority={priority}
-                      onSelect={(newPriority) => onUpdateField?.(task.id, "priority", newPriority)}
-                    >
-                        <button type="button" className="inline-flex" onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-                          <Badge className={cn("text-xs cursor-pointer hover:opacity-80 transition-opacity", priorityInfo.color)}>
-                            {priorityInfo.label}
-                          </Badge>
-                        </button>
-                    </PriorityPopover>
-                  </div>
+                  <PriorityPopover
+                    currentPriority={priority}
+                    onSelect={(newPriority) => onUpdateField?.(task.id, "priority", newPriority)}
+                  >
+                    <button type="button" className="inline-flex ml-2" onClick={handleFieldClick} onPointerDown={handleFieldClick}>
+                      <Badge className={cn("text-xs cursor-pointer hover:opacity-80 transition-opacity", priorityInfo.color)}>
+                        {priorityInfo.label}
+                      </Badge>
+                    </button>
+                  </PriorityPopover>
                   
                   {/* Checklist Progress - Clickable */}
                   {checklistTotal > 0 && (

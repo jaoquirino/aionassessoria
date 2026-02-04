@@ -182,6 +182,7 @@ export interface CreateTaskInput {
 export interface UpdateTaskInput {
   id: string;
   title?: string;
+  client_id?: string;
   contract_id?: string | null;
   contract_module_id?: string | null;
   type?: TaskType;
@@ -200,6 +201,7 @@ export interface UpdateTaskInput {
 export interface UpdateTaskInput {
   id: string;
   title?: string;
+  client_id?: string;
   contract_id?: string | null;
   contract_module_id?: string | null;
   type?: TaskType;
