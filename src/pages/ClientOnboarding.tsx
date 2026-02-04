@@ -1,35 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   Circle,
   ArrowLeft,
-  ArrowRight,
-  Key,
-  FileText,
-  Layers,
-  Calendar,
+  Play,
+  Clock,
+  AlertCircle,
   Loader2,
-  Save,
+  ChevronRight,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-interface OnboardingStep {
-  id: string;
-  client_id: string;
-  step_name: string;
-  step_order: number;
-  status: "pending" | "in_progress" | "completed";
-  completed_at: string | null;
-  notes: string | null;
-}
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useClientModuleOnboardings,
+  useUpdateModuleOnboardingStatus,
+  type ClientModuleOnboarding,
+} from "@/hooks/useClientModuleOnboarding";
 
 interface Client {
   id: string;
@@ -37,164 +31,133 @@ interface Client {
   status: string;
 }
 
-const stepIcons: Record<string, React.ReactNode> = {
-  "Coleta de acessos": <Key className="h-5 w-5" />,
-  "Briefing inicial": <FileText className="h-5 w-5" />,
-  "Definição de módulos": <Layers className="h-5 w-5" />,
-  "Reunião de kickoff": <Calendar className="h-5 w-5" />,
-};
-
-const stepDescriptions: Record<string, string> = {
-  "Coleta de acessos": "Colete todos os acessos necessários: redes sociais, gerenciador de anúncios, Google Analytics, domínios, etc.",
-  "Briefing inicial": "Realize o questionário completo sobre o negócio, público-alvo, objetivos e expectativas do cliente.",
-  "Definição de módulos": "Defina quais módulos de serviço serão contratados e configure os detalhes do contrato.",
-  "Reunião de kickoff": "Agende e realize a reunião inicial de kickoff com o cliente para alinhar expectativas e próximos passos.",
+const statusConfig = {
+  not_started: {
+    label: "Não iniciado",
+    icon: Clock,
+    color: "text-muted-foreground",
+    bgColor: "bg-muted",
+  },
+  in_progress: {
+    label: "Em andamento",
+    icon: Play,
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+  },
+  waiting_client: {
+    label: "Aguardando cliente",
+    icon: AlertCircle,
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
+  },
+  completed: {
+    label: "Concluído",
+    icon: CheckCircle2,
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
+  },
 };
 
 export default function ClientOnboarding() {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
-  const [client, setClient] = useState<Client | null>(null);
-  const [steps, setSteps] = useState<OnboardingStep[]>([]);
-  const [activeStep, setActiveStep] = useState(0);
-  const [notes, setNotes] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (clientId) {
-      fetchClientAndSteps();
-    }
-  }, [clientId]);
-
-  const fetchClientAndSteps = async () => {
-    try {
-      // Fetch client
-      const { data: clientData, error: clientError } = await supabase
+  // Fetch client
+  const { data: client, isLoading: clientLoading } = useQuery({
+    queryKey: ["client", clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+      const { data, error } = await supabase
         .from("clients")
         .select("*")
         .eq("id", clientId)
         .maybeSingle();
+      if (error) throw error;
+      return data as Client | null;
+    },
+    enabled: !!clientId,
+  });
 
-      if (clientError) throw clientError;
-      if (!clientData) {
-        toast.error("Cliente não encontrado");
-        navigate("/clientes");
-        return;
-      }
+  // Fetch module onboardings
+  const { data: onboardings = [], isLoading: onboardingsLoading } = useClientModuleOnboardings(clientId || null);
 
-      setClient(clientData);
-
-      // Fetch onboarding steps
-      const { data: stepsData, error: stepsError } = await supabase
-        .from("client_onboarding")
+  // Fetch related tasks
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["onboarding_tasks", clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      const { data, error } = await supabase
+        .from("tasks")
         .select("*")
         .eq("client_id", clientId)
-        .order("step_order", { ascending: true });
-
-      if (stepsError) throw stepsError;
-
-      setSteps(stepsData || []);
-
-      // Find first incomplete step
-      const firstIncomplete = stepsData?.findIndex(
-        (s) => s.status !== "completed"
-      );
-      setActiveStep(firstIncomplete !== -1 ? firstIncomplete : 0);
-
-      // Load notes for current step
-      if (stepsData && stepsData[firstIncomplete !== -1 ? firstIncomplete : 0]) {
-        setNotes(stepsData[firstIncomplete !== -1 ? firstIncomplete : 0].notes || "");
-      }
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error("Error fetching data:", error);
-      }
-      toast.error("Erro ao carregar dados");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStepClick = (index: number) => {
-    setActiveStep(index);
-    setNotes(steps[index]?.notes || "");
-  };
-
-  const saveNotes = async () => {
-    if (!steps[activeStep]) return;
-
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from("client_onboarding")
-        .update({ notes })
-        .eq("id", steps[activeStep].id);
-
+        .eq("type", "project")
+        .order("created_at", { ascending: true });
       if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
 
-      setSteps((prev) =>
-        prev.map((s, i) => (i === activeStep ? { ...s, notes } : s))
-      );
-      toast.success("Notas salvas");
-    } catch (error: any) {
-      toast.error("Erro ao salvar notas");
-    } finally {
-      setIsSaving(false);
+  const updateStatus = useUpdateModuleOnboardingStatus();
+
+  const isLoading = clientLoading || onboardingsLoading;
+
+  // Calculate progress
+  const completedModules = onboardings.filter((o) => o.status === "completed").length;
+  const totalModules = onboardings.length;
+  const progress = totalModules > 0 ? (completedModules / totalModules) * 100 : 0;
+
+  // Set initial active module
+  if (!activeModuleId && onboardings.length > 0) {
+    const firstIncomplete = onboardings.find((o) => o.status !== "completed");
+    setActiveModuleId(firstIncomplete?.id || onboardings[0].id);
+  }
+
+  const activeOnboarding = onboardings.find((o) => o.id === activeModuleId);
+  const moduleTasks = tasks.filter(
+    (t) => t.contract_module_id === activeOnboarding?.contract_module_id
+  );
+
+  const handleStartModule = async (onboarding: ClientModuleOnboarding) => {
+    if (onboarding.status === "not_started") {
+      await updateStatus.mutateAsync({ id: onboarding.id, status: "in_progress" });
     }
+    setActiveModuleId(onboarding.id);
   };
 
-  const completeStep = async () => {
-    if (!steps[activeStep]) return;
+  const handleCompleteModule = async () => {
+    if (!activeOnboarding) return;
 
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from("client_onboarding")
-        .update({
-          status: "completed",
-          completed_at: new Date().toISOString(),
-          notes,
-        })
-        .eq("id", steps[activeStep].id);
+    await updateStatus.mutateAsync({ id: activeOnboarding.id, status: "completed" });
 
-      if (error) throw error;
+    // Check if all modules are completed
+    const allCompleted = onboardings.every(
+      (o) => o.id === activeOnboarding.id || o.status === "completed"
+    );
 
-      const updatedSteps = steps.map((s, i) =>
-        i === activeStep
-          ? { ...s, status: "completed" as const, completed_at: new Date().toISOString(), notes }
-          : s
+    if (allCompleted) {
+      // Activate client
+      await supabase
+        .from("clients")
+        .update({ status: "active" })
+        .eq("id", clientId);
+
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success("Onboarding finalizado! Cliente ativado.");
+      navigate("/clientes");
+    } else {
+      // Move to next module
+      const nextModule = onboardings.find(
+        (o) => o.id !== activeOnboarding.id && o.status !== "completed"
       );
-      setSteps(updatedSteps);
-
-      // Check if all steps are completed
-      const allCompleted = updatedSteps.every((s) => s.status === "completed");
-
-      if (allCompleted) {
-        // Activate client
-        await supabase
-          .from("clients")
-          .update({ status: "active" })
-          .eq("id", clientId);
-
-        toast.success("Onboarding finalizado! Cliente ativado.");
-        navigate("/clientes");
-      } else {
-        // Move to next step
-        const nextStep = activeStep + 1;
-        setActiveStep(nextStep);
-        setNotes(steps[nextStep]?.notes || "");
-        toast.success("Etapa concluída!");
+      if (nextModule) {
+        setActiveModuleId(nextModule.id);
       }
-    } catch (error: any) {
-      toast.error("Erro ao concluir etapa");
-    } finally {
-      setIsSaving(false);
+      toast.success("Módulo concluído!");
     }
   };
-
-  const completedCount = steps.filter((s) => s.status === "completed").length;
-  const progress = steps.length > 0 ? (completedCount / steps.length) * 100 : 0;
 
   if (isLoading) {
     return (
@@ -204,8 +167,20 @@ export default function ClientOnboarding() {
     );
   }
 
-  // Show empty state when no steps exist
-  if (steps.length === 0) {
+  if (!client) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" onClick={() => navigate("/clientes")}>
+          <ArrowLeft className="h-5 w-5 mr-2" />
+          Voltar
+        </Button>
+        <div className="text-center text-muted-foreground">Cliente não encontrado</div>
+      </div>
+    );
+  }
+
+  // Show empty state when no module onboardings exist
+  if (onboardings.length === 0) {
     return (
       <div className="space-y-6">
         <motion.div
@@ -213,16 +188,12 @@ export default function ClientOnboarding() {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-4"
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/clientes")}
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate("/clientes")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Onboarding: {client?.name}
+              Onboarding: {client.name}
             </h1>
             <p className="text-muted-foreground">Configuração do cliente</p>
           </div>
@@ -239,9 +210,12 @@ export default function ClientOnboarding() {
               <FileText className="h-8 w-8 text-muted-foreground" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Nenhuma etapa cadastrada</h2>
+              <h2 className="text-lg font-semibold text-foreground">
+                Nenhum módulo de onboarding encontrado
+              </h2>
               <p className="text-muted-foreground mt-1">
-                As etapas de onboarding serão criadas automaticamente quando um novo cliente for cadastrado.
+                Para gerar o onboarding, edite o contrato do cliente e ative a opção "Gerar
+                Onboarding" ao salvar.
               </p>
             </div>
             <Button onClick={() => navigate("/clientes")} className="mt-4">
@@ -262,23 +236,22 @@ export default function ClientOnboarding() {
         className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/clientes")}
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate("/clientes")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Onboarding: {client?.name}
+              Onboarding: {client.name}
             </h1>
             <p className="text-muted-foreground">
-              {completedCount} de {steps.length} etapas concluídas
+              {completedModules} de {totalModules} módulos concluídos
             </p>
           </div>
         </div>
-        <Badge variant="outline" className="w-fit bg-primary/10 text-primary border-primary/30">
+        <Badge
+          variant="outline"
+          className="w-fit bg-primary/10 text-primary border-primary/30"
+        >
           {Math.round(progress)}% completo
         </Badge>
       </motion.div>
@@ -290,78 +263,68 @@ export default function ClientOnboarding() {
         transition={{ delay: 0.1 }}
         className="glass rounded-xl p-4"
       >
-        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5 }}
-            className="h-full rounded-full bg-primary"
-          />
-        </div>
+        <Progress value={progress} className="h-2" />
       </motion.div>
 
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-        {/* Steps Navigation */}
+        {/* Modules Navigation */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
           className="glass rounded-xl p-4"
         >
-          <h2 className="font-semibold text-foreground mb-4">Etapas</h2>
+          <h2 className="font-semibold text-foreground mb-4">Módulos</h2>
           <div className="space-y-2">
-            {steps.map((step, index) => (
-              <button
-                key={step.id}
-                onClick={() => handleStepClick(index)}
-                className={cn(
-                  "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-all",
-                  activeStep === index
-                    ? "bg-primary/10 border border-primary/30"
-                    : "hover:bg-muted/50",
-                  step.status === "completed" && "opacity-70"
-                )}
-              >
-                <div
+            {onboardings.map((onboarding) => {
+              const config =
+                statusConfig[onboarding.status as keyof typeof statusConfig] ||
+                statusConfig.not_started;
+              const StatusIcon = config.icon;
+              const moduleName =
+                onboarding.contract_module?.service_module?.name || "Módulo";
+
+              return (
+                <button
+                  key={onboarding.id}
+                  onClick={() => handleStartModule(onboarding)}
                   className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                    step.status === "completed"
-                      ? "bg-success/20 text-success"
-                      : activeStep === index
-                      ? "bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground"
+                    "w-full flex items-center gap-3 rounded-lg p-3 text-left transition-all",
+                    activeModuleId === onboarding.id
+                      ? "bg-primary/10 border border-primary/30"
+                      : "hover:bg-muted/50",
+                    onboarding.status === "completed" && "opacity-70"
                   )}
                 >
-                  {step.status === "completed" ? (
-                    <CheckCircle2 className="h-5 w-5" />
-                  ) : (
-                    stepIcons[step.step_name] || <Circle className="h-5 w-5" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p
+                  <div
                     className={cn(
-                      "text-sm font-medium truncate",
-                      step.status === "completed"
-                        ? "text-muted-foreground line-through"
-                        : "text-foreground"
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                      config.bgColor
                     )}
                   >
-                    {step.step_name}
-                  </p>
-                  {step.completed_at && (
-                    <p className="text-xs text-muted-foreground">
-                      Concluído em{" "}
-                      {new Date(step.completed_at).toLocaleDateString("pt-BR")}
+                    <StatusIcon className={cn("h-4 w-4", config.color)} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={cn(
+                        "text-sm font-medium truncate",
+                        onboarding.status === "completed"
+                          ? "text-muted-foreground line-through"
+                          : "text-foreground"
+                      )}
+                    >
+                      {moduleName}
                     </p>
-                  )}
-                </div>
-              </button>
-            ))}
+                    <p className="text-xs text-muted-foreground">{config.label}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+              );
+            })}
           </div>
         </motion.div>
 
-        {/* Step Content */}
+        {/* Module Content */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -369,78 +332,105 @@ export default function ClientOnboarding() {
           className="glass rounded-xl p-6"
         >
           <AnimatePresence mode="wait">
-            {steps[activeStep] && (
+            {activeOnboarding && (
               <motion.div
-                key={activeStep}
+                key={activeOnboarding.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
               >
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                    {stepIcons[steps[activeStep].step_name] || (
-                      <Circle className="h-6 w-6 text-primary" />
-                    )}
-                  </div>
+                <div className="flex items-start justify-between">
                   <div>
                     <h2 className="text-xl font-semibold text-foreground">
-                      {steps[activeStep].step_name}
+                      {activeOnboarding.contract_module?.service_module?.name || "Módulo"}
                     </h2>
                     <p className="text-muted-foreground mt-1">
-                      {stepDescriptions[steps[activeStep].step_name]}
+                      {activeOnboarding.template?.name || "Onboarding do módulo"}
                     </p>
                   </div>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      statusConfig[
+                        activeOnboarding.status as keyof typeof statusConfig
+                      ]?.bgColor,
+                      statusConfig[
+                        activeOnboarding.status as keyof typeof statusConfig
+                      ]?.color
+                    )}
+                  >
+                    {
+                      statusConfig[
+                        activeOnboarding.status as keyof typeof statusConfig
+                      ]?.label
+                    }
+                  </Badge>
                 </div>
 
+                {/* Tasks for this module */}
                 <div className="space-y-3">
-                  <Label htmlFor="notes">Anotações</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Adicione anotações sobre esta etapa..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={6}
-                    className="resize-none"
-                  />
+                  <h3 className="font-medium text-foreground">
+                    Tarefas ({moduleTasks.length})
+                  </h3>
+                  {moduleTasks.length > 0 ? (
+                    <div className="space-y-2">
+                      {moduleTasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg border p-3",
+                            task.status === "done"
+                              ? "bg-green-500/5 border-green-500/20"
+                              : "bg-muted/30 border-border"
+                          )}
+                        >
+                          {task.status === "done" ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={cn(
+                                "text-sm font-medium truncate",
+                                task.status === "done" && "line-through text-muted-foreground"
+                              )}
+                            >
+                              {task.title}
+                            </p>
+                            {task.description_objective && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {task.description_objective}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-xs shrink-0">
+                            {task.status === "done" ? "Concluída" : "Pendente"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma tarefa cadastrada para este módulo.
+                    </p>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t">
+                {/* Actions */}
+                <div className="flex items-center justify-end pt-4 border-t gap-3">
                   <Button
                     variant="outline"
-                    onClick={saveNotes}
-                    disabled={isSaving}
-                    className="gap-2"
+                    onClick={() => navigate(`/tarefas?client=${clientId}`)}
                   >
-                    <Save className="h-4 w-4" />
-                    Salvar Notas
+                    Ver Tarefas
                   </Button>
-
-                  {steps[activeStep].status !== "completed" && (
-                    <Button
-                      onClick={completeStep}
-                      disabled={isSaving}
-                      className="gap-2"
-                    >
-                      {activeStep === steps.length - 1 ? (
-                        <>
-                          Finalizar Onboarding
-                          <CheckCircle2 className="h-4 w-4" />
-                        </>
-                      ) : (
-                        <>
-                          Concluir Etapa
-                          <ArrowRight className="h-4 w-4" />
-                        </>
-                      )}
+                  {activeOnboarding.status !== "completed" && (
+                    <Button onClick={handleCompleteModule} className="gap-2">
+                      Concluir Módulo
+                      <CheckCircle2 className="h-4 w-4" />
                     </Button>
-                  )}
-
-                  {steps[activeStep].status === "completed" && (
-                    <Badge variant="outline" className="bg-success/10 text-success border-success/30">
-                      <CheckCircle2 className="h-4 w-4 mr-1" />
-                      Etapa Concluída
-                    </Badge>
                   )}
                 </div>
               </motion.div>

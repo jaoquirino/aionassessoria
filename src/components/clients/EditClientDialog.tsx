@@ -57,7 +57,7 @@ export function EditClientDialog({
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ClientStatus>("active");
   const [startDate, setStartDate] = useState("");
-  const [contractDialogOpen, setContractDialogOpen] = useState(openContractDialogOnMount);
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractWithModules | null>(null);
   const [deleteClientOpen, setDeleteClientOpen] = useState(false);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
@@ -76,12 +76,24 @@ export function EditClientDialog({
     }
   }, [client]);
 
-  // Open contract dialog when requested via prop
+  // Open contract dialog when requested via prop - only when dialog opens
   useEffect(() => {
     if (openContractDialogOnMount && open && client) {
-      setContractDialogOpen(true);
+      // Small delay to ensure dialog is rendered first
+      const timer = setTimeout(() => {
+        setContractDialogOpen(true);
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [openContractDialogOnMount, open, client]);
+
+  // Reset contract dialog state when main dialog closes
+  useEffect(() => {
+    if (!open) {
+      setContractDialogOpen(false);
+      setEditingContract(null);
+    }
+  }, [open]);
 
   const handleSave = async () => {
     if (!client) return;
