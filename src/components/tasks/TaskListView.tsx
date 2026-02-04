@@ -23,7 +23,6 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
 
   const handleFieldClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation();
-    e.preventDefault();
   };
 
   return (
@@ -117,7 +116,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="text-right space-y-1">
+                  <div className="text-right space-y-1">
                   <Badge className={cn(taskStatusConfig[task.status].color)}>
                     {taskStatusConfig[task.status].label}
                   </Badge>
@@ -127,9 +126,11 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                       currentPriority={priority}
                       onSelect={(newPriority) => onUpdateField?.(task.id, "priority", newPriority)}
                     >
-                      <Badge className={cn("text-xs cursor-pointer hover:opacity-80 transition-opacity", priorityInfo.color)}>
-                        {priorityInfo.label}
-                      </Badge>
+                        <button type="button" className="inline-flex" onClick={handleFieldClick} onPointerDown={handleFieldClick}>
+                          <Badge className={cn("text-xs cursor-pointer hover:opacity-80 transition-opacity", priorityInfo.color)}>
+                            {priorityInfo.label}
+                          </Badge>
+                        </button>
                     </PriorityPopover>
                   </div>
                   
