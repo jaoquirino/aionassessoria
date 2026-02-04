@@ -46,7 +46,7 @@ export default function Clients() {
 
   // When clients are loaded and we have a pending client to edit, open the edit dialog
   useEffect(() => {
-    if (pendingClientId && clients.length > 0) {
+    if (pendingClientId) {
       const newClient = clients.find(c => c.id === pendingClientId);
       if (newClient) {
         setEditingClient(newClient);
@@ -165,11 +165,11 @@ export default function Clients() {
           </p>
         </div>
         <AddClientDialog 
-          onClientAdded={() => refetch()} 
-          onClientCreatedForOnboarding={(clientId) => {
-            // Set pending client ID and refetch - the useEffect will open the dialog
+          onClientAdded={() => {}} 
+          onClientCreatedForOnboarding={async (clientId) => {
+            // Refetch and wait for completion, then set pending client ID
+            await refetch();
             setPendingClientId(clientId);
-            refetch();
           }}
         />
       </motion.div>

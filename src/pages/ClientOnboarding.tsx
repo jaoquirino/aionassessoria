@@ -124,10 +124,12 @@ export default function ClientOnboarding() {
 
   const isLoading = clientLoading || onboardingsLoading;
 
-  // Calculate progress
+  // Calculate progress based on tasks, not just modules
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((t) => t.status === "done").length;
+  const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const completedModules = onboardings.filter((o) => o.status === "completed").length;
   const totalModules = onboardings.length;
-  const progress = totalModules > 0 ? (completedModules / totalModules) * 100 : 0;
 
   // Set initial active module
   if (!activeModuleId && onboardings.length > 0) {
@@ -264,7 +266,7 @@ export default function ClientOnboarding() {
               Onboarding: {client.name}
             </h1>
             <p className="text-muted-foreground">
-              {completedModules} de {totalModules} módulos concluídos
+              {completedTasks} de {totalTasks} tarefas concluídas
             </p>
           </div>
         </div>
@@ -441,12 +443,6 @@ export default function ClientOnboarding() {
 
                 {/* Actions */}
                 <div className="flex items-center justify-end pt-4 border-t gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate(`/tarefas?client=${clientId}`)}
-                  >
-                    Ver Tarefas
-                  </Button>
                   {activeOnboarding.status !== "completed" && (
                     <Button onClick={handleCompleteModule} className="gap-2">
                       Concluir Módulo
