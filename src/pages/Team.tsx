@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, MoreHorizontal } from "lucide-react";
+import { Plus, Search, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,78 +13,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
+import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
 
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  permission: "admin" | "operational";
-  avatar?: string;
+interface TeamMemberWithStats extends TeamMember {
   currentWeight: number;
-  maxWeight: number;
   activeTasks: number;
   overdueTasks: number;
 }
-
-const mockTeam: TeamMember[] = [
-  {
-    id: "1",
-    name: "Ana Silva",
-    email: "ana@agencia.com",
-    role: "Designer",
-    permission: "operational",
-    currentWeight: 14,
-    maxWeight: 15,
-    activeTasks: 5,
-    overdueTasks: 1,
-  },
-  {
-    id: "2",
-    name: "Carlos Santos",
-    email: "carlos@agencia.com",
-    role: "Gestor de Tráfego",
-    permission: "admin",
-    currentWeight: 18,
-    maxWeight: 15,
-    activeTasks: 7,
-    overdueTasks: 2,
-  },
-  {
-    id: "3",
-    name: "Maria Costa",
-    email: "maria@agencia.com",
-    role: "Copywriter",
-    permission: "operational",
-    currentWeight: 8,
-    maxWeight: 15,
-    activeTasks: 4,
-    overdueTasks: 0,
-  },
-  {
-    id: "4",
-    name: "João Mendes",
-    email: "joao@agencia.com",
-    role: "Designer",
-    permission: "operational",
-    currentWeight: 12,
-    maxWeight: 15,
-    activeTasks: 4,
-    overdueTasks: 1,
-  },
-  {
-    id: "5",
-    name: "Paula Ribeiro",
-    email: "paula@agencia.com",
-    role: "Comercial",
-    permission: "admin",
-    currentWeight: 6,
-    maxWeight: 10,
-    activeTasks: 3,
-    overdueTasks: 0,
-  },
-];
 
 function getCapacityStatus(current: number, max: number) {
   const percentage = (current / max) * 100;
@@ -98,31 +45,57 @@ export default function Team() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [permissionFilter, setPermissionFilter] = useState("all");
   const [capacityFilter, setCapacityFilter] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<TeamMemberWithStats | null>(null);
+  const [deletingMember, setDeletingMember] = useState<TeamMemberWithStats | null>(null);
+
+  const { data: teamMembers = [], isLoading } = useAllTeamMembers();
+  const deleteMember = useDeleteTeamMember();
 
   const allRoles = useMemo(() => {
-    const roles = new Set(mockTeam.map((m) => m.role));
+    const roles = new Set(teamMembers.map((m) => m.role));
     return Array.from(roles).sort();
-  }, []);
+  }, [teamMembers]);
 
   const filteredTeam = useMemo(() => {
-    return mockTeam.filter((member) => {
+    return teamMembers.filter((member) => {
       const matchesSearch =
         search === "" ||
         member.name.toLowerCase().includes(search.toLowerCase()) ||
-        member.email.toLowerCase().includes(search.toLowerCase());
+        member.email?.toLowerCase().includes(search.toLowerCase());
 
       const matchesRole = roleFilter === "all" || member.role === roleFilter;
       const matchesPermission = permissionFilter === "all" || member.permission === permissionFilter;
 
-      const status = getCapacityStatus(member.currentWeight, member.maxWeight);
+      const status = getCapacityStatus(member.currentWeight, member.capacity_limit);
       const matchesCapacity = capacityFilter === "all" || status === capacityFilter;
 
       return matchesSearch && matchesRole && matchesPermission && matchesCapacity;
     });
-  }, [search, roleFilter, permissionFilter, capacityFilter]);
+  }, [teamMembers, search, roleFilter, permissionFilter, capacityFilter]);
 
-  const totalCapacity = mockTeam.reduce((acc, m) => acc + m.maxWeight, 0);
-  const usedCapacity = mockTeam.reduce((acc, m) => acc + m.currentWeight, 0);
+  const totalCapacity = teamMembers.reduce((acc, m) => acc + m.capacity_limit, 0);
+  const usedCapacity = teamMembers.reduce((acc, m) => acc + m.currentWeight, 0);
+
+  const handleEdit = (member: TeamMemberWithStats) => {
+    setEditingMember(member);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (deletingMember) {
+      await deleteMember.mutateAsync(deletingMember.id);
+      setDeletingMember(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -138,7 +111,7 @@ export default function Team() {
             Gerenciamento de capacidade e carga
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4" />
           Novo Membro
         </Button>
@@ -197,44 +170,46 @@ export default function Team() {
       </motion.div>
 
       {/* Capacity Overview */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass rounded-xl p-6"
-      >
-        <h3 className="font-semibold text-foreground mb-4">Capacidade Total da Agência</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Peso utilizado</span>
-            <span className="font-medium text-foreground">
-              {usedCapacity} / {totalCapacity}
-            </span>
+      {teamMembers.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="glass rounded-xl p-6"
+        >
+          <h3 className="font-semibold text-foreground mb-4">Capacidade Total da Agência</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Peso utilizado</span>
+              <span className="font-medium text-foreground">
+                {usedCapacity} / {totalCapacity}
+              </span>
+            </div>
+            <Progress
+              value={totalCapacity > 0 ? (usedCapacity / totalCapacity) * 100 : 0}
+              className={cn(
+                "h-3",
+                usedCapacity > totalCapacity && "[&>div]:bg-destructive",
+                usedCapacity > totalCapacity * 0.8 && usedCapacity <= totalCapacity && "[&>div]:bg-warning"
+              )}
+            />
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="status-indicator status-normal" />
+                <span>Normal</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="status-indicator status-attention" />
+                <span>Atenção ({">"}80%)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="status-indicator status-critical" />
+                <span>Crítico ({">"}100%)</span>
+              </div>
+            </div>
           </div>
-          <Progress
-            value={(usedCapacity / totalCapacity) * 100}
-            className={cn(
-              "h-3",
-              usedCapacity > totalCapacity && "[&>div]:bg-destructive",
-              usedCapacity > totalCapacity * 0.8 && usedCapacity <= totalCapacity && "[&>div]:bg-warning"
-            )}
-          />
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span className="status-indicator status-normal" />
-              <span>Normal</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="status-indicator status-attention" />
-              <span>Atenção ({">"}80%)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="status-indicator status-critical" />
-              <span>Crítico ({">"}100%)</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Team Grid */}
       <motion.div
@@ -244,8 +219,8 @@ export default function Team() {
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
         {filteredTeam.map((member, index) => {
-          const status = getCapacityStatus(member.currentWeight, member.maxWeight);
-          const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
+          const status = getCapacityStatus(member.currentWeight, member.capacity_limit);
+          const percentage = Math.min((member.currentWeight / member.capacity_limit) * 100, 100);
 
           return (
             <motion.div
@@ -254,15 +229,16 @@ export default function Team() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 * index }}
               className={cn(
-                "glass rounded-xl p-5 group transition-all hover:shadow-lg",
+                "glass rounded-xl p-5 group transition-all hover:shadow-lg cursor-pointer",
                 status === "critical" && "border-destructive/30",
                 status === "attention" && "border-warning/30"
               )}
+              onClick={() => handleEdit(member)}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={member.avatar} />
+                    <AvatarImage src={member.avatar_url || undefined} />
                     <AvatarFallback className="bg-primary/10 text-primary font-medium">
                       {member.name.split(" ").map((n) => n[0]).join("")}
                     </AvatarFallback>
@@ -272,8 +248,11 @@ export default function Team() {
                     <p className="text-sm text-muted-foreground">{member.role}</p>
                   </div>
                 </div>
-                <button className="rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100">
-                  <MoreHorizontal className="h-4 w-4" />
+                <button 
+                  className="rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                  onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
+                >
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
 
@@ -297,7 +276,7 @@ export default function Team() {
                     <div className="flex items-center gap-2">
                       <span className={cn("status-indicator", `status-${status}`)} />
                       <span className="font-medium text-foreground">
-                        {member.currentWeight}/{member.maxWeight}
+                        {member.currentWeight}/{member.capacity_limit}
                       </span>
                     </div>
                   </div>
@@ -326,10 +305,36 @@ export default function Team() {
         })}
         {filteredTeam.length === 0 && (
           <div className="col-span-full glass rounded-xl p-12 text-center">
-            <p className="text-muted-foreground">Nenhum membro encontrado</p>
+            <p className="text-muted-foreground">
+              {teamMembers.length === 0 ? "Adicione seu primeiro membro da equipe" : "Nenhum membro encontrado"}
+            </p>
           </div>
         )}
       </motion.div>
+
+      {/* Dialogs */}
+      <TeamMemberDialog
+        member={editingMember}
+        open={dialogOpen}
+        onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingMember(null); }}
+      />
+
+      <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover membro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso removerá {deletingMember?.name} da equipe. As tarefas atribuídas a este membro não serão excluídas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -3,20 +3,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EditDialog } from "@/components/ui/edit-dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-type ClientStatus = "onboarding" | "active" | "paused" | "ended";
-
-interface Client {
-  id: string;
-  name: string;
-  status: ClientStatus;
-  created_at: string;
-}
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Plus, FileText, Calendar, DollarSign, Trash2 } from "lucide-react";
+import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
+import { useClientContractsWithModules, useDeleteContract } from "@/hooks/useContracts";
+import { ContractDialog } from "./ContractDialog";
+import { format, differenceInDays } from "date-fns";
+import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface EditClientDialogProps {
-  client: Client | null;
+  client: ClientWithContracts | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onClientUpdated?: () => void;
@@ -29,6 +37,13 @@ const statusOptions: { value: ClientStatus; label: string }[] = [
   { value: "ended", label: "Encerrado" },
 ];
 
+const statusConfig = {
+  active: { label: "Ativo", color: "bg-success/20 text-success border-success/30" },
+  expiring_soon: { label: "Próx. vencimento", color: "bg-warning/20 text-warning border-warning/30" },
+  renewing: { label: "Em renovação", color: "bg-primary/20 text-primary border-primary/30" },
+  ended: { label: "Encerrado", color: "bg-muted text-muted-foreground border-muted" },
+};
+
 export function EditClientDialog({ 
   client, 
   open, 
@@ -37,91 +52,299 @@ export function EditClientDialog({
 }: EditClientDialogProps) {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ClientStatus>("active");
-  const [isSaving, setIsSaving] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [deleteClientOpen, setDeleteClientOpen] = useState(false);
+  const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+
+  const updateClient = useUpdateClient();
+  const deleteClient = useDeleteClient();
+  const deleteContract = useDeleteContract();
+  const { data: contracts = [] } = useClientContractsWithModules(client?.id || null);
 
   // Sync form state when client changes
   useEffect(() => {
     if (client) {
       setName(client.name);
       setStatus(client.status);
+      setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
     }
   }, [client]);
 
   const handleSave = async () => {
     if (!client) return;
 
-    setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from("clients")
-        .update({ 
-          name: name.trim(),
-          status,
-        })
-        .eq("id", client.id);
-
-      if (error) throw error;
-
-      toast.success("Cliente atualizado");
+      await updateClient.mutateAsync({ 
+        id: client.id,
+        name: name.trim(),
+        status,
+        created_at: new Date(startDate).toISOString(),
+      });
       onClientUpdated?.();
-    } catch (error: any) {
-      toast.error("Erro ao salvar: " + error.message);
-    } finally {
-      setIsSaving(false);
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
+
+  const handleDeleteClient = async () => {
+    if (!client) return;
+    try {
+      await deleteClient.mutateAsync(client.id);
+      onOpenChange(false);
+      onClientUpdated?.();
+    } catch (error) {
+      // Error handled by mutation
+    }
+    setDeleteClientOpen(false);
+  };
+
+  const handleDeleteContract = async () => {
+    if (deletingContractId) {
+      await deleteContract.mutateAsync(deletingContractId);
+      setDeletingContractId(null);
     }
   };
 
   const handleCancel = () => {
-    // Reset to original values
     if (client) {
       setName(client.name);
       setStatus(client.status);
+      setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
     }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  const getContractStatus = (contract: typeof contracts[0]) => {
+    if (contract.status === "ended") return "ended";
+    const renewalDate = contract.renewal_date ? new Date(contract.renewal_date) : null;
+    const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : 999;
+    if (daysUntilRenewal <= 7) return "renewing";
+    if (daysUntilRenewal <= 30) return "expiring_soon";
+    return "active";
   };
 
   if (!client) return null;
 
+  const isSaving = updateClient.isPending;
+
   return (
-    <EditDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Editar Cliente"
-      onSave={handleSave}
-      onCancel={handleCancel}
-      isSaving={isSaving}
-      autoSaveOnOutsideClick={true}
-    >
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="client-name">Nome do Cliente</Label>
-          <Input
-            id="client-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nome do cliente"
-          />
-        </div>
+    <>
+      <EditDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title="Editar Cliente"
+        onSave={handleSave}
+        onCancel={handleCancel}
+        isSaving={isSaving}
+        autoSaveOnOutsideClick={true}
+      >
+        <div className="space-y-6">
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="client-name">Nome do Cliente</Label>
+              <Input
+                id="client-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nome do cliente"
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="client-status">Status</Label>
-          <Select value={status} onValueChange={(v) => setStatus(v as ClientStatus)}>
-            <SelectTrigger id="client-status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="client-status">Status</Label>
+                <Select value={status} onValueChange={(v) => setStatus(v as ClientStatus)}>
+                  <SelectTrigger id="client-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <div className="pt-2 text-xs text-muted-foreground">
-          Cliente desde: {new Date(client.created_at).toLocaleDateString("pt-BR")}
+              <div className="space-y-2">
+                <Label htmlFor="start-date">Cliente desde</Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Contracts Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Contratos
+              </h3>
+              <Button size="sm" variant="outline" onClick={() => setContractDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Novo Contrato
+              </Button>
+            </div>
+
+            {contracts.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                Nenhum contrato cadastrado
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {contracts.map((contract) => {
+                  const contractStatus = getContractStatus(contract);
+                  const daysUntilRenewal = contract.renewal_date 
+                    ? differenceInDays(new Date(contract.renewal_date), new Date())
+                    : null;
+
+                  return (
+                    <div
+                      key={contract.id}
+                      className={cn(
+                        "p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors",
+                        contractStatus === "expiring_soon" && "border-warning/30",
+                        contractStatus === "renewing" && "border-primary/30"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-foreground">
+                              {formatCurrency(contract.monthly_value)}/mês
+                            </span>
+                            <Badge 
+                              variant="outline" 
+                              className={cn("text-xs", statusConfig[contractStatus].color)}
+                            >
+                              {statusConfig[contractStatus].label}
+                            </Badge>
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Início: {format(new Date(contract.start_date), "dd/MM/yyyy")}
+                            </span>
+                            {contract.renewal_date && (
+                              <span className="flex items-center gap-1">
+                                Renova: {format(new Date(contract.renewal_date), "dd/MM/yyyy")}
+                                {daysUntilRenewal !== null && daysUntilRenewal > 0 && daysUntilRenewal <= 30 && (
+                                  <span className={cn(
+                                    "font-medium",
+                                    daysUntilRenewal <= 7 ? "text-destructive" : "text-warning"
+                                  )}>
+                                    ({daysUntilRenewal}d)
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                          </div>
+                          {contract.modules && contract.modules.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {contract.modules.map((cm) => (
+                                <Badge key={cm.id} variant="secondary" className="text-xs">
+                                  {cm.service_module.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeletingContractId(contract.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Delete Client */}
+          <Button 
+            variant="destructive" 
+            className="w-full"
+            onClick={() => setDeleteClientOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Excluir Cliente
+          </Button>
         </div>
-      </div>
-    </EditDialog>
+      </EditDialog>
+
+      {/* Contract Dialog */}
+      {client && (
+        <ContractDialog
+          clientId={client.id}
+          open={contractDialogOpen}
+          onOpenChange={setContractDialogOpen}
+        />
+      )}
+
+      {/* Delete Client Confirmation */}
+      <AlertDialog open={deleteClientOpen} onOpenChange={setDeleteClientOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso excluirá permanentemente "{client?.name}" e todos os seus contratos e tarefas associadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteClient} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Contract Confirmation */}
+      <AlertDialog open={!!deletingContractId} onOpenChange={() => setDeletingContractId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir contrato?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso excluirá permanentemente este contrato e seus módulos associados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteContract} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
