@@ -191,24 +191,7 @@ export interface UpdateTaskInput {
   due_date?: string;
   status?: TaskStatusDB;
   priority?: TaskPriority;
-  description_objective?: string | null;
-  description_deliverable?: string | null;
-  description_references?: string | null;
-  description_notes?: string | null;
-  is_deliverable?: boolean;
-}
-
-export interface UpdateTaskInput {
-  id: string;
-  title?: string;
-  client_id?: string;
-  contract_id?: string | null;
-  contract_module_id?: string | null;
-  type?: TaskType;
-  required_role?: string;
-  assigned_to?: string | null;
-  due_date?: string;
-  status?: TaskStatusDB;
+  weight?: number;
   description_objective?: string | null;
   description_deliverable?: string | null;
   description_references?: string | null;
