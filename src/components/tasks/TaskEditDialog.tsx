@@ -247,7 +247,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
   
   const canComplete = task && (
     (!task.checklist?.length || task.checklist.every(item => item.is_completed)) &&
-    task.attachments && task.attachments.length > 0
+    (task.description_notes?.trim() || (task.checklist && task.checklist.length > 0))
   );
 
   // Status color mapping
@@ -382,8 +382,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                         {task.checklist?.length && !task.checklist.every(i => i.is_completed) && (
                           <li>• Complete todos os itens do checklist</li>
                         )}
-                        {(!task.attachments || task.attachments.length === 0) && (
-                          <li>• Adicione pelo menos um anexo ou link de entrega</li>
+                        {!task.description_notes?.trim() && (!task.checklist || task.checklist.length === 0) && (
+                          <li>• Adicione pelo menos observações ou checklist para concluir a tarefa</li>
                         )}
                       </ul>
                     </div>
