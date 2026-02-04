@@ -132,19 +132,19 @@ export function Sidebar() {
           <Button
             variant="ghost"
             size={isCollapsed ? "icon" : "default"}
-            onClick={onToggleTheme}
+            onClick={toggleTheme}
             className={cn(
               "w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
               isCollapsed && "justify-center"
             )}
           >
-            {isDarkMode ? (
+            {isDark ? (
               <Sun className="h-5 w-5" />
             ) : (
               <Moon className="h-5 w-5" />
             )}
             {!isCollapsed && (
-              <span>{isDarkMode ? "Modo Claro" : "Modo Escuro"}</span>
+              <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>
             )}
           </Button>
           <Button
