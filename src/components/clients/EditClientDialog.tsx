@@ -6,12 +6,15 @@ import { EditDialog } from "@/components/ui/edit-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList } from "lucide-react";
+import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList, Eye, Play } from "lucide-react";
 import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
 import { useClientContractsWithModules, useDeleteContract, type ContractWithModules } from "@/hooks/useContracts";
 import { ContractDialog } from "./ContractDialog";
 import { EditContractDialog } from "./EditContractDialog";
+import { ClientContactInfo } from "./ClientContactInfo";
 import { ClientOnboardingProgress } from "@/components/onboarding/ClientOnboardingProgress";
+import { OnboardingStepsDialog } from "./OnboardingStepsDialog";
+import { useClientOnboardingProgress } from "@/hooks/useClientModuleOnboarding";
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
