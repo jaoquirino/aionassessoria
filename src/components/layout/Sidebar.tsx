@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { NotificationBell } from "@/components/notifications/NotificationCenter";
 import { toast } from "sonner";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
@@ -77,19 +78,22 @@ export function Sidebar() {
               />
             </motion.div>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
-          >
-            <ChevronLeft
-              className={cn(
-                "h-4 w-4 transition-transform",
-                isCollapsed && "rotate-180"
-              )}
-            />
-          </Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
+            >
+              <ChevronLeft
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  isCollapsed && "rotate-180"
+                )}
+              />
+            </Button>
+          </div>
         </div>
 
         {/* Navigation */}
