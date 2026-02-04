@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { clientSchema, getSafeErrorMessage, devLog } from "@/lib/validationSchemas";
 
 interface AddClientDialogProps {
   onClientAdded?: () => void;
@@ -32,8 +33,14 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim()) {
-      toast.error("Digite o nome do cliente");
+    // Validate input
+    const validation = clientSchema.safeParse({ 
+      name, 
+      status: startOnboarding ? "onboarding" : "active" 
+    });
+    
+    if (!validation.success) {
+      toast.error(validation.error.errors[0]?.message || "Dados inválidos");
       return;
     }
 
@@ -43,15 +50,15 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
       const { data, error } = await supabase
         .from("clients")
         .insert({
-          name: name.trim(),
-          status: startOnboarding ? "onboarding" : "active",
+          name: validation.data.name,
+          status: validation.data.status,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      toast.success(`Cliente "${name}" criado com sucesso!`);
+      toast.success(`Cliente "${validation.data.name}" criado com sucesso!`);
       setOpen(false);
       setName("");
       onClientAdded?.();
@@ -59,9 +66,9 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
       if (startOnboarding && data) {
         navigate(`/clientes/${data.id}/onboarding`);
       }
-    } catch (error: any) {
-      console.error("Error creating client:", error);
-      toast.error("Erro ao criar cliente: " + error.message);
+    } catch (error) {
+      devLog.error("Error creating client:", error);
+      toast.error(getSafeErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -95,6 +102,7 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
                 placeholder="Ex: Empresa XYZ"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                maxLength={200}
                 autoFocus
               />
             </div>

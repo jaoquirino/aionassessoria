@@ -43,10 +43,14 @@ export function useAuth() {
       });
       
       if (response.data?.isFirstAdmin) {
-        console.log('First admin created successfully');
+        if (import.meta.env.DEV) {
+          console.log('First admin created successfully');
+        }
       }
     } catch (error) {
-      console.error('Error assigning role:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error assigning role:', error);
+      }
     }
   };
 
@@ -55,7 +59,9 @@ export function useAuth() {
       const response = await supabase.functions.invoke('check-has-admin');
       return response.data?.hasAdmin ?? false;
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error checking admin status:', error);
+      }
       return false;
     }
   };

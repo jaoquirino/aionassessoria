@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TaskComment } from "@/types/tasks";
 import { toast } from "sonner";
+import { commentSchema, updateCommentSchema, getSafeErrorMessage, devLog } from "@/lib/validationSchemas";
+import { z } from "zod";
 
 export function useTaskComments(taskId: string | null) {
   return useQuery({
@@ -53,6 +55,9 @@ export function useAddTaskComment() {
 
   return useMutation({
     mutationFn: async ({ taskId, content }: { taskId: string; content: string }) => {
+      // Validate input
+      const validated = commentSchema.parse({ taskId, content });
+      
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) throw new Error("Usuário não autenticado");
@@ -60,8 +65,8 @@ export function useAddTaskComment() {
       const { data, error } = await supabase
         .from("task_comments")
         .insert({ 
-          task_id: taskId, 
-          content,
+          task_id: validated.taskId, 
+          content: validated.content,
           user_id: user.id
         })
         .select()
@@ -74,7 +79,8 @@ export function useAddTaskComment() {
       queryClient.invalidateQueries({ queryKey: ["task_comments", variables.taskId] });
     },
     onError: (error) => {
-      toast.error("Erro ao adicionar comentário: " + error.message);
+      devLog.error("Error adding comment:", error);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }
@@ -84,21 +90,25 @@ export function useUpdateTaskComment() {
 
   return useMutation({
     mutationFn: async ({ commentId, content, taskId }: { commentId: string; content: string; taskId: string }) => {
+      // Validate input
+      const validated = updateCommentSchema.parse({ commentId, content, taskId });
+      
       const { data, error } = await supabase
         .from("task_comments")
-        .update({ content })
-        .eq("id", commentId)
+        .update({ content: validated.content })
+        .eq("id", validated.commentId)
         .select()
         .single();
 
       if (error) throw error;
-      return { data, taskId };
+      return { data, taskId: validated.taskId };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["task_comments", result.taskId] });
     },
     onError: (error) => {
-      toast.error("Erro ao atualizar comentário: " + error.message);
+      devLog.error("Error updating comment:", error);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }
@@ -108,6 +118,10 @@ export function useDeleteTaskComment() {
 
   return useMutation({
     mutationFn: async ({ commentId, taskId }: { commentId: string; taskId: string }) => {
+      // Validate UUIDs
+      z.string().uuid().parse(commentId);
+      z.string().uuid().parse(taskId);
+      
       const { error } = await supabase
         .from("task_comments")
         .delete()
@@ -120,7 +134,8 @@ export function useDeleteTaskComment() {
       queryClient.invalidateQueries({ queryKey: ["task_comments", result.taskId] });
     },
     onError: (error) => {
-      toast.error("Erro ao excluir comentário: " + error.message);
+      devLog.error("Error deleting comment:", error);
+      toast.error(getSafeErrorMessage(error));
     },
   });
 }

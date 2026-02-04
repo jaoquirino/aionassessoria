@@ -106,8 +106,10 @@ export default function ClientOnboarding() {
       if (stepsData && stepsData[firstIncomplete !== -1 ? firstIncomplete : 0]) {
         setNotes(stepsData[firstIncomplete !== -1 ? firstIncomplete : 0].notes || "");
       }
-    } catch (error: any) {
-      console.error("Error fetching data:", error);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error("Error fetching data:", error);
+      }
       toast.error("Erro ao carregar dados");
     } finally {
       setIsLoading(false);
