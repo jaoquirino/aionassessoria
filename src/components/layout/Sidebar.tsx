@@ -31,12 +31,13 @@ const adminNavigation = [
   { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
-export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
+export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
+  const { isDark, toggleTheme } = useUserPreferences();
 
   const handleLogout = async () => {
     const { error } = await signOut();
