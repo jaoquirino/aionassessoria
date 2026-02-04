@@ -358,13 +358,94 @@ export function EditClientDialog({
           <Separator />
 
           {/* Onboarding Progress Section */}
-          {client && (
+          {client && onboardingProgress && onboardingProgress.totalModules > 0 && (
             <div className="space-y-3">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <ClipboardList className="h-4 w-4" />
-                Progresso do Onboarding
-              </h3>
-              <ClientOnboardingProgress clientId={client.id} showDetail={true} />
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Progresso do Onboarding
+                </h3>
+                {onboardingProgress.progressPercent === 100 && (
+                  <Badge className="bg-success/20 text-success border-success/30">
+                    Concluído
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Module Cards with Actions */}
+              <div className="space-y-2">
+                {onboardingProgress.modules.map((module) => {
+                  const isCompleted = module.status === "completed";
+                  
+                  return (
+                    <div 
+                      key={module.moduleId}
+                      className={cn(
+                        "p-3 rounded-lg border cursor-pointer transition-colors",
+                        isCompleted 
+                          ? "bg-success/5 border-success/20 hover:bg-success/10" 
+                          : "bg-muted/30 hover:bg-muted/50"
+                      )}
+                      onClick={() => handleOpenOnboarding({
+                        contractModuleId: module.contractModuleId,
+                        templateId: module.templateId || "",
+                        moduleName: module.moduleName,
+                        isCompleted,
+                      })}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{module.moduleName}</span>
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "text-xs",
+                                isCompleted 
+                                  ? "bg-success/20 text-success border-success/30" 
+                                  : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {isCompleted ? "Concluído" : `${module.progressPercent}%`}
+                            </Badge>
+                          </div>
+                          {!isCompleted && module.totalTasks > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {module.completedTasks}/{module.totalTasks} etapas
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={isCompleted ? "outline" : "default"}
+                          className="gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenOnboarding({
+                              contractModuleId: module.contractModuleId,
+                              templateId: module.templateId || "",
+                              moduleName: module.moduleName,
+                              isCompleted,
+                            });
+                          }}
+                        >
+                          {isCompleted ? (
+                            <>
+                              <Eye className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Ver</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Continuar</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
