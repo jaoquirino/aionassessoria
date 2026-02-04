@@ -118,6 +118,7 @@ export function OnboardingStepsDialog({
         )
       );
       setHasChanges(false);
+      toast.success("Informações de onboarding salvas!");
       onOpenChange(false);
     } catch (error) {
       console.error("Erro ao salvar onboarding:", error);
