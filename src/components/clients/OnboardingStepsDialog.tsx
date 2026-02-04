@@ -143,10 +143,9 @@ export function OnboardingStepsDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {readOnly ? <Eye className="h-5 w-5" /> : null}
             {moduleName} - Onboarding
             {isCompleted && (
-              <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
+              <Badge className="bg-success/20 text-success border-success/30">
                 Concluído
               </Badge>
             )}
