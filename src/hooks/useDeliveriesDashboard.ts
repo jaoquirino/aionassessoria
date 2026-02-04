@@ -88,42 +88,43 @@ export function useFinancialEvolution() {
       const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
       // Helper function to check if contract is active in a given month
-      const isContractActiveInMonth = (contract: any, monthEnd: Date) => {
+      const isContractActiveInMonth = (contract: any, year: number, month: number) => {
         const startDate = new Date(contract.start_date);
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0);
         
-        // Contract hasn't started yet
+        // Contract hasn't started yet in this month
         if (startDate > monthEnd) return false;
         
-        // If contract is ended, check if it was ended before this month
-        if (contract.status === "ended") {
-          // Use renewal_date as end date if available
-          if (contract.renewal_date) {
-            const endDate = new Date(contract.renewal_date);
-            if (endDate < monthEnd) return false;
-          }
+        // Calculate contract end date based on start_date + minimum_duration_months
+        // OR use renewal_date if it represents the actual end
+        let contractEndDate: Date | null = null;
+        
+        if (contract.renewal_date) {
+          contractEndDate = new Date(contract.renewal_date);
         }
         
-        // If contract has renewal_date, check if it's within the valid period
-        if (contract.renewal_date) {
-          const renewalDate = new Date(contract.renewal_date);
-          // Contract is active if we're before the renewal date OR status is still active
-          if (renewalDate < monthEnd && contract.status !== "active") return false;
+        // If contract has an end date and the month is after it, contract is not active
+        if (contractEndDate && monthStart > contractEndDate) {
+          return false;
+        }
+        
+        // If contract status is "ended", use the renewal_date as the end
+        if (contract.status === "ended" && contractEndDate && monthStart > contractEndDate) {
+          return false;
         }
         
         return true;
       };
 
       for (let month = 0; month < 12; month++) {
-        const currentYearMonthEnd = new Date(currentYear, month + 1, 0);
-        const previousYearMonthEnd = new Date(previousYear, month + 1, 0);
-
         // Filter contracts active in each month
-        const currentYearContracts = contracts?.filter(c => isContractActiveInMonth(c, currentYearMonthEnd)) || [];
+        const currentYearContracts = contracts?.filter(c => isContractActiveInMonth(c, currentYear, month)) || [];
         const previousYearContracts = contracts?.filter(c => {
           const startDate = new Date(c.start_date);
           // Only include if started before or in previous year
           if (startDate.getFullYear() > previousYear) return false;
-          return isContractActiveInMonth(c, previousYearMonthEnd);
+          return isContractActiveInMonth(c, previousYear, month);
         }) || [];
 
         // Calculate revenue
