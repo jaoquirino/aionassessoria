@@ -1,13 +1,13 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, LayoutGrid, List, Clock } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, LayoutGrid, List, Clock, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TaskKanbanBoard } from "@/components/tasks/TaskKanbanBoard";
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { CollapsibleFilters, type FiltersState } from "@/components/tasks/CollapsibleFilters";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
-import { useTasks, useUpdateTaskStatus, useTeamMembers, useClients, useCreateTask } from "@/hooks/useTasks";
+import { useTasks, useUpdateTaskStatus, useUpdateTaskField, useTeamMembers, useClients, useCreateTask } from "@/hooks/useTasks";
 import type { TaskStatusDB } from "@/types/tasks";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
@@ -42,6 +42,7 @@ export default function Tasks() {
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
   const updateStatus = useUpdateTaskStatus();
+  const updateField = useUpdateTaskField();
   const createTask = useCreateTask();
 
   const assigneeOptions = useMemo(() => {
@@ -104,6 +105,10 @@ export default function Tasks() {
       // Error already handled by mutation
     }
   };
+  // Handle inline field updates
+  const handleUpdateField = (taskId: string, field: string, value: unknown) => {
+    updateField.mutate({ taskId, field, value });
+  };
 
   const overdueTasks = tasks.filter((t) => new Date(t.due_date) < new Date() && t.status !== "done");
   const waitingClientTasks = tasks.filter((t) => t.status === "waiting_client");
@@ -124,10 +129,14 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold text-foreground">Tarefas</h1>
           <p className="text-muted-foreground">Motor de entregas e produção</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {isFetching && !isLoading && (
             <span className="text-xs text-muted-foreground animate-pulse">Atualizando...</span>
           )}
+          <Button onClick={() => handleQuickAddTask("todo")} className="gap-2">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nova Tarefa</span>
+          </Button>
           <ToggleGroup
             type="single"
             value={viewMode}
@@ -246,11 +255,15 @@ export default function Tasks() {
               onTaskMove={handleTaskMove} 
               onTaskClick={handleTaskClick}
               onAddTask={handleQuickAddTask}
+              onUpdateField={handleUpdateField}
+              teamMembers={teamMembers}
             />
           ) : (
             <TaskListView 
               tasks={filteredTasks} 
               onTaskClick={handleTaskClick}
+              onUpdateField={handleUpdateField}
+              teamMembers={teamMembers}
             />
           )
         )}

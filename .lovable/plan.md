@@ -107,9 +107,9 @@ O badge exibindo "Média", "Alta", etc. será possível alterar a prioridade da 
 
 ## Ordem de Implementação
 
-1. Adicionar botão geral "Nova Tarefa" no header
-2. Criar componente `InlineEditPopover` reutilizável
-3. Modificar `TaskCard` com edição inline (Kanban)
-4. Modificar `TaskListView` com edição inline
-5. Remover badge de prioridade dos cards
+1. ~~Adicionar botão geral "Nova Tarefa" no header~~ ✅
+2. ~~Criar componente `InlineEditPopover` reutilizável~~ ✅
+3. ~~Modificar `TaskCard` com edição inline (Kanban)~~ ✅
+4. ~~Modificar `TaskListView` com edição inline~~ ✅
+5. ~~Tornar badge de prioridade editável~~ ✅
 6. Testar fluxo completo

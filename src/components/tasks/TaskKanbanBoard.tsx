@@ -1,23 +1,27 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, GripVertical, Clock, Plus, User, Calendar } from "lucide-react";
+import { AlertTriangle, GripVertical, Plus, User, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Task, TaskStatusDB, TaskPriority } from "@/types/tasks";
-import { taskStatusConfig, priorityConfig } from "@/types/tasks";
+import type { Task, TaskStatusDB, TaskPriority, TeamMember } from "@/types/tasks";
+import { taskStatusConfig, priorityConfig, roleOptions } from "@/types/tasks";
+import { AssigneePopover, DatePopover, RolePopover, PriorityPopover } from "./InlineFieldPopover";
+import { format } from "date-fns";
 
 interface TaskKanbanBoardProps {
   tasks: Task[];
   onTaskMove?: (taskId: string, newStatus: TaskStatusDB) => void;
   onTaskClick?: (taskId: string) => void;
   onAddTask?: (status: TaskStatusDB) => void;
+  onUpdateField?: (taskId: string, field: string, value: unknown) => void;
+  teamMembers?: TeamMember[];
 }
 
 // Colunas incluindo "overdue" como primeira
 type KanbanColumn = "overdue" | TaskStatusDB;
 const columns: KanbanColumn[] = ["overdue", "todo", "in_progress", "review", "waiting_client", "done"];
 
-export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask }: TaskKanbanBoardProps) {
+export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onUpdateField, teamMembers = [] }: TaskKanbanBoardProps) {
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<KanbanColumn | null>(null);
 
@@ -148,6 +152,8 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask }: T
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                   onClick={() => onTaskClick?.(task.id)}
+                  onUpdateField={onUpdateField}
+                  teamMembers={teamMembers}
                 />
               ))}
 
@@ -177,15 +183,21 @@ interface TaskCardProps {
   onDragStart: (e: React.DragEvent, taskId: string) => void;
   onDragEnd: () => void;
   onClick: () => void;
+  onUpdateField?: (taskId: string, field: string, value: unknown) => void;
+  teamMembers: TeamMember[];
 }
 
-function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick }: TaskCardProps) {
+function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, teamMembers }: TaskCardProps) {
   const priority = task.priority as TaskPriority || "medium";
   const priorityInfo = priorityConfig[priority];
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  };
+
+  const handleFieldClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
   };
 
   return (
@@ -221,36 +233,65 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
             {task.client?.name || "Sem cliente"}
           </p>
 
-          {/* Prioridade */}
-          <Badge className={cn("text-xs", priorityInfo.color)}>
-            {priorityInfo.label}
-          </Badge>
-
-          {/* Área (required_role) */}
-          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
-            {task.required_role}
-          </Badge>
-
-          {/* Responsável */}
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <User className="h-3 w-3" />
-            <span className="truncate">
-              {task.assignee?.name || "Não atribuído"}
-            </span>
+          {/* Prioridade - Clicável */}
+          <div onClick={handleFieldClick}>
+            <PriorityPopover
+              currentPriority={priority}
+              onSelect={(newPriority) => onUpdateField?.(task.id, "priority", newPriority)}
+            >
+              <Badge className={cn("text-xs cursor-pointer hover:opacity-80 transition-opacity", priorityInfo.color)}>
+                {priorityInfo.label}
+              </Badge>
+            </PriorityPopover>
           </div>
 
-          {/* Data de entrega e aviso de atraso */}
-          <div className={cn(
-            "flex items-center gap-1 text-xs pt-1 border-t border-border/50",
-            isOverdue ? "text-destructive font-medium" : "text-muted-foreground"
-          )}>
-            <Calendar className="h-3 w-3" />
-            <span>{formatDate(task.due_date)}</span>
-            {isOverdue && (
-              <span className="ml-1 px-1.5 py-0.5 rounded bg-destructive/20 text-destructive text-[10px] font-semibold">
-                ATRASADA
-              </span>
-            )}
+          {/* Área (required_role) - Clicável */}
+          <div onClick={handleFieldClick}>
+            <RolePopover
+              currentRole={task.required_role}
+              onSelect={(newRole) => onUpdateField?.(task.id, "required_role", newRole)}
+            >
+              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20 cursor-pointer hover:opacity-80 transition-opacity">
+                {task.required_role}
+              </Badge>
+            </RolePopover>
+          </div>
+
+          {/* Responsável - Clicável */}
+          <div onClick={handleFieldClick}>
+            <AssigneePopover
+              currentAssignee={task.assignee}
+              teamMembers={teamMembers}
+              onSelect={(memberId) => onUpdateField?.(task.id, "assigned_to", memberId)}
+            >
+              <div className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                <User className="h-3 w-3" />
+                <span className="truncate">
+                  {task.assignee?.name || "Não atribuído"}
+                </span>
+              </div>
+            </AssigneePopover>
+          </div>
+
+          {/* Data de entrega - Clicável */}
+          <div onClick={handleFieldClick}>
+            <DatePopover
+              currentDate={new Date(task.due_date)}
+              onSelect={(date) => onUpdateField?.(task.id, "due_date", format(date, "yyyy-MM-dd"))}
+            >
+              <div className={cn(
+                "flex items-center gap-1 text-xs pt-1 border-t border-border/50 cursor-pointer hover:opacity-80 transition-opacity",
+                isOverdue ? "text-destructive font-medium" : "text-muted-foreground"
+              )}>
+                <Calendar className="h-3 w-3" />
+                <span>{formatDate(task.due_date)}</span>
+                {isOverdue && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded bg-destructive/20 text-destructive text-[10px] font-semibold">
+                    ATRASADA
+                  </span>
+                )}
+              </div>
+            </DatePopover>
           </div>
         </div>
       </div>
