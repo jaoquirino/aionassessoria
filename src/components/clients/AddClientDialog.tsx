@@ -36,7 +36,7 @@ export function AddClientDialog({ onClientAdded, onClientCreatedForOnboarding }:
     // Validate input
     const validation = clientSchema.safeParse({ 
       name, 
-      status: "onboarding"
+      status: "active"  // Create as active - will change to onboarding only if onboarding is generated
     });
     
     if (!validation.success) {
@@ -47,7 +47,7 @@ export function AddClientDialog({ onClientAdded, onClientCreatedForOnboarding }:
     createClient.mutate(
       {
         name: validation.data.name,
-        status: "onboarding",
+        status: "active",  // Start as active, ContractDialog will set to onboarding if needed
       },
       {
         onSuccess: (data) => {

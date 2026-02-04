@@ -53,11 +53,13 @@ export default function Tasks() {
     return clients.map((c) => ({ value: c.id, label: c.name }));
   }, [clients]);
 
+  // Filter out project (onboarding) tasks from the base tasks for stats and display
+  const operationalTasks = useMemo(() => {
+    return tasks.filter(task => task.type !== "project");
+  }, [tasks]);
+
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      // Excluir tarefas do tipo "project" (onboarding) da listagem geral
-      if (task.type === "project") return false;
-      
+    return operationalTasks.filter((task) => {
       const matchesSearch =
         filters.search === "" ||
         task.title.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -71,7 +73,7 @@ export default function Tasks() {
 
       return matchesSearch && matchesStatus && matchesType && matchesAssignee && matchesClient;
     });
-  }, [tasks, filters]);
+  }, [operationalTasks, filters]);
 
   const handleTaskMove = (taskId: string, newStatus: TaskStatusDB) => {
     updateStatus.mutate({ taskId, status: newStatus });
@@ -114,12 +116,13 @@ export default function Tasks() {
     updateField.mutate({ taskId, field, value });
   };
 
-  const overdueTasks = tasks.filter((t) => new Date(t.due_date) < new Date() && t.status !== "done");
-  const waitingClientTasks = tasks.filter((t) => t.status === "waiting_client");
-  const totalWeight = tasks.filter((t) => t.status !== "done" && t.status !== "waiting_client").reduce((acc, t) => acc + t.weight, 0);
+  // Use operationalTasks for stats (excludes project/onboarding tasks)
+  const overdueTasks = operationalTasks.filter((t) => new Date(t.due_date) < new Date() && t.status !== "done");
+  const waitingClientTasks = operationalTasks.filter((t) => t.status === "waiting_client");
+  const totalWeight = operationalTasks.filter((t) => t.status !== "done" && t.status !== "waiting_client").reduce((acc, t) => acc + t.weight, 0);
 
   // Show content immediately with cached data (no loading skeleton)
-  const showContent = tasks.length > 0 || !isLoading;
+  const showContent = operationalTasks.length > 0 || !isLoading;
 
   return (
     <div className="space-y-6">
@@ -212,7 +215,7 @@ export default function Tasks() {
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Total Ativas</p>
           <p className="text-2xl font-bold text-foreground">
-            {tasks.filter((t) => t.status !== "done").length}
+            {operationalTasks.filter((t) => t.status !== "done").length}
           </p>
         </div>
         <div className="glass rounded-xl p-4 border-destructive/20 flex flex-col items-center justify-center text-center">
@@ -222,7 +225,7 @@ export default function Tasks() {
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Em Revisão</p>
           <p className="text-2xl font-bold text-warning">
-            {tasks.filter((t) => t.status === "review").length}
+            {operationalTasks.filter((t) => t.status === "review").length}
           </p>
         </div>
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">

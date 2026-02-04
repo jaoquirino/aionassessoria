@@ -95,7 +95,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           modules: selectedModules,
         });
 
-        // If onboarding is required, generate it for selected modules
+        // ONLY generate onboarding if requiresOnboarding is true AND modules are selected
         if (requiresOnboarding && selectedModules.length > 0 && newContract) {
           // Fetch the created contract_modules to get their IDs
           const { data: contractModules } = await supabase
@@ -112,6 +112,12 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
                 moduleId: cm.module_id,
               })),
             });
+
+            // Set client status to onboarding only when generating onboarding
+            await supabase
+              .from("clients")
+              .update({ status: "onboarding" })
+              .eq("id", clientId);
           }
         }
       }
