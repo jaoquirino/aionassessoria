@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { NotificationToastContainer } from "@/components/notifications/NotificationCenter";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import ClientOnboarding from "./pages/ClientOnboarding";
@@ -35,7 +36,12 @@ function ProtectedRoutes() {
     return <Navigate to="/auth" replace />;
   }
 
-  return <MainLayout />;
+  return (
+    <>
+      <NotificationToastContainer />
+      <MainLayout />
+    </>
+  );
 }
 
 const App = () => (
