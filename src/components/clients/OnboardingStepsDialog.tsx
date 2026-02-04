@@ -100,19 +100,27 @@ export function OnboardingStepsDialog({
   };
 
   const handleSave = async () => {
-    const promises = Array.from(localResponses.values()).map(response => 
-      upsertResponse.mutateAsync({
-        client_id: clientId,
-        contract_module_id: contractModuleId,
-        template_step_id: response.stepId,
-        response_value: response.value,
-        is_completed: response.isCompleted,
-      })
-    );
-
-    await Promise.all(promises);
+    // Optimistic: close immediately, save in background
+    const responsesToSave = Array.from(localResponses.values());
     setHasChanges(false);
     onOpenChange(false);
+    
+    // Save all in background
+    try {
+      await Promise.all(
+        responsesToSave.map(response => 
+          upsertResponse.mutateAsync({
+            client_id: clientId,
+            contract_module_id: contractModuleId,
+            template_step_id: response.stepId,
+            response_value: response.value,
+            is_completed: response.isCompleted,
+          })
+        )
+      );
+    } catch {
+      // Error already handled by mutation
+    }
   };
 
   const toggleStep = (stepId: string) => {
