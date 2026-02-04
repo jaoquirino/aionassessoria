@@ -942,6 +942,13 @@ export default function Settings() {
               <ArchivedTasksTab />
             </TabsContent>
           )}
+
+          {/* Client Data Export Tab (Admin Only) */}
+          {isAdmin && (
+            <TabsContent value="export">
+              <ClientDataExportTab />
+            </TabsContent>
+          )}
         </Tabs>
       </motion.div>
 
