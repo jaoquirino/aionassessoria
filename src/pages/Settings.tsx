@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Mail, Trash2, ClipboardList, Archive } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Mail, Trash2, ClipboardList, Archive, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +37,7 @@ import { PasswordRequirements } from "@/components/settings/PasswordRequirements
 import { isPasswordStrong } from "@/lib/passwordValidation";
 import { OnboardingTemplatesTab } from "@/components/settings/OnboardingTemplatesTab";
 import { ArchivedTasksTab } from "@/components/settings/ArchivedTasksTab";
+import { ClientDataExportTab } from "@/components/settings/ClientDataExportTab";
 
 export default function Settings() {
   const [searchTerm, setSearchTerm] = useState("");
