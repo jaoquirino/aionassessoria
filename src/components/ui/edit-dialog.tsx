@@ -7,6 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface EditDialogProps {
@@ -92,24 +93,26 @@ export function EditDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent 
-        className={cn("max-w-lg", className)}
+        className={cn("max-w-lg flex flex-col max-h-[90vh]", className)}
         onInteractOutside={(e) => {
           // Prevent default close behavior, we handle it in onOpenChange
         }}
       >
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <div 
-          className="py-4 space-y-4"
-          onChange={() => markAsChanged()}
-          onInput={() => markAsChanged()}
-        >
-          {children}
-        </div>
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div 
+            className="py-4 space-y-4"
+            onChange={() => markAsChanged()}
+            onInput={() => markAsChanged()}
+          >
+            {children}
+          </div>
+        </ScrollArea>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0 flex-shrink-0 pt-4 border-t">
           <Button
             type="button"
             variant="outline"
