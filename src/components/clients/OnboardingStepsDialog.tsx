@@ -276,21 +276,20 @@ export function OnboardingStepsDialog({
 
         <DialogFooter className="gap-2 sm:gap-0 border-t pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {readOnly ? "Fechar" : "Cancelar"}
+            Cancelar
           </Button>
-          {!readOnly && (
-            <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Salvar
-                </>
-              )}
+          <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Salvar
+              </>
+            )}
             </Button>
           )}
         </DialogFooter>
