@@ -13,6 +13,7 @@ interface MetricCardProps {
   };
   status?: "normal" | "attention" | "critical";
   delay?: number;
+  onClick?: () => void;
 }
 
 export function MetricCard({
@@ -23,6 +24,7 @@ export function MetricCard({
   trend,
   status,
   delay = 0,
+  onClick,
 }: MetricCardProps) {
   const statusColors = {
     normal: "border-success/30 bg-success/5",
@@ -37,13 +39,15 @@ export function MetricCard({
       transition={{ delay: delay * 0.1, duration: 0.4 }}
       className={cn(
         "card-metric group cursor-pointer overflow-hidden",
-        status && statusColors[status]
+        status && statusColors[status],
+        onClick && "hover:scale-[1.02] transition-transform"
       )}
+      onClick={onClick}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0 space-y-1">
           <p className="text-sm font-medium text-muted-foreground truncate">{title}</p>
-          <p className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground whitespace-nowrap overflow-hidden text-ellipsis">
+          <p className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight text-foreground whitespace-nowrap overflow-hidden text-ellipsis">
             {value}
           </p>
           {subtitle && (

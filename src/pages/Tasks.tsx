@@ -83,7 +83,7 @@ export default function Tasks() {
     setSelectedTaskId(taskId);
   };
 
-  // Quick create task - creates with defaults and opens edit modal AFTER creation succeeds
+  // Quick create task - creates with no client pre-selected, opens edit modal
   const handleQuickAddTask = async (status: TaskStatusDB) => {
     if (clients.length === 0) {
       toast.error("Cadastre um cliente ativo primeiro");
@@ -93,16 +93,15 @@ export default function Tasks() {
     try {
       const result = await createTask.mutateAsync({
         title: "Nova tarefa",
-        client_id: clients[0].id,
+        client_id: clients[0].id, // Required by DB, user will change in modal
         type: "recurring",
         required_role: "Designer",
         due_date: format(addDays(new Date(), 7), "yyyy-MM-dd"),
-        status, // Use the status from the column
+        status,
       });
 
-      // Only open edit modal after we have a valid ID
+      // Open edit modal so user can select client and module
       if (result && result.id) {
-        // Small delay to ensure the task is in cache
         setTimeout(() => {
           setSelectedTaskId(result.id);
         }, 100);
