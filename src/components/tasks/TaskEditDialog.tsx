@@ -548,15 +548,16 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                   <Separator />
 
-                  {/* Single Observations Field */}
+                  {/* Single Observations Field with @ mentions */}
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1">
                       <StickyNote className="h-3 w-3" /> Observações
+                      <span className="text-xs text-muted-foreground ml-2">(use @ para mencionar alguém)</span>
                     </Label>
-                    <Textarea 
+                    <MentionTextarea 
                       value={descriptionNotes}
-                      onChange={(e) => setDescriptionNotes(e.target.value)}
-                      placeholder="Notas adicionais, referências, objetivos e entregáveis"
+                      onValueChange={(val) => setDescriptionNotes(val)}
+                      placeholder="Notas adicionais, referências, objetivos e entregáveis. Use @ para mencionar alguém."
                       className="resize-none min-h-[120px]"
                     />
                   </div>
