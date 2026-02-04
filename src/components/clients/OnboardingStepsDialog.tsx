@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useOnboardingTemplateSteps } from "@/hooks/useOnboardingTemplates";
 import { useClientOnboardingResponses, useUpsertOnboardingResponse } from "@/hooks/useOnboardingResponses";
@@ -166,7 +165,7 @@ export function OnboardingStepsDialog({
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
+          <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6">
             <div className="space-y-3 py-4">
               <AnimatePresence mode="wait">
                 {steps.map((step, index) => {
@@ -271,7 +270,7 @@ export function OnboardingStepsDialog({
                 })}
               </AnimatePresence>
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         <DialogFooter className="gap-2 sm:gap-0 border-t pt-4">

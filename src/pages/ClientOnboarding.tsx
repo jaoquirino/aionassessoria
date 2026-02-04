@@ -480,40 +480,45 @@ export default function ClientOnboarding() {
                                   )}
                                 </button>
 
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <p
-                                      className={cn(
-                                        "text-sm font-medium truncate",
-                                        isDone && "line-through text-muted-foreground"
-                                      )}
-                                    >
-                                      {task.title}
-                                    </p>
-                                    <Badge variant="outline" className="text-xs shrink-0">
-                                      {isDone ? "Concluída" : "Pendente"}
-                                    </Badge>
-                                  </div>
-                                  {task.description_objective && !isExpanded && (
-                                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                                      {task.description_objective}
-                                    </p>
-                                  )}
-                                </div>
-
                                 <CollapsibleTrigger asChild>
                                   <button
                                     type="button"
-                                    className="mt-0.5 shrink-0"
-                                    aria-label={isExpanded ? "Recolher" : "Expandir"}
+                                    className="flex-1 min-w-0 text-left"
+                                    aria-label={isExpanded ? "Recolher detalhes" : "Expandir para escrever"}
                                   >
-                                    {isExpanded ? (
-                                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                                    ) : (
-                                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p
+                                        className={cn(
+                                          "text-sm font-medium truncate",
+                                          isDone && "line-through text-muted-foreground"
+                                        )}
+                                      >
+                                        {task.title}
+                                      </p>
+                                      <Badge variant="outline" className="text-xs shrink-0">
+                                        {isDone ? "Concluída" : "Pendente"}
+                                      </Badge>
+                                    </div>
+                                    {task.description_objective && !isExpanded && (
+                                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                        {task.description_objective}
+                                      </p>
                                     )}
                                   </button>
                                 </CollapsibleTrigger>
+
+                                <button
+                                  type="button"
+                                  className="mt-0.5 shrink-0"
+                                  aria-hidden="true"
+                                  tabIndex={-1}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </button>
                               </div>
 
                               <CollapsibleContent>
