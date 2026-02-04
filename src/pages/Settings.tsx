@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Mail, Trash2 } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Mail, Trash2, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,7 @@ import { AvatarCropDialog } from "@/components/settings/AvatarCropDialog";
 import { PasswordInput } from "@/components/settings/PasswordInput";
 import { PasswordRequirements } from "@/components/settings/PasswordRequirements";
 import { isPasswordStrong } from "@/lib/passwordValidation";
+import { OnboardingTemplatesTab } from "@/components/settings/OnboardingTemplatesTab";
 
 export default function Settings() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -377,6 +378,12 @@ export default function Settings() {
               <Palette className="h-4 w-4" />
               <span className="hidden sm:inline">Aparência</span>
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="onboarding" className="gap-2">
+                <ClipboardList className="h-4 w-4" />
+                <span className="hidden sm:inline">Onboarding</span>
+              </TabsTrigger>
+            )}
             {isAdmin && (
               <TabsTrigger value="permissions" className="gap-2">
                 <Shield className="h-4 w-4" />
@@ -729,6 +736,12 @@ export default function Settings() {
               </div>
             </div>
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="onboarding" className="space-y-6">
+              <OnboardingTemplatesTab />
+            </TabsContent>
+          )}
 
           {isAdmin && (
             <TabsContent value="permissions" className="space-y-6">

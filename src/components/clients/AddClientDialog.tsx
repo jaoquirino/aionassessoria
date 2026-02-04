@@ -15,9 +15,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { useCreateClient } from "@/hooks/useClients";
+import { clientSchema } from "@/lib/validationSchemas";
 import { toast } from "sonner";
-import { clientSchema, getSafeErrorMessage, devLog } from "@/lib/validationSchemas";
 
 interface AddClientDialogProps {
   onClientAdded?: () => void;
@@ -28,10 +28,14 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [startOnboarding, setStartOnboarding] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const createClient = useCreateClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (createClient.isPending) return;
     
     // Validate input
     const validation = clientSchema.safeParse({ 
@@ -44,34 +48,23 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
       return;
     }
 
-    setIsLoading(true);
+    createClient.mutate(
+      {
+        name: validation.data.name,
+        status: validation.data.status as "onboarding" | "active",
+      },
+      {
+        onSuccess: (data) => {
+          setOpen(false);
+          setName("");
+          onClientAdded?.();
 
-    try {
-      const { data, error } = await supabase
-        .from("clients")
-        .insert({
-          name: validation.data.name,
-          status: validation.data.status,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success(`Cliente "${validation.data.name}" criado com sucesso!`);
-      setOpen(false);
-      setName("");
-      onClientAdded?.();
-
-      if (startOnboarding && data) {
-        navigate(`/clientes/${data.id}/onboarding`);
+          if (startOnboarding && data) {
+            navigate(`/clientes/${data.id}/onboarding`);
+          }
+        },
       }
-    } catch (error) {
-      devLog.error("Error creating client:", error);
-      toast.error(getSafeErrorMessage(error));
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
 
   return (
@@ -169,8 +162,8 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading} className="gap-2">
-              {isLoading ? (
+            <Button type="submit" disabled={createClient.isPending} className="gap-2">
+              {createClient.isPending ? (
                 "Criando..."
               ) : startOnboarding ? (
                 <>

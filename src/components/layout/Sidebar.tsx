@@ -33,7 +33,6 @@ const adminNavigation = [
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
   { name: "Equipe", href: "/equipe", icon: UserCircle },
   { name: "Módulos", href: "/modulos", icon: Puzzle },
-  { name: "Onboarding", href: "/onboarding-templates", icon: ClipboardList, adminOnly: true },
   { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
