@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Lock, Eye, EyeOff, Loader2, CheckCircle } from "lucide-react";
@@ -7,11 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { z } from "zod";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
-
-const passwordSchema = z.string().min(6, "Senha deve ter no mínimo 6 caracteres");
+import { strongPasswordSchema, getPasswordRequirements } from "@/lib/passwordValidation";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -28,7 +26,7 @@ export default function ResetPassword() {
   const validateForm = () => {
     const newErrors: { password?: string; confirmPassword?: string } = {};
 
-    const passwordResult = passwordSchema.safeParse(password);
+    const passwordResult = strongPasswordSchema.safeParse(password);
     if (!passwordResult.success) {
       newErrors.password = passwordResult.error.errors[0].message;
     }
@@ -140,6 +138,23 @@ export default function ResetPassword() {
               </div>
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password}</p>
+              )}
+              
+              {/* Password requirements indicator */}
+              {password.length > 0 && (
+                <div className="mt-2 p-3 rounded-lg bg-muted/50 border">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Requisitos da senha:</p>
+                  <div className="grid grid-cols-1 gap-1">
+                    {getPasswordRequirements(password).map((req, index) => (
+                      <div key={index} className="flex items-center gap-2 text-xs">
+                        <div className={`h-1.5 w-1.5 rounded-full ${req.met ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
+                        <span className={req.met ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
+                          {req.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
