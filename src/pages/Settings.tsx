@@ -49,6 +49,7 @@ export default function Settings() {
   // User profile state
   const { user } = useAuth();
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -57,10 +58,6 @@ export default function Settings() {
   // Avatar crop dialog
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState("");
-  
-  // Email change
-  const [newEmail, setNewEmail] = useState("");
-  const [isChangingEmail, setIsChangingEmail] = useState(false);
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
