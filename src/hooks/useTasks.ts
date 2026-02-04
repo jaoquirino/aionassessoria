@@ -16,12 +16,13 @@ import type {
 } from "@/types/tasks";
 import { toast } from "sonner";
 
-// Fetch all tasks with related data
+// Fetch all tasks with related data (uses public view for team_members to avoid RLS issues)
 export function useTasks() {
   return useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch tasks with client/contract info (no team_members join to avoid RLS permission error)
+      const { data: tasksData, error } = await supabase
         .from("tasks")
         .select(`
           *,
@@ -30,17 +31,30 @@ export function useTasks() {
           contract_module:contract_modules(
             *,
             service_module:service_modules(*)
-          ),
-          assignee:team_members!tasks_assigned_to_fkey(*),
-          creator:team_members!tasks_created_by_fkey(*)
+          )
         `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Task[];
+
+      // Fetch team members separately via public view
+      const { data: teamMembers } = await supabase
+        .from("team_members_public")
+        .select("*");
+
+      const membersMap = new Map(teamMembers?.map(m => [m.id, m]) || []);
+
+      // Map assignee and creator
+      const tasks = tasksData?.map(task => ({
+        ...task,
+        assignee: task.assigned_to ? membersMap.get(task.assigned_to) || null : null,
+        creator: task.created_by ? membersMap.get(task.created_by) || null : null,
+      })) || [];
+
+      return tasks as Task[];
     },
-    staleTime: 30000, // 30 seconds - data won't refetch if still fresh
-    gcTime: 300000, // 5 minutes - keep in cache for faster loading
+    staleTime: 30000,
+    gcTime: 300000,
   });
 }
 
@@ -60,17 +74,22 @@ export function useTask(taskId: string | null) {
           contract_module:contract_modules(
             *,
             service_module:service_modules(*)
-          ),
-          assignee:team_members!tasks_assigned_to_fkey(*),
-          creator:team_members!tasks_created_by_fkey(*)
+          )
         `)
         .eq("id", taskId)
         .maybeSingle();
 
       if (error) throw error;
       
-      // Fetch checklist, attachments, and history
       if (data) {
+        // Fetch team members separately
+        const { data: teamMembers } = await supabase
+          .from("team_members_public")
+          .select("*");
+
+        const membersMap = new Map(teamMembers?.map(m => [m.id, m]) || []);
+
+        // Fetch checklist, attachments, and history
         const [checklistRes, attachmentsRes, historyRes] = await Promise.all([
           supabase.from("task_checklist").select("*").eq("task_id", taskId).order("order_index"),
           supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at", { ascending: false }),
@@ -79,6 +98,8 @@ export function useTask(taskId: string | null) {
 
         return {
           ...data,
+          assignee: data.assigned_to ? membersMap.get(data.assigned_to) || null : null,
+          creator: data.created_by ? membersMap.get(data.created_by) || null : null,
           checklist: checklistRes.data || [],
           attachments: attachmentsRes.data || [],
           history: historyRes.data || [],
@@ -361,6 +382,7 @@ export function useTeamMembers() {
         email: null
       })) as TeamMember[];
     },
+    staleTime: 60000,
   });
 }
 
@@ -378,6 +400,7 @@ export function useClients() {
       if (error) throw error;
       return data as Client[];
     },
+    staleTime: 60000,
   });
 }
 
@@ -437,5 +460,6 @@ export function useServiceModules() {
       if (error) throw error;
       return data as ServiceModule[];
     },
+    staleTime: 60000,
   });
 }

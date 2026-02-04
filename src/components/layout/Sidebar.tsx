@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useUserRoles";
 import { toast } from "sonner";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
@@ -25,9 +26,9 @@ interface SidebarProps {
   onToggleTheme: () => void;
 }
 
-const navigation = [
+const adminNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Clientes", href: "/clientes", icon: Users },
+  { name: "Clientes", href: "/clientes", icon: Users, adminOnly: true },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
   { name: "Equipe", href: "/equipe", icon: UserCircle },
   { name: "Módulos", href: "/modulos", icon: Puzzle },
@@ -39,6 +40,7 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -49,6 +51,9 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
       navigate("/auth", { replace: true });
     }
   };
+
+  // Filter nav items based on role
+  const navigation = adminNavigation.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <motion.aside
