@@ -26,26 +26,13 @@ const adminNavigation = [
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
   { name: "Equipe", href: "/equipe", icon: UserCircle },
   { name: "Módulos", href: "/modulos", icon: Puzzle },
-  { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
   const { isDark, toggleTheme } = useUserPreferences();
-
-  const handleLogout = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast.error("Erro ao sair");
-    } else {
-      toast.success("Até logo!");
-      navigate("/auth", { replace: true });
-    }
-  };
 
   // Filter nav items based on role
   const navigation = adminNavigation.filter(item => !item.adminOnly || isAdmin);
