@@ -20,7 +20,7 @@ import { format } from "date-fns";
 interface TaskKanbanBoardProps {
   tasks: Task[];
   onTaskMove?: (taskId: string, newStatus: TaskStatusDB) => void;
-  onTaskClick?: (taskId: string) => void;
+  onTaskClick?: (taskId: string, initialTab?: string) => void;
   onAddTask?: (status: TaskStatusDB) => void;
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
   onArchiveTask?: (taskId: string) => void;
@@ -61,11 +61,12 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
     setDragOverColumn(null);
   };
 
+  // Check if task is overdue - ONLY based on date, not priority
   const isOverdue = (task: Task) => {
     return parseLocalDate(task.due_date) < new Date() && task.status !== "done";
   };
 
-  // Check if task should be in "pra ontem" column based on priority OR overdue
+  // Check if task should be in "pra ontem" column based on urgent priority OR overdue date
   const isUrgentOrOverdue = (task: Task) => {
     return task.priority === "urgent" || isOverdue(task);
   };
@@ -163,11 +164,11 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
                   key={task.id}
                   task={task}
                   index={index}
-                  isOverdue={column === "overdue" || isOverdue(task)}
+                  isOverdue={isOverdue(task)}
                   isDragging={draggedTask === task.id}
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
-                  onClick={() => onTaskClick?.(task.id)}
+                  onClick={(tab) => onTaskClick?.(task.id, tab)}
                   onUpdateField={onUpdateField}
                   onArchive={onArchiveTask}
                   teamMembers={teamMembers}
@@ -200,7 +201,7 @@ interface TaskCardProps {
   isDragging: boolean;
   onDragStart: (e: React.DragEvent, taskId: string) => void;
   onDragEnd: () => void;
-  onClick: () => void;
+  onClick: (initialTab?: string) => void;
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
   onArchive?: (taskId: string) => void;
   teamMembers: TeamMember[];
@@ -234,7 +235,7 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
       draggable
       onDragStart={(e) => onDragStart(e as unknown as React.DragEvent, task.id)}
       onDragEnd={onDragEnd}
-      onClick={onClick}
+      onClick={() => onClick()}
       className={cn(
         "glass rounded-lg p-3 cursor-pointer active:cursor-grabbing group transition-all hover:shadow-md",
         isDragging && "opacity-50 scale-95",
@@ -318,9 +319,12 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
             </AssigneePopover>
           </div>
 
-          {/* Checklist Progress */}
+          {/* Checklist Progress - Clickable */}
           {checklistTotal > 0 && (
-            <div className="space-y-1 pt-1">
+            <div 
+              className="space-y-1 pt-1 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={(e) => { e.stopPropagation(); onClick("checklist"); }}
+            >
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <CheckSquare className="h-3 w-3" />

@@ -5,12 +5,12 @@ import { Progress } from "@/components/ui/progress";
 import { cn, parseLocalDate } from "@/lib/utils";
 import type { Task, TeamMember, TaskPriority, Client } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig, priorityConfig } from "@/types/tasks";
-import { AssigneePopover, DatePopover, RolePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
+import { AssigneePopover, DatePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
 import { format } from "date-fns";
 
 interface TaskListViewProps {
   tasks: Task[];
-  onTaskClick?: (taskId: string) => void;
+  onTaskClick?: (taskId: string, initialTab?: string) => void;
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
   teamMembers?: TeamMember[];
   clients?: Client[];
@@ -113,17 +113,6 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                         </span>
                       </AssigneePopover>
                     </div>
-                    {/* Área (required_role) - Clicável */}
-                    <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-                      <RolePopover
-                        currentRole={task.required_role}
-                        onSelect={(newRole) => onUpdateField?.(task.id, "required_role", newRole)}
-                      >
-                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary cursor-pointer hover:opacity-80 transition-opacity">
-                          {task.required_role}
-                        </Badge>
-                      </RolePopover>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -144,9 +133,12 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                     </PriorityPopover>
                   </div>
                   
-                  {/* Checklist Progress */}
+                  {/* Checklist Progress - Clickable */}
                   {checklistTotal > 0 && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div 
+                      className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer hover:opacity-80"
+                      onClick={(e) => { e.stopPropagation(); onTaskClick?.(task.id, "checklist"); }}
+                    >
                       <CheckSquare className="h-3 w-3" />
                       <span>{checklistCompleted}/{checklistTotal}</span>
                       <Progress value={checklistProgress} className="h-1.5 w-16" />
