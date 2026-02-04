@@ -8,6 +8,9 @@ export interface Client {
   id: string;
   name: string;
   status: ClientStatus;
+  cnpj: string | null;
+  phone: string | null;
+  email: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,13 +28,19 @@ export interface ClientWithContracts extends Client {
 export interface CreateClientInput {
   name: string;
   status?: ClientStatus;
+  cnpj?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface UpdateClientInput {
   id: string;
   name?: string;
   status?: ClientStatus;
-  created_at?: string; // For changing "start date"
+  created_at?: string;
+  cnpj?: string;
+  phone?: string;
+  email?: string;
 }
 
 // Fetch all clients
