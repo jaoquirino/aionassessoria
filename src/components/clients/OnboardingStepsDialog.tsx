@@ -96,12 +96,14 @@ export function OnboardingStepsDialog({
   };
 
   const handleSave = async () => {
-    // Optimistic: close immediately, save in background
     const responsesToSave = Array.from(localResponses.values());
-    setHasChanges(false);
-    onOpenChange(false);
     
-    // Save all in background
+    if (responsesToSave.length === 0) {
+      onOpenChange(false);
+      return;
+    }
+    
+    // Save first, then close on success
     try {
       await Promise.all(
         responsesToSave.map(response => 
@@ -114,8 +116,11 @@ export function OnboardingStepsDialog({
           })
         )
       );
-    } catch {
-      // Error already handled by mutation
+      setHasChanges(false);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Erro ao salvar onboarding:", error);
+      // Don't close on error - let user retry
     }
   };
 
