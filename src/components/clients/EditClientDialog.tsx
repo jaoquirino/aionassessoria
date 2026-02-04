@@ -520,6 +520,20 @@ export function EditClientDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Onboarding Steps Dialog */}
+      {client && selectedOnboardingModule && (
+        <OnboardingStepsDialog
+          open={onboardingDialogOpen}
+          onOpenChange={setOnboardingDialogOpen}
+          clientId={client.id}
+          contractModuleId={selectedOnboardingModule.contractModuleId}
+          templateId={selectedOnboardingModule.templateId}
+          moduleName={selectedOnboardingModule.moduleName}
+          isCompleted={selectedOnboardingModule.isCompleted}
+          readOnly={selectedOnboardingModule.isCompleted}
+        />
+      )}
     </>
   );
 }
