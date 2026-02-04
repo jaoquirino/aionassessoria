@@ -76,17 +76,6 @@ export function EditClientDialog({
     }
   }, [client]);
 
-  // Open contract dialog when requested via prop - only when dialog opens
-  useEffect(() => {
-    if (openContractDialogOnMount && open && client) {
-      // Small delay to ensure dialog is rendered first
-      const timer = setTimeout(() => {
-        setContractDialogOpen(true);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [openContractDialogOnMount, open, client]);
-
   // Reset contract dialog state when main dialog closes
   useEffect(() => {
     if (!open) {
