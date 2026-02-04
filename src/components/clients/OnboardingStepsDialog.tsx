@@ -243,28 +243,24 @@ export function OnboardingStepsDialog({
                                     onChange={(e) => handleResponseChange(step.id, e.target.value)}
                                     placeholder="Digite as informações coletadas nesta etapa..."
                                     rows={3}
-                                    disabled={readOnly}
-                                    className={cn(readOnly && "opacity-70")}
                                   />
                                 </div>
 
-                                {!readOnly && (
-                                  <div className="flex items-center gap-2">
-                                    <Checkbox
-                                      id={`completed-${step.id}`}
-                                      checked={stepIsCompleted}
-                                      onCheckedChange={(checked) => 
-                                        handleCompletedChange(step.id, checked as boolean)
-                                      }
-                                    />
-                                    <Label 
-                                      htmlFor={`completed-${step.id}`}
-                                      className="text-sm cursor-pointer"
-                                    >
-                                      Marcar como concluída
-                                    </Label>
-                                  </div>
-                                )}
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`completed-${step.id}`}
+                                    checked={stepIsCompleted}
+                                    onCheckedChange={(checked) => 
+                                      handleCompletedChange(step.id, checked as boolean)
+                                    }
+                                  />
+                                  <Label 
+                                    htmlFor={`completed-${step.id}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    Marcar como concluída
+                                  </Label>
+                                </div>
                               </div>
                             </div>
                           </CollapsibleContent>
