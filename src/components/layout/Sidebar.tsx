@@ -71,7 +71,7 @@ export function Sidebar() {
               className="flex items-center"
             >
               <img 
-                src={isDarkMode ? logoDark : logoLight} 
+                src={isDark ? logoDark : logoLight} 
                 alt="AION Assessoria" 
                 className="h-8 w-auto"
               />
