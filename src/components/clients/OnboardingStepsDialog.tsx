@@ -184,7 +184,7 @@ export function OnboardingStepsDialog({
                           <CollapsibleTrigger className="w-full p-4 flex items-start gap-3 text-left">
                             <div className={cn(
                               "mt-0.5 flex-shrink-0",
-                              stepIsCompleted ? "text-green-500" : "text-muted-foreground"
+                              stepIsCompleted ? "text-success" : "text-muted-foreground"
                             )}>
                               {stepIsCompleted ? (
                                 <CheckCircle2 className="h-5 w-5" />
