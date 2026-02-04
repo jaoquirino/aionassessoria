@@ -3,7 +3,7 @@ import { Download, FileSpreadsheet, FileCode, Loader2, Building2 } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAllClients } from "@/hooks/useClients";
-import { useAllClientOnboardingResponses } from "@/hooks/useOnboardingResponses";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
