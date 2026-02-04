@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, User, Calendar, Building2 } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, User, Calendar, Building2, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { cn, parseLocalDate } from "@/lib/utils";
 import type { Task, TeamMember, TaskPriority, Client } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig, priorityConfig } from "@/types/tasks";
@@ -30,6 +31,11 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
       {tasks.map((task, index) => {
         const priority = task.priority as TaskPriority || "medium";
         const priorityInfo = priorityConfig[priority];
+        
+        // Checklist progress
+        const checklistTotal = task.checklist?.length || 0;
+        const checklistCompleted = task.checklist?.filter(i => i.is_completed).length || 0;
+        const checklistProgress = checklistTotal > 0 ? (checklistCompleted / checklistTotal) * 100 : 0;
         
         return (
           <motion.div
@@ -137,6 +143,16 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                       </Badge>
                     </PriorityPopover>
                   </div>
+                  
+                  {/* Checklist Progress */}
+                  {checklistTotal > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <CheckSquare className="h-3 w-3" />
+                      <span>{checklistCompleted}/{checklistTotal}</span>
+                      <Progress value={checklistProgress} className="h-1.5 w-16" />
+                    </div>
+                  )}
+                  
                   {/* Data - Clicável */}
                   <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
                     <DatePopover

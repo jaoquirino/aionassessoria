@@ -234,10 +234,10 @@ export const taskTypeConfig: Record<TaskType, { label: string; color: string; we
 };
 
 export const priorityConfig: Record<TaskPriority, { label: string; color: string; order: number }> = {
-  low: { label: "Baixa", color: "bg-muted text-muted-foreground", order: 4 },
-  medium: { label: "Média", color: "bg-info/20 text-info", order: 3 },
-  high: { label: "Alta", color: "bg-warning/20 text-warning", order: 2 },
-  urgent: { label: "Urgente", color: "bg-destructive/20 text-destructive", order: 1 },
+  low: { label: "Baixa", color: "bg-success/20 text-success", order: 4 },
+  medium: { label: "Média", color: "bg-warning/20 text-warning", order: 3 },
+  high: { label: "Alta", color: "bg-primary/20 text-primary", order: 2 },
+  urgent: { label: "Pra ontem", color: "bg-destructive/20 text-destructive", order: 1 },
 };
 
 export const roleOptions = [

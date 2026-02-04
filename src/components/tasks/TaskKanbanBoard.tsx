@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, GripVertical, Plus, User, Calendar, MoreHorizontal, Archive, Pencil } from "lucide-react";
+import { AlertTriangle, GripVertical, Plus, User, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +65,11 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
     return parseLocalDate(task.due_date) < new Date() && task.status !== "done";
   };
 
+  // Check if task should be in "pra ontem" column based on priority OR overdue
+  const isUrgentOrOverdue = (task: Task) => {
+    return task.priority === "urgent" || isOverdue(task);
+  };
+
   // Organizar tarefas por coluna
   const tasksByColumn = useMemo(() => {
     const result: Record<KanbanColumn, Task[]> = {
@@ -76,7 +82,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
     };
 
     tasks.forEach((task) => {
-      if (isOverdue(task)) {
+      if (isUrgentOrOverdue(task)) {
         result.overdue.push(task);
       } else {
         result[task.status].push(task);
@@ -205,6 +211,11 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
   const priority = task.priority as TaskPriority || "medium";
   const priorityInfo = priorityConfig[priority];
 
+  // Checklist progress
+  const checklistTotal = task.checklist?.length || 0;
+  const checklistCompleted = task.checklist?.filter(i => i.is_completed).length || 0;
+  const checklistProgress = checklistTotal > 0 ? (checklistCompleted / checklistTotal) * 100 : 0;
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
@@ -256,7 +267,7 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={(e) => { e.stopPropagation(); onArchive?.(task.id); }}
-                    className="text-muted-foreground"
+                    className="text-muted-foreground hover:!text-destructive hover:!bg-destructive/10"
                   >
                     <Archive className="h-4 w-4 mr-2" />
                     Arquivar
@@ -318,6 +329,20 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
               </div>
             </AssigneePopover>
           </div>
+
+          {/* Checklist Progress */}
+          {checklistTotal > 0 && (
+            <div className="space-y-1 pt-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <CheckSquare className="h-3 w-3" />
+                  <span>{checklistCompleted}/{checklistTotal}</span>
+                </div>
+                <span>{Math.round(checklistProgress)}%</span>
+              </div>
+              <Progress value={checklistProgress} className="h-1.5" />
+            </div>
+          )}
 
           {/* Data de entrega - Clicável */}
           <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
