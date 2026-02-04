@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useDashboardData } from "@/hooks/useDashboard";
 import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
+import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
@@ -299,6 +300,9 @@ export default function Dashboard() {
           </div>
         </motion.div>
       </div>
+
+      {/* Onboarding Overview */}
+      {isAdmin && <OnboardingOverview />}
 
       {/* Contract Alerts & Client Health (admin only) */}
       {isAdmin && (

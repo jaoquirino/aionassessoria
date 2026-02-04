@@ -6,11 +6,12 @@ import { EditDialog } from "@/components/ui/edit-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, FileText, Calendar, Trash2, Pencil } from "lucide-react";
+import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList } from "lucide-react";
 import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
 import { useClientContractsWithModules, useDeleteContract, type ContractWithModules } from "@/hooks/useContracts";
 import { ContractDialog } from "./ContractDialog";
 import { EditContractDialog } from "./EditContractDialog";
+import { ClientOnboardingProgress } from "@/components/onboarding/ClientOnboardingProgress";
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -299,6 +300,19 @@ export function EditClientDialog({
               </div>
             )}
           </div>
+
+          <Separator />
+
+          {/* Onboarding Progress Section */}
+          {client && (
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Progresso do Onboarding
+              </h3>
+              <ClientOnboardingProgress clientId={client.id} showDetail={true} />
+            </div>
+          )}
 
           <Separator />
 
