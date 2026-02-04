@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, UserCheck, Clock, Loader2, Pencil, AlertTriangle, MoreHorizontal, FileText, XCircle } from "lucide-react";
+import { Search, UserCheck, Clock, Loader2, AlertTriangle, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,16 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { AddClientDialog } from "@/components/clients/AddClientDialog";
 import { EditClientDialog } from "@/components/clients/EditClientDialog";
+import { OnboardingClientCard } from "@/components/clients/OnboardingClientCard";
 import { useAllClients, type ClientWithContracts } from "@/hooks/useClients";
 import { differenceInDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -278,50 +272,14 @@ export default function Clients() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {onboardingClients.map((client, index) => (
-              <motion.div
+              <OnboardingClientCard
                 key={client.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.05 * index }}
-                className="glass rounded-xl p-4 border-blue-500/30 bg-blue-500/5"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-medium text-foreground">{client.name}</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={cn(statusConfig.onboarding.color)}>
-                      {statusConfig.onboarding.label}
-                    </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-background border-border">
-                        <DropdownMenuItem onClick={() => handleGoToContract(client)}>
-                          <FileText className="h-4 w-4 mr-2" />
-                          Editar Contrato
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => handleCancelOnboarding(client.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Cancelar Onboarding
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  className="w-full gap-2"
-                  onClick={() => handleContinueOnboarding(client.id)}
-                >
-                  Continuar Onboarding
-                </Button>
-              </motion.div>
+                client={client}
+                index={index}
+                onContinue={handleContinueOnboarding}
+                onEditContract={handleGoToContract}
+                onCancel={handleCancelOnboarding}
+              />
             ))}
           </div>
         </motion.div>
