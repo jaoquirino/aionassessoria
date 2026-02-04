@@ -79,7 +79,6 @@ export default function Settings() {
   useEffect(() => {
     if (user) {
       loadProfile();
-      setNewEmail(user.email || "");
     }
   }, [user]);
 
@@ -88,13 +87,14 @@ export default function Settings() {
     
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, avatar_url")
+      .select("full_name, avatar_url, username")
       .eq("user_id", user.id)
       .maybeSingle();
     
     if (data) {
       setFullName(data.full_name || "");
       setAvatarUrl(data.avatar_url || "");
+      setUsername(data.username || "");
     }
   };
 
