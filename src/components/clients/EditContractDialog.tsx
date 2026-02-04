@@ -39,6 +39,7 @@ export function EditContractDialog({
   const [monthlyValue, setMonthlyValue] = useState(0);
   const [startDate, setStartDate] = useState("");
   const [renewalDate, setRenewalDate] = useState("");
+  const [paymentDueDay, setPaymentDueDay] = useState(10);
   const [minimumDuration, setMinimumDuration] = useState(12);
   const [status, setStatus] = useState("active");
   const [notes, setNotes] = useState("");
