@@ -110,6 +110,9 @@ export function EditClientDialog({
         name: name.trim(),
         status,
         created_at: new Date(startDate).toISOString(),
+        cnpj: cnpj || undefined,
+        phone: phone || undefined,
+        email: email || undefined,
       });
       onClientUpdated?.();
     } catch (error) {
