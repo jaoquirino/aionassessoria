@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Mail, Trash2, ClipboardList, Archive, FileDown } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,6 +49,7 @@ export default function Settings() {
   // User profile state
   const { user } = useAuth();
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -57,10 +58,6 @@ export default function Settings() {
   // Avatar crop dialog
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState("");
-  
-  // Email change
-  const [newEmail, setNewEmail] = useState("");
-  const [isChangingEmail, setIsChangingEmail] = useState(false);
   
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -82,7 +79,6 @@ export default function Settings() {
   useEffect(() => {
     if (user) {
       loadProfile();
-      setNewEmail(user.email || "");
     }
   }, [user]);
 
@@ -91,13 +87,14 @@ export default function Settings() {
     
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, avatar_url")
+      .select("full_name, avatar_url, username")
       .eq("user_id", user.id)
       .maybeSingle();
     
     if (data) {
       setFullName(data.full_name || "");
       setAvatarUrl(data.avatar_url || "");
+      setUsername(data.username || "");
     }
   };
 
@@ -220,28 +217,6 @@ export default function Settings() {
       toast.error("Erro ao atualizar perfil: " + error.message);
     } finally {
       setIsSavingProfile(false);
-    }
-  };
-
-  const handleChangeEmail = async () => {
-    if (!newEmail || newEmail === user?.email) {
-      toast.error("Digite um novo email");
-      return;
-    }
-
-    setIsChangingEmail(true);
-    try {
-      const { error } = await supabase.auth.updateUser({
-        email: newEmail,
-      });
-
-      if (error) throw error;
-      
-      toast.success("Email de confirmação enviado para o novo endereço");
-    } catch (error: any) {
-      toast.error("Erro ao alterar email: " + error.message);
-    } finally {
-      setIsChangingEmail(false);
     }
   };
 
@@ -477,6 +452,24 @@ export default function Settings() {
                 isSaving={isUploadingAvatar}
               />
 
+              {/* Username - readonly */}
+              {username && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <AtSign className="h-4 w-4" />
+                    Usuário
+                  </Label>
+                  <Input
+                    value={username}
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    O nome de usuário não pode ser alterado
+                  </p>
+                </div>
+              )}
+
               {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="fullName">Nome completo</Label>
@@ -486,48 +479,14 @@ export default function Settings() {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Seu nome"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Quando preenchido, o nome será exibido no lugar do usuário
+                </p>
               </div>
 
               <Button onClick={handleSaveProfile} disabled={isSavingProfile} className="gap-2">
                 <Save className="h-4 w-4" />
                 {isSavingProfile ? "Salvando..." : "Salvar Perfil"}
-              </Button>
-            </div>
-
-            {/* Email Change */}
-            <div className="glass rounded-xl p-6 space-y-6">
-              <div>
-                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Alterar Email
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Um email de confirmação será enviado para o novo endereço
-                </p>
-              </div>
-              <Separator />
-              
-              <div className="space-y-4 max-w-sm">
-                <div className="space-y-2">
-                  <Label htmlFor="newEmail">Novo email</Label>
-                  <Input
-                    id="newEmail"
-                    type="email"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="novo@email.com"
-                  />
-                </div>
-              </div>
-
-              <Button 
-                onClick={handleChangeEmail} 
-                disabled={isChangingEmail || !newEmail || newEmail === user?.email}
-                variant="outline"
-                className="gap-2"
-              >
-                <Mail className="h-4 w-4" />
-                {isChangingEmail ? "Enviando..." : "Alterar Email"}
               </Button>
             </div>
 

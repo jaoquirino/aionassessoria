@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Loader2, Shield, Key } from "lucide-react";
+import { Lock, User, Eye, EyeOff, Loader2, Shield, Key, AtSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,17 +15,22 @@ import { Badge } from "@/components/ui/badge";
 import { strongPasswordSchema, getPasswordRequirements } from "@/lib/passwordValidation";
 import { supabase } from "@/integrations/supabase/client";
 
-const emailSchema = z.string().email("Email inválido");
+const usernameSchema = z.string()
+  .min(3, "Username deve ter no mínimo 3 caracteres")
+  .regex(/^[a-zA-Z0-9_]+$/, "Username pode conter apenas letras, números e _");
+
+// Generate internal email from username
+const generateInternalEmail = (username: string) => `${username.toLowerCase()}@internal.local`;
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string; setupToken?: string }>({});
+  const [errors, setErrors] = useState<{ username?: string; password?: string; fullName?: string; setupToken?: string }>({});
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [setupToken, setSetupToken] = useState("");
   const [showSetupTokenInput, setShowSetupTokenInput] = useState(false);
@@ -41,8 +46,8 @@ export default function Auth() {
         if (!hasAdmin) {
           setShowSetupTokenInput(true);
         }
-      } catch (error) {
-        console.error("Error checking admin status:", error);
+      } catch {
+        console.error("Error checking admin status");
       }
     };
     checkSetupNeeded();
@@ -56,12 +61,12 @@ export default function Auth() {
   }, [user, loading, navigate]);
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string; fullName?: string; setupToken?: string } = {};
+    const newErrors: { username?: string; password?: string; fullName?: string; setupToken?: string } = {};
 
-    // Validate email
-    const emailResult = emailSchema.safeParse(email);
-    if (!emailResult.success) {
-      newErrors.email = emailResult.error.errors[0].message;
+    // Validate username
+    const usernameResult = usernameSchema.safeParse(username);
+    if (!usernameResult.success) {
+      newErrors.username = usernameResult.error.errors[0].message;
     }
 
     // Strong password validation for account creation (not for login)
@@ -72,10 +77,7 @@ export default function Auth() {
       }
     }
 
-    if (!isLogin && !fullName.trim()) {
-      newErrors.fullName = "Nome é obrigatório";
-    }
-
+    // Name is optional now
     if (isSetupMode && !setupToken.trim()) {
       newErrors.setupToken = "Token de setup é obrigatório";
     }
@@ -105,7 +107,7 @@ export default function Auth() {
         setShowSetupTokenInput(false);
         toast.info("Modo de configuração ativado! Crie sua conta de administrador.");
       }
-    } catch (error) {
+    } catch {
       toast.error("Erro ao validar token");
     } finally {
       setIsSubmitting(false);
@@ -119,14 +121,17 @@ export default function Auth() {
 
     setIsSubmitting(true);
 
+    // Generate internal email from username
+    const internalEmail = generateInternalEmail(username);
+
     try {
       if (isLogin && !isSetupMode) {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(internalEmail, password);
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
-            toast.error("Email ou senha incorretos");
+            toast.error("Usuário ou senha incorretos");
           } else if (error.message.includes("Email not confirmed")) {
-            toast.error("Confirme seu email antes de fazer login");
+            toast.error("Confirme seu cadastro antes de fazer login");
           } else {
             toast.error(error.message);
           }
@@ -136,21 +141,34 @@ export default function Auth() {
         }
       } else {
         // Creating account (setup mode or normal signup)
-        const { error } = await signUp(email, password, fullName, isSetupMode);
+        const { data, error } = await signUp(internalEmail, password, fullName || username, isSetupMode);
         if (error) {
           if (error.message.includes("User already registered")) {
-            toast.error("Este email já está cadastrado");
+            toast.error("Este username já está em uso");
           } else {
             toast.error(error.message);
           }
         } else {
+          // Save username to profile
+          if (data?.user) {
+            await supabase.from("profiles").upsert({
+              user_id: data.user.id,
+              username: username.toLowerCase(),
+              full_name: fullName.trim() || null,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: "user_id" });
+          }
+
           if (isSetupMode) {
-            toast.success("Conta de administrador criada! Verifique seu email para confirmar o cadastro.");
+            toast.success("Conta de administrador criada!");
           } else {
-            toast.success("Conta criada! Verifique seu email para confirmar o cadastro.");
+            toast.success("Conta criada com sucesso!");
           }
           setIsSetupMode(false);
           setIsLogin(true);
+          setUsername("");
+          setPassword("");
+          setFullName("");
         }
       }
     } catch (err) {
@@ -164,7 +182,7 @@ export default function Auth() {
   const exitSetupMode = () => {
     setIsSetupMode(false);
     setIsLogin(true);
-    setEmail("");
+    setUsername("");
     setPassword("");
     setFullName("");
     setSetupToken("");
@@ -271,44 +289,47 @@ export default function Auth() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name - only for signup */}
+            {/* Username */}
+            <div className="space-y-2">
+              <Label htmlFor="username">Usuário</Label>
+              <div className="relative">
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="seu_usuario"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  className="pl-10"
+                  autoComplete="username"
+                />
+              </div>
+              {errors.username && (
+                <p className="text-sm text-destructive">{errors.username}</p>
+              )}
+            </div>
+
+            {/* Name - optional for signup */}
             {(!isLogin || isSetupMode) && (
               <div className="space-y-2">
-                <Label htmlFor="fullName">Nome completo</Label>
+                <Label htmlFor="fullName">Nome (opcional)</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="fullName"
                     type="text"
-                    placeholder="Seu nome"
+                    placeholder="Seu nome completo"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="pl-10"
+                    autoComplete="name"
                   />
                 </div>
-                {errors.fullName && (
-                  <p className="text-sm text-destructive">{errors.fullName}</p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  Pode ser adicionado ou alterado depois nas configurações
+                </p>
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
@@ -321,6 +342,7 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                 />
                 <button
                   type="button"

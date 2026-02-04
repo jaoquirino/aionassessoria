@@ -80,6 +80,13 @@ export function useAuth() {
         },
       },
     });
+    
+    // If signup successful, auto sign in (since we're using username-based auth without email confirmation)
+    if (!error && data?.user) {
+      // Auto sign in after signup
+      await supabase.auth.signInWithPassword({ email, password });
+    }
+    
     return { data, error };
   };
 

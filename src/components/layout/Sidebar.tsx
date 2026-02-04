@@ -1,25 +1,22 @@
 import { useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
   CheckSquare,
   UserCircle,
-  Settings,
   Puzzle,
   ChevronLeft,
   Sun,
   Moon,
-  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { NotificationBell } from "@/components/notifications/NotificationCenter";
-import { toast } from "sonner";
+import { UserProfileDropdown } from "./UserProfileDropdown";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 
@@ -29,26 +26,13 @@ const adminNavigation = [
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
   { name: "Equipe", href: "/equipe", icon: UserCircle },
   { name: "Módulos", href: "/modulos", icon: Puzzle },
-  { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
   const { isDark, toggleTheme } = useUserPreferences();
-
-  const handleLogout = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast.error("Erro ao sair");
-    } else {
-      toast.success("Até logo!");
-      navigate("/auth", { replace: true });
-    }
-  };
 
   // Filter nav items based on role
   const navigation = adminNavigation.filter(item => !item.adminOnly || isAdmin);
@@ -151,18 +135,9 @@ export function Sidebar() {
               <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>
             )}
           </Button>
-          <Button
-            variant="ghost"
-            size={isCollapsed ? "icon" : "default"}
-            onClick={handleLogout}
-            className={cn(
-              "w-full justify-start gap-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive",
-              isCollapsed && "justify-center"
-            )}
-          >
-            <LogOut className="h-5 w-5" />
-            {!isCollapsed && <span>Sair</span>}
-          </Button>
+          
+          {/* User Profile Dropdown */}
+          <UserProfileDropdown isCollapsed={isCollapsed} />
         </div>
       </div>
     </motion.aside>
