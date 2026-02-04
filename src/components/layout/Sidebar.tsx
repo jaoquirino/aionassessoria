@@ -1,25 +1,22 @@
 import { useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
   CheckSquare,
   UserCircle,
-  Settings,
   Puzzle,
   ChevronLeft,
   Sun,
   Moon,
-  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { NotificationBell } from "@/components/notifications/NotificationCenter";
-import { toast } from "sonner";
+import { UserProfileDropdown } from "./UserProfileDropdown";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 
