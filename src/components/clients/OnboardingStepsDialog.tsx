@@ -164,7 +164,7 @@ export function OnboardingStepsDialog({
         ) : (
           <ScrollArea className="flex-1 -mx-6 px-6">
             <div className="space-y-3 py-4">
-              <AnimatePresence>
+              <AnimatePresence mode="wait">
                 {steps.map((step, index) => {
                   const response = localResponses.get(step.id);
                   const isExpanded = expandedSteps.has(step.id);
