@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -22,6 +24,8 @@ interface ContractDialogProps {
 }
 
 export function ContractDialog({ clientId, contract, open, onOpenChange }: ContractDialogProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [monthlyValue, setMonthlyValue] = useState(0);
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [minDuration, setMinDuration] = useState(6);
@@ -118,6 +122,16 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
               .from("clients")
               .update({ status: "onboarding" })
               .eq("id", clientId);
+
+            // Refresh UI instantly (no need to leave and come back)
+            queryClient.invalidateQueries({ queryKey: ["clients"] });
+            queryClient.invalidateQueries({ queryKey: ["client_contracts_full", clientId] });
+            queryClient.invalidateQueries({ queryKey: ["client_module_onboarding", clientId] });
+            queryClient.invalidateQueries({ queryKey: ["client_onboarding_progress", clientId] });
+            queryClient.invalidateQueries({ queryKey: ["onboarding_tasks", clientId] });
+
+            // Go straight to onboarding flow
+            navigate(`/clientes/${clientId}/onboarding`);
           }
         }
       }

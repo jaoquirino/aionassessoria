@@ -81,18 +81,6 @@ export function OnboardingStepsDialog({
     await updateTaskStatus.mutateAsync({ taskId, status: next });
   };
 
-  const toggleStep = (stepId: string) => {
-    setExpandedSteps(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(stepId)) {
-        newSet.delete(stepId);
-      } else {
-        newSet.add(stepId);
-      }
-      return newSet;
-    });
-  };
-
   const isSaving = updateTaskField.isPending || updateTaskStatus.isPending;
 
   return (
@@ -113,7 +101,7 @@ export function OnboardingStepsDialog({
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Progresso</span>
-            <span className="font-medium">{completedCount}/{steps.length} etapas</span>
+            <span className="font-medium">{completedCount}/{tasks.length} etapas</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
