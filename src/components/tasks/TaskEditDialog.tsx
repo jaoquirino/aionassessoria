@@ -493,12 +493,31 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                     </div>
                   </div>
 
-                  {/* Required Role Display */}
-                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                    <p className="text-xs text-muted-foreground mb-1">Função Exigida</p>
-                    <Badge variant="secondary" className="text-sm">
-                      {task.required_role}
-                    </Badge>
+                  {/* Priority Display */}
+                  <div className="space-y-2">
+                    <Label>Prioridade</Label>
+                    <Select 
+                      value={task.priority || "medium"} 
+                      onValueChange={(val) => updateTask.mutate({ id: task.id, priority: val as any })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">
+                          <Badge className="bg-success/20 text-success">Baixa</Badge>
+                        </SelectItem>
+                        <SelectItem value="medium">
+                          <Badge className="bg-warning/20 text-warning">Média</Badge>
+                        </SelectItem>
+                        <SelectItem value="high">
+                          <Badge className="bg-primary/20 text-primary">Alta</Badge>
+                        </SelectItem>
+                        <SelectItem value="urgent">
+                          <Badge className="bg-destructive/20 text-destructive">Pra ontem</Badge>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <Separator />
@@ -595,16 +614,19 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
 
                 {/* Attachments Tab */}
                 <TabsContent value="attachments" className="p-6 space-y-4 mt-0">
-                  {/* Add Attachment */}
+                  {/* Add URL/Link */}
                   <div className="space-y-2">
+                    <Label className="flex items-center gap-1">
+                      <ExternalLink className="h-3 w-3" /> URL ou Link de Referência
+                    </Label>
                     <Input
-                      placeholder="Nome do anexo"
+                      placeholder="Nome do link"
                       value={newAttachmentName}
                       onChange={(e) => setNewAttachmentName(e.target.value)}
                     />
                     <div className="flex gap-2">
                       <Input
-                        placeholder="URL do link ou arquivo"
+                        placeholder="https://..."
                         value={newAttachmentUrl}
                         onChange={(e) => setNewAttachmentUrl(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleAddAttachment()}
@@ -614,7 +636,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                         onClick={handleAddAttachment}
                         disabled={!newAttachmentName.trim() || !newAttachmentUrl.trim()}
                       >
-                        <Plus className="h-4 w-4" />
+                        Adicionar
                       </Button>
                     </div>
                   </div>

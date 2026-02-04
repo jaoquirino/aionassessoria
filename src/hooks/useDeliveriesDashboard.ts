@@ -36,6 +36,8 @@ export function useDeliveriesByClient(clientId?: string) {
           weight,
           is_deliverable,
           client_id,
+          archived_at,
+          type,
           clients(name),
           contract_module_id,
           contract_modules(
@@ -43,6 +45,8 @@ export function useDeliveriesByClient(clientId?: string) {
           )
         `)
         .eq("is_deliverable", true)
+        .is("archived_at", null)
+        .neq("type", "project")
         .order("due_date", { ascending: false });
 
       if (clientId) {

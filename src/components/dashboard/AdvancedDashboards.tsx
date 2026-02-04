@@ -1,14 +1,19 @@
 import { useState, useMemo } from "react";
-import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText } from "lucide-react";
+import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, CalendarIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDeliveriesByClient, useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
 import { useAllClients } from "@/hooks/useClients";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
 import { type PeriodOption, getPeriodDates } from "./PeriodSelector";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground", icon: Clock },
@@ -32,6 +37,10 @@ interface DeliveriesDashboardProps {
 
 export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
   const [selectedClient, setSelectedClient] = useState<string>("all");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  const [useCustomDates, setUseCustomDates] = useState(false);
+  
   const { data: clients, isLoading: clientsLoading } = useAllClients();
   const { data: deliveries, isLoading: deliveriesLoading } = useDeliveriesByClient(
     selectedClient === "all" ? undefined : selectedClient
@@ -39,20 +48,37 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
 
   const isLoading = clientsLoading || deliveriesLoading;
 
-  // Filter deliveries by period
+  // Filter deliveries by period or custom dates
   const filteredDeliveries = useMemo(() => {
     if (!deliveries) return [];
-    const { start, end } = getPeriodDates(period);
+    
+    let start: Date, end: Date;
+    
+    if (useCustomDates && customStartDate && customEndDate) {
+      start = customStartDate;
+      end = customEndDate;
+    } else {
+      const periodDates = getPeriodDates(period);
+      start = periodDates.start;
+      end = periodDates.end;
+    }
+    
     return deliveries.filter(d => {
       const dueDate = new Date(d.dueDate);
       return dueDate >= start && dueDate <= end;
     });
-  }, [deliveries, period]);
+  }, [deliveries, period, useCustomDates, customStartDate, customEndDate]);
 
   // Group deliveries by status
   const groupedDeliveries = {
     done: filteredDeliveries.filter(d => d.status === "done"),
     pending: filteredDeliveries.filter(d => d.status !== "done"),
+  };
+
+  const handleClearCustomDates = () => {
+    setCustomStartDate(undefined);
+    setCustomEndDate(undefined);
+    setUseCustomDates(false);
   };
 
   if (isLoading) {
@@ -69,7 +95,7 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with Filter */}
+      {/* Header with Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -81,21 +107,78 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={selectedClient} onValueChange={setSelectedClient}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrar por cliente" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os clientes</SelectItem>
-              {clients?.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Custom Date Range */}
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn(
+                  "gap-2",
+                  useCustomDates && customStartDate && "border-primary"
+                )}>
+                  <CalendarIcon className="h-4 w-4" />
+                  {customStartDate ? format(customStartDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customStartDate}
+                  onSelect={(date) => {
+                    setCustomStartDate(date);
+                    if (date) setUseCustomDates(true);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <span className="text-muted-foreground">—</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn(
+                  "gap-2",
+                  useCustomDates && customEndDate && "border-primary"
+                )}>
+                  <CalendarIcon className="h-4 w-4" />
+                  {customEndDate ? format(customEndDate, "dd/MM/yy", { locale: ptBR }) : "Fim"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customEndDate}
+                  onSelect={(date) => {
+                    setCustomEndDate(date);
+                    if (date) setUseCustomDates(true);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {useCustomDates && (
+              <Button variant="ghost" size="sm" onClick={handleClearCustomDates}>
+                Limpar
+              </Button>
+            )}
+          </div>
+          
+          {/* Client Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedClient} onValueChange={setSelectedClient}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtrar por cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os clientes</SelectItem>
+                {clients?.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 

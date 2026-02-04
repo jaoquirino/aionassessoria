@@ -40,18 +40,28 @@ export function useTasks() {
 
       if (error) throw error;
 
-      // Fetch team members separately via public view
-      const { data: teamMembers } = await supabase
-        .from("team_members_public")
-        .select("*");
+      // Fetch team members and checklists separately
+      const [teamMembersRes, checklistRes] = await Promise.all([
+        supabase.from("team_members_public").select("*"),
+        supabase.from("task_checklist").select("*"),
+      ]);
 
-      const membersMap = new Map(teamMembers?.map(m => [m.id, m]) || []);
+      const membersMap = new Map(teamMembersRes.data?.map(m => [m.id, m]) || []);
+      
+      // Group checklists by task_id
+      const checklistByTask = new Map<string, typeof checklistRes.data>();
+      checklistRes.data?.forEach(item => {
+        const existing = checklistByTask.get(item.task_id) || [];
+        existing.push(item);
+        checklistByTask.set(item.task_id, existing);
+      });
 
-      // Map assignee and creator
+      // Map assignee, creator, and checklist
       const tasks = tasksData?.map(task => ({
         ...task,
         assignee: task.assigned_to ? membersMap.get(task.assigned_to) || null : null,
         creator: task.created_by ? membersMap.get(task.created_by) || null : null,
+        checklist: checklistByTask.get(task.id) || [],
       })) || [];
 
       return tasks as Task[];
