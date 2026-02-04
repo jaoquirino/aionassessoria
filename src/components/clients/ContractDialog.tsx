@@ -30,6 +30,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [minDuration, setMinDuration] = useState(6);
   const [renewalDate, setRenewalDate] = useState("");
+  const [paymentDueDay, setPaymentDueDay] = useState(10);
   const [notes, setNotes] = useState("");
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [requiresOnboarding, setRequiresOnboarding] = useState(true);
