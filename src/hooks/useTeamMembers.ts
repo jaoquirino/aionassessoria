@@ -38,22 +38,17 @@ export function useAllTeamMembers() {
   return useQuery({
     queryKey: ["all_team_members"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("team_members")
-        .select("*")
-        .order("name");
+      // Parallel fetch for better performance
+      const [membersRes, tasksRes] = await Promise.all([
+        supabase.from("team_members").select("*").order("name"),
+        supabase.from("tasks").select("assigned_to, weight, status, due_date").not("status", "eq", "done"),
+      ]);
 
-      if (error) throw error;
-
-      // Calculate current weight from active tasks
-      const { data: tasks } = await supabase
-        .from("tasks")
-        .select("assigned_to, weight, status, due_date")
-        .not("status", "eq", "done");
+      if (membersRes.error) throw membersRes.error;
 
       const memberWeights = new Map<string, { currentWeight: number; activeTasks: number; overdueTasks: number }>();
       
-      tasks?.forEach(task => {
+      tasksRes.data?.forEach(task => {
         if (task.assigned_to) {
           const current = memberWeights.get(task.assigned_to) || { currentWeight: 0, activeTasks: 0, overdueTasks: 0 };
           current.currentWeight += task.weight;
@@ -65,13 +60,15 @@ export function useAllTeamMembers() {
         }
       });
 
-      return (data as TeamMember[]).map(member => ({
+      return (membersRes.data as TeamMember[]).map(member => ({
         ...member,
         currentWeight: memberWeights.get(member.id)?.currentWeight || 0,
         activeTasks: memberWeights.get(member.id)?.activeTasks || 0,
         overdueTasks: memberWeights.get(member.id)?.overdueTasks || 0,
       }));
     },
+    staleTime: 30000,
+    gcTime: 300000,
   });
 }
 

@@ -92,6 +92,7 @@ export default function Tasks() {
         type: "recurring",
         required_role: "Designer",
         due_date: format(addDays(new Date(), 7), "yyyy-MM-dd"),
+        status, // Use the status from the column
       });
 
       // Only open edit modal after we have a valid ID

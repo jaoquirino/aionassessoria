@@ -6,10 +6,11 @@ import { EditDialog } from "@/components/ui/edit-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, FileText, Calendar, DollarSign, Trash2 } from "lucide-react";
+import { Plus, FileText, Calendar, Trash2, Pencil } from "lucide-react";
 import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
-import { useClientContractsWithModules, useDeleteContract } from "@/hooks/useContracts";
+import { useClientContractsWithModules, useDeleteContract, type ContractWithModules } from "@/hooks/useContracts";
 import { ContractDialog } from "./ContractDialog";
+import { EditContractDialog } from "./EditContractDialog";
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -54,6 +55,7 @@ export function EditClientDialog({
   const [status, setStatus] = useState<ClientStatus>("active");
   const [startDate, setStartDate] = useState("");
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState<ContractWithModules | null>(null);
   const [deleteClientOpen, setDeleteClientOpen] = useState(false);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
 
@@ -218,10 +220,11 @@ export function EditClientDialog({
                     <div
                       key={contract.id}
                       className={cn(
-                        "p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors",
+                        "p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer",
                         contractStatus === "expiring_soon" && "border-warning/30",
                         contractStatus === "renewing" && "border-primary/30"
                       )}
+                      onClick={() => setEditingContract(contract)}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -265,14 +268,30 @@ export function EditClientDialog({
                             </div>
                           )}
                         </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => setDeletingContractId(contract.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingContract(contract);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingContractId(contract.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -295,7 +314,7 @@ export function EditClientDialog({
         </div>
       </EditDialog>
 
-      {/* Contract Dialog */}
+      {/* New Contract Dialog */}
       {client && (
         <ContractDialog
           clientId={client.id}
@@ -303,6 +322,13 @@ export function EditClientDialog({
           onOpenChange={setContractDialogOpen}
         />
       )}
+
+      {/* Edit Contract Dialog */}
+      <EditContractDialog
+        contract={editingContract}
+        open={!!editingContract}
+        onOpenChange={(open) => !open && setEditingContract(null)}
+      />
 
       {/* Delete Client Confirmation */}
       <AlertDialog open={deleteClientOpen} onOpenChange={setDeleteClientOpen}>
