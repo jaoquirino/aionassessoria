@@ -290,8 +290,7 @@ export function OnboardingStepsDialog({
                 Salvar
               </>
             )}
-            </Button>
-          )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
