@@ -738,6 +738,85 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         urgent: "Pra ontem",
                       };
 
+                      // Get color based on action type
+                      const getHistoryColor = () => {
+                        switch (entry.action_type) {
+                          case "status_change":
+                          case "status_changed":
+                            return {
+                              border: "border-primary",
+                              bg: "bg-primary/10",
+                              icon: "text-primary",
+                            };
+                          case "priority_changed":
+                            return {
+                              border: "border-warning",
+                              bg: "bg-warning/10",
+                              icon: "text-warning",
+                            };
+                          case "assignee_change":
+                          case "assignee_changed":
+                            return {
+                              border: "border-info",
+                              bg: "bg-info/10",
+                              icon: "text-info",
+                            };
+                          case "created":
+                            return {
+                              border: "border-success",
+                              bg: "bg-success/10",
+                              icon: "text-success",
+                            };
+                          case "archived":
+                            return {
+                              border: "border-destructive",
+                              bg: "bg-destructive/10",
+                              icon: "text-destructive",
+                            };
+                          case "unarchived":
+                            return {
+                              border: "border-success",
+                              bg: "bg-success/10",
+                              icon: "text-success",
+                            };
+                          case "due_date_changed":
+                            return {
+                              border: "border-orange-500",
+                              bg: "bg-orange-500/10",
+                              icon: "text-orange-500",
+                            };
+                          case "title_changed":
+                          case "notes_changed":
+                          case "objective_changed":
+                            return {
+                              border: "border-purple-500",
+                              bg: "bg-purple-500/10",
+                              icon: "text-purple-500",
+                            };
+                          case "type_changed":
+                          case "module_changed":
+                          case "client_changed":
+                          case "contract_changed":
+                            return {
+                              border: "border-cyan-500",
+                              bg: "bg-cyan-500/10",
+                              icon: "text-cyan-500",
+                            };
+                          case "comment":
+                            return {
+                              border: "border-muted-foreground",
+                              bg: "bg-muted",
+                              icon: "text-muted-foreground",
+                            };
+                          default:
+                            return {
+                              border: "border-muted",
+                              bg: "bg-muted",
+                              icon: "text-muted-foreground",
+                            };
+                        }
+                      };
+
                       const getHistoryMessage = () => {
                         switch (entry.action_type) {
                           case "comment":
@@ -843,18 +922,22 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           case "comment":
                             return <MessageSquare className="h-4 w-4" />;
                           case "status_change":
+                          case "status_changed":
                             return <Clock className="h-4 w-4" />;
                           case "assignee_change":
+                          case "assignee_changed":
                             return <User className="h-4 w-4" />;
                           default:
                             return <History className="h-4 w-4" />;
                         }
                       };
 
+                      const colors = getHistoryColor();
+
                       return (
-                        <div key={entry.id} className="flex gap-3 text-sm border-l-2 border-muted pl-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                            {getIcon()}
+                        <div key={entry.id} className={cn("flex gap-3 text-sm border-l-2 pl-3", colors.border)}>
+                          <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", colors.bg)}>
+                            <span className={colors.icon}>{getIcon()}</span>
                           </div>
                           <div className="flex-1">
                             <p className="text-muted-foreground">{getHistoryMessage()}</p>
