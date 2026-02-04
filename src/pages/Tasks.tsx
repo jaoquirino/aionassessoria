@@ -3,10 +3,9 @@ import { motion } from "framer-motion";
 import { AlertTriangle, LayoutGrid, List, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Skeleton } from "@/components/ui/skeleton";
 import { TaskKanbanBoard } from "@/components/tasks/TaskKanbanBoard";
 import { TaskListView } from "@/components/tasks/TaskListView";
-import { TaskFilters, TaskFiltersState } from "@/components/tasks/TaskFilters";
+import { CollapsibleFilters, type FiltersState } from "@/components/tasks/CollapsibleFilters";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { useTasks, useUpdateTaskStatus, useTeamMembers, useClients, useCreateTask } from "@/hooks/useTasks";
 import type { TaskStatusDB } from "@/types/tasks";
@@ -31,7 +30,7 @@ const typeOptions = [
 export default function Tasks() {
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [filters, setFilters] = useState<TaskFiltersState>({
+  const [filters, setFilters] = useState<FiltersState>({
     search: "",
     status: "all",
     type: "all",
@@ -39,7 +38,7 @@ export default function Tasks() {
     client: "all",
   });
 
-  const { data: tasks = [], isLoading } = useTasks();
+  const { data: tasks = [], isLoading, isFetching } = useTasks();
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
   const updateStatus = useUpdateTaskStatus();
@@ -78,7 +77,7 @@ export default function Tasks() {
     setSelectedTaskId(taskId);
   };
 
-  // Quick create task - creates with defaults and opens edit modal
+  // Quick create task - creates with defaults and opens edit modal AFTER creation succeeds
   const handleQuickAddTask = async (status: TaskStatusDB) => {
     if (clients.length === 0) {
       toast.error("Cadastre um cliente ativo primeiro");
@@ -88,17 +87,20 @@ export default function Tasks() {
     try {
       const result = await createTask.mutateAsync({
         title: "Nova tarefa",
-        client_id: clients[0].id, // First active client
+        client_id: clients[0].id,
         type: "recurring",
         required_role: "Designer",
         due_date: format(addDays(new Date(), 7), "yyyy-MM-dd"),
       });
 
-      // Open edit modal immediately after creation
-      if (result?.id) {
-        setSelectedTaskId(result.id);
+      // Only open edit modal after we have a valid ID
+      if (result && result.id) {
+        // Small delay to ensure the task is in cache
+        setTimeout(() => {
+          setSelectedTaskId(result.id);
+        }, 100);
       }
-    } catch (error) {
+    } catch {
       // Error already handled by mutation
     }
   };
@@ -107,26 +109,8 @@ export default function Tasks() {
   const waitingClientTasks = tasks.filter((t) => t.status === "waiting_client");
   const totalWeight = tasks.filter((t) => t.status !== "done" && t.status !== "waiting_client").reduce((acc, t) => acc + t.weight, 0);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </div>
-        <div className="flex gap-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-[500px] w-[280px]" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // Show content immediately with cached data (no loading skeleton)
+  const showContent = tasks.length > 0 || !isLoading;
 
   return (
     <div className="space-y-6">
@@ -140,21 +124,26 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold text-foreground">Tarefas</h1>
           <p className="text-muted-foreground">Motor de entregas e produção</p>
         </div>
-        <ToggleGroup
-          type="single"
-          value={viewMode}
-          onValueChange={(v) => v && setViewMode(v as "kanban" | "list")}
-          className="bg-muted rounded-lg p-1"
-        >
-          <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="gap-1.5 data-[state=on]:bg-background">
-            <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Kanban</span>
-          </ToggleGroupItem>
-          <ToggleGroupItem value="list" aria-label="Visualização Lista" className="gap-1.5 data-[state=on]:bg-background">
-            <List className="h-4 w-4" />
-            <span className="hidden sm:inline">Lista</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <div className="flex items-center gap-4">
+          {isFetching && !isLoading && (
+            <span className="text-xs text-muted-foreground animate-pulse">Atualizando...</span>
+          )}
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={(v) => v && setViewMode(v as "kanban" | "list")}
+            className="bg-muted rounded-lg p-1"
+          >
+            <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="gap-1.5 data-[state=on]:bg-background">
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden sm:inline">Kanban</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="Visualização Lista" className="gap-1.5 data-[state=on]:bg-background">
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">Lista</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </motion.div>
 
       {/* Alerts */}
@@ -241,7 +230,7 @@ export default function Tasks() {
         className="glass rounded-xl p-4"
       >
         <div className="mb-4">
-          <TaskFilters
+          <CollapsibleFilters
             filters={filters}
             onFiltersChange={setFilters}
             statusOptions={statusOptions}
@@ -250,18 +239,20 @@ export default function Tasks() {
             clientOptions={clientOptions}
           />
         </div>
-        {viewMode === "kanban" ? (
-          <TaskKanbanBoard 
-            tasks={filteredTasks} 
-            onTaskMove={handleTaskMove} 
-            onTaskClick={handleTaskClick}
-            onAddTask={handleQuickAddTask}
-          />
-        ) : (
-          <TaskListView 
-            tasks={filteredTasks} 
-            onTaskClick={handleTaskClick}
-          />
+        {showContent && (
+          viewMode === "kanban" ? (
+            <TaskKanbanBoard 
+              tasks={filteredTasks} 
+              onTaskMove={handleTaskMove} 
+              onTaskClick={handleTaskClick}
+              onAddTask={handleQuickAddTask}
+            />
+          ) : (
+            <TaskListView 
+              tasks={filteredTasks} 
+              onTaskClick={handleTaskClick}
+            />
+          )
         )}
       </motion.div>
 

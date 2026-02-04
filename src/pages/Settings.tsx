@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, useIsAdmin, type AppRole } from "@/hooks/useUserRoles";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPreferences";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function Settings() {
@@ -33,10 +38,100 @@ export default function Settings() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("member");
 
+  // User profile state
+  const { user } = useAuth();
+  const [fullName, setFullName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Theme preferences
+  const { theme, setTheme, isDark } = useUserPreferences();
+
   const { data: users, isLoading: usersLoading } = useUsersWithRoles();
   const { data: isAdmin } = useIsAdmin();
   const setRole = useSetUserRole();
   const removeRole = useRemoveUserRole();
+
+  // Load user profile
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    
+    if (data) {
+      setFullName(data.full_name || "");
+      setAvatarUrl(data.avatar_url || "");
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    setIsSavingProfile(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({
+          user_id: user.id,
+          full_name: fullName.trim() || null,
+          avatar_url: avatarUrl.trim() || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+
+      if (error) throw error;
+      toast.success("Perfil atualizado com sucesso");
+    } catch (error: any) {
+      toast.error("Erro ao atualizar perfil: " + error.message);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem");
+      return;
+    }
+
+    if (newPassword.length < 12) {
+      toast.error("A senha deve ter pelo menos 12 caracteres");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+      
+      toast.success("Senha alterada com sucesso");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast.error("Erro ao alterar senha: " + error.message);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const filteredUsers = users?.filter(
     (user) =>
@@ -105,7 +200,7 @@ export default function Settings() {
           <TabsList className="glass flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="general" className="gap-2">
               <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Geral</span>
+              <span className="hidden sm:inline">Perfil</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
@@ -127,28 +222,114 @@ export default function Settings() {
             )}
           </TabsList>
 
+          {/* Profile Tab */}
           <TabsContent value="general" className="space-y-6">
             <div className="glass rounded-xl p-6 space-y-6">
               <div>
-                <h3 className="font-semibold text-foreground mb-1">Informações da Agência</h3>
+                <h3 className="font-semibold text-foreground mb-1">Seu Perfil</h3>
                 <p className="text-sm text-muted-foreground">
-                  Dados básicos da sua agência
+                  Informações da sua conta
                 </p>
               </div>
               <Separator />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="agencyName">Nome da Agência</Label>
-                  <Input id="agencyName" defaultValue="Minha Agência" />
+              
+              {/* Avatar */}
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={avatarUrl || undefined} />
+                    <AvatarFallback className="text-xl">
+                      {getInitials(fullName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-1 -right-1 rounded-full bg-primary p-1.5">
+                    <Camera className="h-3 w-3 text-primary-foreground" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email de Contato</Label>
-                  <Input id="email" type="email" defaultValue="contato@agencia.com" />
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="avatarUrl">URL da foto</Label>
+                  <Input
+                    id="avatarUrl"
+                    value={avatarUrl}
+                    onChange={(e) => setAvatarUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
                 </div>
               </div>
-              <Button className="gap-2">
+
+              {/* Name */}
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Nome completo</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Seu nome"
+                />
+              </div>
+
+              {/* Email (read-only) */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  value={user?.email || ""}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
+              </div>
+
+              <Button onClick={handleSaveProfile} disabled={isSavingProfile} className="gap-2">
                 <Save className="h-4 w-4" />
-                Salvar Alterações
+                {isSavingProfile ? "Salvando..." : "Salvar Perfil"}
+              </Button>
+            </div>
+
+            {/* Password Change */}
+            <div className="glass rounded-xl p-6 space-y-6">
+              <div>
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <Key className="h-4 w-4" />
+                  Alterar Senha
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Mínimo de 12 caracteres com letras, números e símbolos
+                </p>
+              </div>
+              <Separator />
+              
+              <div className="space-y-4 max-w-sm">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nova senha</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                  />
+                </div>
+              </div>
+
+              <Button 
+                onClick={handleChangePassword} 
+                disabled={isChangingPassword || !newPassword || !confirmPassword}
+                variant="outline"
+                className="gap-2"
+              >
+                <Key className="h-4 w-4" />
+                {isChangingPassword ? "Alterando..." : "Alterar Senha"}
               </Button>
             </div>
           </TabsContent>
@@ -265,16 +446,39 @@ export default function Settings() {
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Tema</h3>
                 <p className="text-sm text-muted-foreground">
-                  Escolha entre modo claro e escuro
+                  Escolha entre modo claro, escuro ou automático
                 </p>
               </div>
               <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">Modo Escuro</p>
-                  <p className="text-sm text-muted-foreground">Usar tema escuro como padrão</p>
-                </div>
-                <Switch defaultChecked />
+              
+              <div className="space-y-4">
+                <Label>Selecione o tema</Label>
+                <ToggleGroup
+                  type="single"
+                  value={theme}
+                  onValueChange={(value) => value && setTheme(value as ThemePreference)}
+                  className="justify-start"
+                >
+                  <ToggleGroupItem value="light" aria-label="Modo Claro" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                    <Sun className="h-4 w-4" />
+                    Claro
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="dark" aria-label="Modo Escuro" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                    <Moon className="h-4 w-4" />
+                    Escuro
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="system" aria-label="Automático" className="gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                    <Monitor className="h-4 w-4" />
+                    Automático
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                <p className="text-xs text-muted-foreground">
+                  {theme === "system" 
+                    ? `Usando tema do sistema (${isDark ? "escuro" : "claro"})` 
+                    : theme === "dark" 
+                      ? "Tema escuro ativado" 
+                      : "Tema claro ativado"}
+                </p>
               </div>
             </div>
           </TabsContent>
