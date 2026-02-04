@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
 import { CheckCircle2, Circle, Save, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useOnboardingTemplateSteps } from "@/hooks/useOnboardingTemplates";
 import { useClientOnboardingResponses, useUpsertOnboardingResponse } from "@/hooks/useOnboardingResponses";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface OnboardingStepsDialogProps {
   open: boolean;
@@ -96,12 +96,14 @@ export function OnboardingStepsDialog({
   };
 
   const handleSave = async () => {
-    // Optimistic: close immediately, save in background
     const responsesToSave = Array.from(localResponses.values());
-    setHasChanges(false);
-    onOpenChange(false);
     
-    // Save all in background
+    if (responsesToSave.length === 0) {
+      onOpenChange(false);
+      return;
+    }
+    
+    // Save first, then close on success
     try {
       await Promise.all(
         responsesToSave.map(response => 
@@ -114,8 +116,12 @@ export function OnboardingStepsDialog({
           })
         )
       );
-    } catch {
-      // Error already handled by mutation
+      setHasChanges(false);
+      toast.success("Informações de onboarding salvas!");
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Erro ao salvar onboarding:", error);
+      // Don't close on error - let user retry
     }
   };
 
@@ -167,8 +173,7 @@ export function OnboardingStepsDialog({
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6">
             <div className="space-y-3 py-4">
-              <AnimatePresence mode="wait">
-                {steps.map((step, index) => {
+              {steps.map((step, index) => {
                   const response = localResponses.get(step.id);
                   const isExpanded = expandedSteps.has(step.id);
                   const stepIsCompleted = response?.isCompleted || false;
@@ -266,18 +271,17 @@ export function OnboardingStepsDialog({
                         </div>
                       </Collapsible>
                     </div>
-                  );
-                })}
-              </AnimatePresence>
+                );
+              })}
             </div>
           </div>
         )}
 
         <DialogFooter className="gap-2 sm:gap-0 border-t pt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
+          <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

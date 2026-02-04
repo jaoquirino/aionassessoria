@@ -146,7 +146,7 @@ export function useUpsertOnboardingResponse() {
 
       return { previousResponses };
     },
-    onError: (_error, variables, context) => {
+    onError: (error, variables, context) => {
       // Rollback on error
       if (context?.previousResponses) {
         queryClient.setQueryData(
@@ -154,6 +154,8 @@ export function useUpsertOnboardingResponse() {
           context.previousResponses
         );
       }
+      console.error("Erro no upsert de onboarding response:", error);
+      toast.error("Erro ao salvar resposta: " + (error as Error).message);
     },
     onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ 
