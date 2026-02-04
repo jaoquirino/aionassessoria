@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useCreateContract, useUpdateContract, type Contract } from "@/hooks/useContracts";
 import { useAllModules } from "@/hooks/useModules";
+import { useGenerateModuleOnboarding } from "@/hooks/useClientModuleOnboarding";
 import { format, addMonths } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ContractDialogProps {
   clientId: string;
@@ -25,10 +28,12 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   const [renewalDate, setRenewalDate] = useState("");
   const [notes, setNotes] = useState("");
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [requiresOnboarding, setRequiresOnboarding] = useState(true);
 
   const { data: modules = [] } = useAllModules();
   const createContract = useCreateContract();
   const updateContract = useUpdateContract();
+  const generateOnboarding = useGenerateModuleOnboarding();
 
   const isEditing = !!contract;
 
@@ -46,6 +51,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
       setRenewalDate(format(addMonths(new Date(), 6), "yyyy-MM-dd"));
       setNotes("");
       setSelectedModules([]);
+      setRequiresOnboarding(true);
     }
   }, [contract, open]);
 
@@ -78,7 +84,8 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           notes: notes.trim() || null,
         });
       } else {
-        await createContract.mutateAsync({
+        // Create contract with requires_onboarding flag
+        const newContract = await createContract.mutateAsync({
           client_id: clientId,
           monthly_value: monthlyValue,
           start_date: startDate,
@@ -87,6 +94,26 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           notes: notes.trim() || undefined,
           modules: selectedModules,
         });
+
+        // If onboarding is required, generate it for selected modules
+        if (requiresOnboarding && selectedModules.length > 0 && newContract) {
+          // Fetch the created contract_modules to get their IDs
+          const { data: contractModules } = await supabase
+            .from("contract_modules")
+            .select("id, module_id")
+            .eq("contract_id", newContract.id);
+
+          if (contractModules && contractModules.length > 0) {
+            await generateOnboarding.mutateAsync({
+              clientId,
+              contractId: newContract.id,
+              contractModuleIds: contractModules.map(cm => ({
+                contractModuleId: cm.id,
+                moduleId: cm.module_id,
+              })),
+            });
+          }
+        }
       }
       onOpenChange(false);
     } catch (error) {
@@ -94,7 +121,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
     }
   };
 
-  const isSaving = createContract.isPending || updateContract.isPending;
+  const isSaving = createContract.isPending || updateContract.isPending || generateOnboarding.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -172,6 +199,25 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
                   </label>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Onboarding toggle - only for new contracts */}
+          {!isEditing && selectedModules.length > 0 && (
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+              <div className="space-y-0.5">
+                <Label htmlFor="onboarding" className="text-sm font-medium">
+                  Gerar Onboarding
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Criar tarefas de ativação para cada módulo selecionado
+                </p>
+              </div>
+              <Switch
+                id="onboarding"
+                checked={requiresOnboarding}
+                onCheckedChange={setRequiresOnboarding}
+              />
             </div>
           )}
 

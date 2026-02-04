@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_module_onboarding: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          contract_id: string
+          contract_module_id: string
+          created_at: string
+          id: string
+          started_at: string | null
+          status: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          contract_id: string
+          contract_module_id: string
+          created_at?: string
+          id?: string
+          started_at?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          contract_id?: string
+          contract_module_id?: string
+          created_at?: string
+          id?: string
+          started_at?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_module_onboarding_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_module_onboarding_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_module_onboarding_contract_module_id_fkey"
+            columns: ["contract_module_id"]
+            isOneToOne: true
+            referencedRelation: "contract_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_module_onboarding_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_onboarding: {
         Row: {
           client_id: string
@@ -139,6 +207,7 @@ export type Database = {
           monthly_value: number
           notes: string | null
           renewal_date: string | null
+          requires_onboarding: boolean
           start_date: string
           status: string
           updated_at: string
@@ -151,6 +220,7 @@ export type Database = {
           monthly_value: number
           notes?: string | null
           renewal_date?: string | null
+          requires_onboarding?: boolean
           start_date: string
           status?: string
           updated_at?: string
@@ -163,6 +233,7 @@ export type Database = {
           monthly_value?: number
           notes?: string | null
           renewal_date?: string | null
+          requires_onboarding?: boolean
           start_date?: string
           status?: string
           updated_at?: string
@@ -173,6 +244,85 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_template_steps: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          responsible_role: string
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          responsible_role: string
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          responsible_role?: string
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_template_steps_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          module_id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          module_id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          module_id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_templates_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: true
+            referencedRelation: "service_modules"
             referencedColumns: ["id"]
           },
         ]

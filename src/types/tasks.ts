@@ -6,7 +6,7 @@ export type TaskStatusDB = "todo" | "in_progress" | "review" | "waiting_client" 
 export interface TeamMember {
   id: string;
   name: string;
-  email: string | null;
+  email?: string | null;
   role: string;
   permission: string;
   avatar_url: string | null;
@@ -14,6 +14,19 @@ export interface TeamMember {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// Public view of team members (without sensitive fields)
+export interface TeamMemberPublic {
+  id: string | null;
+  name: string | null;
+  role: string | null;
+  permission: string | null;
+  avatar_url: string | null;
+  capacity_limit: number | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface Client {
