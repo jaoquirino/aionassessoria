@@ -135,18 +135,9 @@ export function Sidebar() {
               <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>
             )}
           </Button>
-          <Button
-            variant="ghost"
-            size={isCollapsed ? "icon" : "default"}
-            onClick={handleLogout}
-            className={cn(
-              "w-full justify-start gap-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive",
-              isCollapsed && "justify-center"
-            )}
-          >
-            <LogOut className="h-5 w-5" />
-            {!isCollapsed && <span>Sair</span>}
-          </Button>
+          
+          {/* User Profile Dropdown */}
+          <UserProfileDropdown isCollapsed={isCollapsed} />
         </div>
       </div>
     </motion.aside>
