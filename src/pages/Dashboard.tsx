@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useDashboardData } from "@/hooks/useDashboard";
 import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
+import { PeriodSelector, type PeriodOption } from "@/components/dashboard/PeriodSelector";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
@@ -56,6 +57,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { data, isLoading } = useDashboardData();
   const [activeTab, setActiveTab] = useState("overview");
+  const [period, setPeriod] = useState<PeriodOption>("30d");
 
   if (isLoading || !data) {
     return (
@@ -482,27 +484,33 @@ export default function Dashboard() {
       {/* Admin Dashboard with Tabs */}
       {isAdmin ? (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="glass">
-            <TabsTrigger value="overview" className="gap-2">
-              <Clock className="h-4 w-4" />
-              Visão Geral
-            </TabsTrigger>
-            <TabsTrigger value="deliveries" className="gap-2">
-              <Package className="h-4 w-4" />
-              Entregas
-            </TabsTrigger>
-            <TabsTrigger value="financial" className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Evolução Financeira
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <TabsList className="glass">
+              <TabsTrigger value="overview" className="gap-2">
+                <Clock className="h-4 w-4" />
+                Visão Geral
+              </TabsTrigger>
+              <TabsTrigger value="deliveries" className="gap-2">
+                <Package className="h-4 w-4" />
+                Entregas
+              </TabsTrigger>
+              <TabsTrigger value="financial" className="gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Evolução Financeira
+              </TabsTrigger>
+            </TabsList>
+            
+            {activeTab !== "financial" && (
+              <PeriodSelector value={period} onChange={setPeriod} />
+            )}
+          </div>
 
           <TabsContent value="overview" className="space-y-6">
             <OverviewContent />
           </TabsContent>
 
           <TabsContent value="deliveries" className="space-y-6">
-            <DeliveriesDashboard />
+            <DeliveriesDashboard period={period} />
           </TabsContent>
 
           <TabsContent value="financial" className="space-y-6">

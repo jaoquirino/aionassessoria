@@ -84,13 +84,16 @@ export function useDashboardData() {
 
       const now = new Date();
 
-      // Calculate stats
-      const overdueTasks = tasks.filter(t => new Date(t.due_date) < now && t.status !== "done").length;
-      const todayDeliveries = tasks.filter(t => {
+      // Filter out onboarding (project) tasks from general stats
+      const operationalTasks = tasks.filter(t => t.type !== "project");
+
+      // Calculate stats (excluding onboarding tasks)
+      const overdueTasks = operationalTasks.filter(t => new Date(t.due_date) < now && t.status !== "done").length;
+      const todayDeliveries = operationalTasks.filter(t => {
         const due = new Date(t.due_date);
         return due.toDateString() === today.toDateString();
       }).length;
-      const weekTasks = tasks.filter(t => {
+      const weekTasks = operationalTasks.filter(t => {
         const due = new Date(t.due_date);
         return due >= startOfWeek && due <= endOfWeek;
       });
@@ -106,7 +109,7 @@ export function useDashboardData() {
       const activeClients = clients.filter(c => c.status === "active").length;
       const monthlyRevenue = contracts.reduce((sum, c) => sum + Number(c.monthly_value), 0);
 
-      const activeTasks = tasks.filter(t => t.status !== "done");
+      const activeTasks = operationalTasks.filter(t => t.status !== "done");
       const totalWeight = activeTasks.reduce((sum, t) => sum + t.weight, 0);
       const totalCapacity = teamMembers.reduce((sum, m) => sum + (m.capacity_limit || 0), 0);
 
@@ -126,9 +129,9 @@ export function useDashboardData() {
         type: t.type,
       }));
 
-      // Map team capacity
+      // Map team capacity (using operational tasks only)
       const memberTaskStats = new Map<string, { weight: number; count: number; overdue: number }>();
-      activeTasks.forEach(t => {
+      operationalTasks.filter(t => t.status !== "done").forEach(t => {
         if (t.assigned_to) {
           const curr = memberTaskStats.get(t.assigned_to) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
@@ -173,9 +176,9 @@ export function useDashboardData() {
         .sort((a, b) => a.daysUntilRenewal - b.daysUntilRenewal)
         .slice(0, 4);
 
-      // Client health
+      // Client health (using operational tasks only)
       const clientTaskStats = new Map<string, { weight: number; pending: number; delivered: number }>();
-      tasks.forEach(t => {
+      operationalTasks.forEach(t => {
         const curr = clientTaskStats.get(t.client_id) || { weight: 0, pending: 0, delivered: 0 };
         if (t.status !== "done") {
           curr.weight += t.weight;
