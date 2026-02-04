@@ -220,28 +220,6 @@ export default function Settings() {
     }
   };
 
-  const handleChangeEmail = async () => {
-    if (!newEmail || newEmail === user?.email) {
-      toast.error("Digite um novo email");
-      return;
-    }
-
-    setIsChangingEmail(true);
-    try {
-      const { error } = await supabase.auth.updateUser({
-        email: newEmail,
-      });
-
-      if (error) throw error;
-      
-      toast.success("Email de confirmação enviado para o novo endereço");
-    } catch (error: any) {
-      toast.error("Erro ao alterar email: " + error.message);
-    } finally {
-      setIsChangingEmail(false);
-    }
-  };
-
   const handleChangePassword = async () => {
     if (!isPasswordStrong(newPassword)) {
       toast.error("A nova senha não atende aos requisitos");
