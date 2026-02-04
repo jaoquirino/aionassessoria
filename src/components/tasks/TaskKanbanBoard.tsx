@@ -207,8 +207,9 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
   };
 
-  const handleFieldClick = (e: React.MouseEvent) => {
+  const handleFieldClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation();
+    e.preventDefault();
   };
 
   return (
@@ -268,7 +269,7 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
           </p>
 
           {/* Prioridade - Clicável */}
-          <div onClick={handleFieldClick}>
+          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
             <PriorityPopover
               currentPriority={priority}
               onSelect={(newPriority) => onUpdateField?.(task.id, "priority", newPriority)}
@@ -280,7 +281,7 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
           </div>
 
           {/* Área (required_role) - Clicável */}
-          <div onClick={handleFieldClick}>
+          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
             <RolePopover
               currentRole={task.required_role}
               onSelect={(newRole) => onUpdateField?.(task.id, "required_role", newRole)}
@@ -292,7 +293,7 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
           </div>
 
           {/* Responsável - Clicável */}
-          <div onClick={handleFieldClick}>
+          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
             <AssigneePopover
               currentAssignee={task.assignee}
               teamMembers={teamMembers}
@@ -308,7 +309,7 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
           </div>
 
           {/* Data de entrega - Clicável */}
-          <div onClick={handleFieldClick}>
+          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
             <DatePopover
               currentDate={parseLocalDate(task.due_date)}
               onSelect={(date) => onUpdateField?.(task.id, "due_date", format(date, "yyyy-MM-dd"))}

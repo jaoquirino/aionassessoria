@@ -19,8 +19,9 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
     return parseLocalDate(task.due_date) < new Date() && task.status !== "done";
   };
 
-  const handleFieldClick = (e: React.MouseEvent) => {
+  const handleFieldClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation();
+    e.preventDefault();
   };
 
   return (
@@ -81,7 +82,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                     )}
                     <span>·</span>
                     {/* Responsável - Clicável */}
-                    <div onClick={handleFieldClick}>
+                    <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
                       <AssigneePopover
                         currentAssignee={task.assignee}
                         teamMembers={teamMembers}
@@ -94,7 +95,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                       </AssigneePopover>
                     </div>
                     {/* Área (required_role) - Clicável */}
-                    <div onClick={handleFieldClick}>
+                    <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
                       <RolePopover
                         currentRole={task.required_role}
                         onSelect={(newRole) => onUpdateField?.(task.id, "required_role", newRole)}
@@ -113,7 +114,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                     {taskStatusConfig[task.status].label}
                   </Badge>
                   {/* Prioridade - Clicável */}
-                  <div onClick={handleFieldClick} className="inline-block ml-2">
+                  <div onClick={handleFieldClick} onPointerDown={handleFieldClick} className="inline-block ml-2">
                     <PriorityPopover
                       currentPriority={priority}
                       onSelect={(newPriority) => onUpdateField?.(task.id, "priority", newPriority)}
@@ -124,7 +125,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                     </PriorityPopover>
                   </div>
                   {/* Data - Clicável */}
-                  <div onClick={handleFieldClick}>
+                  <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
                     <DatePopover
                       currentDate={parseLocalDate(task.due_date)}
                       onSelect={(date) => onUpdateField?.(task.id, "due_date", format(date, "yyyy-MM-dd"))}

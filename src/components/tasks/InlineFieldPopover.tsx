@@ -39,10 +39,15 @@ export function AssigneePopover({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled}>
+      <PopoverTrigger 
+        asChild 
+        disabled={disabled}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         {children}
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2" align="start" onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="w-56 p-2" align="start" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground px-2 py-1">Responsável</p>
           <button
@@ -112,10 +117,15 @@ export function DatePopover({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled}>
+      <PopoverTrigger 
+        asChild 
+        disabled={disabled}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         {children}
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start" onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="w-auto p-0" align="start" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <Calendar
           mode="single"
           selected={currentDate}
@@ -156,10 +166,15 @@ export function RolePopover({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled}>
+      <PopoverTrigger 
+        asChild 
+        disabled={disabled}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         {children}
       </PopoverTrigger>
-      <PopoverContent className="w-48 p-2" align="start" onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="w-48 p-2" align="start" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground px-2 py-1">Função</p>
           {roleOptions.map((role) => (
@@ -210,10 +225,15 @@ export function PriorityPopover({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild disabled={disabled}>
+      <PopoverTrigger 
+        asChild 
+        disabled={disabled}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         {children}
       </PopoverTrigger>
-      <PopoverContent className="w-40 p-2" align="start" onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="w-40 p-2" align="start" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground px-2 py-1">Prioridade</p>
           {priorities.map((priority) => {
