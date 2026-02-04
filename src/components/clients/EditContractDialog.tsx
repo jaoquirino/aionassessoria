@@ -224,7 +224,7 @@ export function EditContractDialog({
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {allModules?.filter(m => m.is_active).map((module) => {
                 const config = moduleConfigs.find(c => c.moduleId === module.id);
-                const isDesign = isDesignModule(module.name);
+                const needsLimit = moduleNeedsDeliverableLimit(module.name, module.deliverable_limit);
                 
                 return (
                   <div 
@@ -248,8 +248,8 @@ export function EditContractDialog({
                       </p>
                     </div>
                     
-                    {/* Deliverable limit - shown for design modules or if already has a limit */}
-                    {(isDesign || module.deliverable_limit !== null) && config?.selected && (
+                    {/* Deliverable limit - shown for all selected modules */}
+                    {config?.selected && (
                       <div className="flex items-center gap-1.5">
                         <Input
                           type="number"
@@ -259,7 +259,7 @@ export function EditContractDialog({
                           placeholder="∞"
                           className="w-16 h-8 text-center text-sm"
                         />
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">entregáveis</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">entregas</span>
                       </div>
                     )}
                   </div>
