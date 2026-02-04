@@ -272,9 +272,8 @@ export function OnboardingStepsDialog({
                         </div>
                       </Collapsible>
                     </div>
-                  );
-                })}
-              </AnimatePresence>
+                );
+              })}
             </div>
           </div>
         )}
