@@ -171,17 +171,14 @@ export function OnboardingStepsDialog({
                   const stepIsCompleted = response?.isCompleted || false;
 
                   return (
-                    <motion.div
+                    <div
                       key={step.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
                     >
                       <Collapsible open={isExpanded} onOpenChange={() => toggleStep(step.id)}>
                         <div
                           className={cn(
                             "border rounded-lg transition-colors",
-                            stepIsCompleted ? "bg-green-500/5 border-green-500/20" : "bg-muted/30"
+                            stepIsCompleted ? "bg-success/5 border-success/20" : "bg-muted/30"
                           )}
                         >
                           <CollapsibleTrigger className="w-full p-4 flex items-start gap-3 text-left">
