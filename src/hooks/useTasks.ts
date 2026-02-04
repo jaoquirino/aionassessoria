@@ -315,6 +315,7 @@ export function useUpdateTaskField() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["onboarding_module_tasks"] });
     },
   });
 }
