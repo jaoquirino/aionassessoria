@@ -608,19 +608,19 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   </div>
                 </TabsContent>
 
-                {/* Attachments Tab */}
+                {/* Attachments Tab - Simplified */}
                 <TabsContent value="attachments" className="p-6 space-y-4 mt-0">
                   {/* Add URL/Link */}
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label className="flex items-center gap-1">
-                      <ExternalLink className="h-3 w-3" /> URL ou Link de Referência
+                      <ExternalLink className="h-3 w-3" /> Adicionar Link de Referência
                     </Label>
-                    <Input
-                      placeholder="Nome do link"
-                      value={newAttachmentName}
-                      onChange={(e) => setNewAttachmentName(e.target.value)}
-                    />
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-1 gap-2">
+                      <Input
+                        placeholder="Nome do link (ex: Briefing, Referência, Drive)"
+                        value={newAttachmentName}
+                        onChange={(e) => setNewAttachmentName(e.target.value)}
+                      />
                       <Input
                         placeholder="https://..."
                         value={newAttachmentUrl}
@@ -628,48 +628,50 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         onKeyDown={(e) => e.key === "Enter" && handleAddAttachment()}
                       />
                       <Button 
-                        variant="outline" 
                         onClick={handleAddAttachment}
                         disabled={!newAttachmentName.trim() || !newAttachmentUrl.trim()}
+                        className="w-full"
                       >
-                        Adicionar
+                        Adicionar Link
                       </Button>
                     </div>
                   </div>
 
+                  <Separator />
+
                   {/* Attachments List */}
                   <div className="space-y-2">
                     {task.attachments?.map((attachment) => (
-                      <div 
-                        key={attachment.id} 
-                        className="flex items-center gap-3 p-3 rounded-lg border"
+                      <a 
+                        key={attachment.id}
+                        href={attachment.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group"
                       >
-                        <Paperclip className="h-4 w-4 text-muted-foreground" />
+                        <ExternalLink className="h-4 w-4 text-primary shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{attachment.file_name}</p>
-                          <a 
-                            href={attachment.file_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs text-primary hover:underline flex items-center gap-1"
-                          >
-                            Abrir <ExternalLink className="h-3 w-3" />
-                          </a>
+                          <p className="text-sm font-medium truncate text-primary">{attachment.file_name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
-                          onClick={() => deleteAttachment.mutate({ attachmentId: attachment.id, taskId: task.id })}
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation();
+                            deleteAttachment.mutate({ attachmentId: attachment.id, taskId: task.id }); 
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </div>
+                      </a>
                     ))}
 
                     {(!task.attachments || task.attachments.length === 0) && (
                       <p className="text-center text-muted-foreground py-8">
-                        Nenhum anexo adicionado
+                        Nenhum link adicionado
                       </p>
                     )}
                   </div>
@@ -698,49 +700,76 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                   {/* History List */}
                   <div className="space-y-3">
-                    {task.history?.map((entry) => (
-                      <div key={entry.id} className="flex gap-3 text-sm">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                          {entry.action_type === "comment" ? (
-                            <MessageSquare className="h-4 w-4" />
-                          ) : entry.action_type === "status_change" ? (
-                            <Clock className="h-4 w-4" />
-                          ) : entry.action_type === "assignee_change" ? (
-                            <User className="h-4 w-4" />
-                          ) : (
-                            <History className="h-4 w-4" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          {entry.action_type === "comment" ? (
-                            <p className="text-foreground">{entry.comment}</p>
-                          ) : entry.action_type === "status_change" ? (
-                            <p className="text-muted-foreground">
-                              Status alterado de{" "}
-                              <span className="font-medium text-foreground">
-                                {taskStatusConfig[entry.old_value as TaskStatusDB]?.label || entry.old_value}
-                              </span>{" "}
-                              para{" "}
-                              <span className="font-medium text-foreground">
-                                {taskStatusConfig[entry.new_value as TaskStatusDB]?.label || entry.new_value}
-                              </span>
+                    {task.history?.map((entry) => {
+                      const getHistoryMessage = () => {
+                        switch (entry.action_type) {
+                          case "comment":
+                            return <span className="text-foreground">{entry.comment}</span>;
+                          case "status_change":
+                            return (
+                              <>
+                                Status alterado de{" "}
+                                <span className="font-medium text-foreground">
+                                  {taskStatusConfig[entry.old_value as TaskStatusDB]?.label || entry.old_value}
+                                </span>{" "}
+                                para{" "}
+                                <span className="font-medium text-foreground">
+                                  {taskStatusConfig[entry.new_value as TaskStatusDB]?.label || entry.new_value}
+                                </span>
+                              </>
+                            );
+                          case "assignee_change":
+                            return "Responsável alterado";
+                          case "field_change":
+                            const fieldLabels: Record<string, string> = {
+                              title: "Título",
+                              priority: "Prioridade",
+                              due_date: "Data de entrega",
+                              client_id: "Cliente",
+                              contract_module_id: "Módulo",
+                              type: "Tipo",
+                              required_role: "Função exigida",
+                              description_notes: "Observações",
+                            };
+                            return `${fieldLabels[entry.comment || ""] || entry.comment} alterado`;
+                          case "created":
+                            return "Tarefa criada";
+                          case "archived":
+                            return "Tarefa arquivada";
+                          case "unarchived":
+                            return "Tarefa restaurada";
+                          default:
+                            return entry.action_type;
+                        }
+                      };
+
+                      const getIcon = () => {
+                        switch (entry.action_type) {
+                          case "comment":
+                            return <MessageSquare className="h-4 w-4" />;
+                          case "status_change":
+                            return <Clock className="h-4 w-4" />;
+                          case "assignee_change":
+                            return <User className="h-4 w-4" />;
+                          default:
+                            return <History className="h-4 w-4" />;
+                        }
+                      };
+
+                      return (
+                        <div key={entry.id} className="flex gap-3 text-sm border-l-2 border-muted pl-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                            {getIcon()}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-muted-foreground">{getHistoryMessage()}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(entry.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                             </p>
-                          ) : entry.action_type === "assignee_change" ? (
-                            <p className="text-muted-foreground">Responsável alterado</p>
-                          ) : entry.action_type === "created" ? (
-                            <p className="text-muted-foreground">Tarefa criada</p>
-                          ) : (
-                            <p className="text-muted-foreground">{entry.action_type}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(entry.created_at), { 
-                              addSuffix: true, 
-                              locale: ptBR 
-                            })}
-                          </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     {(!task.history || task.history.length === 0) && (
                       <p className="text-center text-muted-foreground py-8">

@@ -221,19 +221,25 @@ export function PriorityPopover({
     setOpen(false);
   };
 
-  const priorities: TaskPriority[] = ["urgent", "high", "medium", "low"];
+  const priorities: TaskPriority[] = ["low", "medium", "high", "urgent"];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger 
         asChild 
         disabled={disabled}
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        onPointerDown={(e) => { e.stopPropagation(); }}
       >
         {children}
       </PopoverTrigger>
-      <PopoverContent className="w-40 p-2" align="start" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+      <PopoverContent 
+        className="w-40 p-2" 
+        align="start" 
+        onClick={(e) => e.stopPropagation()} 
+        onPointerDown={(e) => e.stopPropagation()}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground px-2 py-1">Prioridade</p>
           {priorities.map((priority) => {
@@ -241,7 +247,7 @@ export function PriorityPopover({
             return (
               <button
                 key={priority}
-                onClick={() => handleSelect(priority)}
+                onClick={(e) => { e.stopPropagation(); handleSelect(priority); }}
                 className={cn(
                   "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors",
                   currentPriority === priority && "bg-muted"
