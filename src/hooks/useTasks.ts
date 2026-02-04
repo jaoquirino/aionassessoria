@@ -269,6 +269,7 @@ export function useUpdateTaskStatus() {
     onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ["onboarding_module_tasks"] });
     },
   });
 }
