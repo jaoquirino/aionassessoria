@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Send, Trash2, Edit2, MoreVertical } from "lucide-react";
+import { Send, Trash2, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { MentionTextarea } from "@/components/ui/mention-textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,6 +61,24 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
   const getInitials = (name: string | null) => {
     if (!name) return "?";
     return name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  };
+
+  // Render content with highlighted mentions
+  const renderContent = (content: string) => {
+    const mentionRegex = /@([^\s@]+(?:\s+[^\s@]+)?)/g;
+    const parts = content.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      // Every odd index is a mention match
+      if (index % 2 === 1) {
+        return (
+          <span key={index} className="text-primary font-medium">
+            @{part}
+          </span>
+        );
+      }
+      return part;
+    });
   };
 
   if (isLoading) {
@@ -131,7 +149,7 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
                   )}
                 </div>
                 <p className="text-sm text-foreground/80 mt-1 whitespace-pre-wrap break-words">
-                  {comment.content}
+                  {renderContent(comment.content)}
                 </p>
               </div>
             </motion.div>
@@ -139,19 +157,13 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
         )}
       </div>
 
-      {/* New Comment Form */}
+      {/* New Comment Form with @ mentions */}
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <Textarea
-          placeholder="Escreva um comentário..."
+        <MentionTextarea
+          placeholder="Escreva um comentário... Use @ para mencionar alguém"
           value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
+          onValueChange={setNewComment}
           className="min-h-[60px] resize-none"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit(e);
-            }
-          }}
         />
         <Button 
           type="submit" 
@@ -167,7 +179,7 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
         </Button>
       </form>
       <p className="text-xs text-muted-foreground">
-        Pressione Enter para enviar, Shift+Enter para nova linha
+        Use @ para mencionar membros da equipe
       </p>
     </div>
   );

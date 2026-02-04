@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { useCreateTeamMember, useUpdateTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
+import { cn } from "@/lib/utils";
 
 interface TeamMemberDialogProps {
   member?: TeamMember | null;
@@ -19,12 +22,16 @@ const roleOptions = [
   "Comercial",
   "Atendimento",
   "Desenvolvedor",
+  "Social Media",
+  "Estrategista",
+  "Diretor de Arte",
+  "Produtor de Conteúdo",
 ];
 
 export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialogProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("Designer");
+  const [roles, setRoles] = useState<string[]>(["Designer"]);
   const [permission, setPermission] = useState("operational");
   const [capacityLimit, setCapacityLimit] = useState(15);
 
@@ -37,20 +44,37 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
     if (member) {
       setName(member.name);
       setEmail(member.email || "");
-      setRole(member.role);
+      // Parse multiple roles from comma-separated string
+      const memberRoles = member.role?.split(",").map(r => r.trim()).filter(Boolean) || ["Designer"];
+      setRoles(memberRoles);
       setPermission(member.permission);
       setCapacityLimit(member.capacity_limit);
     } else {
       setName("");
       setEmail("");
-      setRole("Designer");
+      setRoles(["Designer"]);
       setPermission("operational");
       setCapacityLimit(15);
     }
   }, [member, open]);
 
+  const handleAddRole = (role: string) => {
+    if (!roles.includes(role)) {
+      setRoles([...roles, role]);
+    }
+  };
+
+  const handleRemoveRole = (role: string) => {
+    if (roles.length > 1) {
+      setRoles(roles.filter(r => r !== role));
+    }
+  };
+
   const handleSave = async () => {
-    if (!name.trim() || !role) return;
+    if (!name.trim() || roles.length === 0) return;
+
+    // Store roles as comma-separated string
+    const roleString = roles.join(", ");
 
     try {
       if (isEditing && member) {
@@ -58,7 +82,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           id: member.id,
           name: name.trim(),
           email: email.trim() || null,
-          role,
+          role: roleString,
           permission,
           capacity_limit: capacityLimit,
         });
@@ -66,7 +90,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
         await createMember.mutateAsync({
           name: name.trim(),
           email: email.trim() || undefined,
-          role,
+          role: roleString,
           permission,
           capacity_limit: capacityLimit,
         });
@@ -78,10 +102,11 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
   };
 
   const isSaving = createMember.isPending || updateMember.isPending;
+  const availableRoles = roleOptions.filter(r => !roles.includes(r));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Membro" : "Novo Membro"}</DialogTitle>
         </DialogHeader>
@@ -109,17 +134,46 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Função *</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {roleOptions.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Cargos / Funções *</Label>
+            <p className="text-xs text-muted-foreground">Um membro pode ter múltiplos cargos</p>
+            
+            {/* Selected Roles */}
+            <div className="flex flex-wrap gap-2 min-h-[32px] p-2 border rounded-md bg-muted/30">
+              {roles.map((role) => (
+                <Badge 
+                  key={role} 
+                  variant="secondary" 
+                  className="gap-1 pr-1"
+                >
+                  {role}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveRole(role)}
+                    className={cn(
+                      "rounded-full p-0.5 hover:bg-destructive/20",
+                      roles.length === 1 && "opacity-50 cursor-not-allowed"
+                    )}
+                    disabled={roles.length === 1}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+
+            {/* Add Role */}
+            {availableRoles.length > 0 && (
+              <Select value="" onValueChange={handleAddRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Adicionar cargo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRoles.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -152,7 +206,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !name.trim()}>
+          <Button onClick={handleSave} disabled={isSaving || !name.trim() || roles.length === 0}>
             {isSaving ? "Salvando..." : isEditing ? "Salvar" : "Adicionar"}
           </Button>
         </div>
