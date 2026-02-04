@@ -56,6 +56,26 @@ export function useOnboardingTemplates() {
   });
 }
 
+// Fetch steps by template ID
+export function useOnboardingTemplateSteps(templateId: string | null) {
+  return useQuery({
+    queryKey: ["onboarding_template_steps", templateId],
+    queryFn: async () => {
+      if (!templateId) return [];
+      
+      const { data, error } = await supabase
+        .from("onboarding_template_steps")
+        .select("*")
+        .eq("template_id", templateId)
+        .order("order_index");
+
+      if (error) throw error;
+      return data as OnboardingTemplateStep[];
+    },
+    enabled: !!templateId,
+  });
+}
+
 // Fetch template by module ID
 export function useOnboardingTemplateByModule(moduleId: string | null) {
   return useQuery({

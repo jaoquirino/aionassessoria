@@ -266,7 +266,7 @@ export function OnboardingStepsDialog({
                           </CollapsibleContent>
                         </div>
                       </Collapsible>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </AnimatePresence>
