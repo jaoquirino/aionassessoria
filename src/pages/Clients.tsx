@@ -262,6 +262,9 @@ export default function Clients() {
                   MRR
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Vencimento
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Cliente Desde
                 </th>
                 <th className="px-6 py-4"></th>
@@ -271,6 +274,18 @@ export default function Clients() {
               {otherClients.map((client, index) => {
                 const activeContracts = client.contracts?.filter(c => c.status === "active") || [];
                 const mrr = activeContracts.reduce((sum, c) => sum + c.monthly_value, 0);
+                
+                // Get nearest renewal date
+                const renewalDates = activeContracts
+                  .filter(c => c.renewal_date)
+                  .map(c => new Date(c.renewal_date!));
+                const nearestRenewal = renewalDates.length > 0 
+                  ? renewalDates.reduce((a, b) => a < b ? a : b) 
+                  : null;
+                const daysUntilRenewal = nearestRenewal 
+                  ? differenceInDays(nearestRenewal, new Date()) 
+                  : null;
+                const isNearRenewal = daysUntilRenewal !== null && daysUntilRenewal <= 30 && daysUntilRenewal > 0;
 
                 return (
                   <motion.tr
@@ -300,6 +315,25 @@ export default function Clients() {
                     <td className="px-6 py-4 text-sm font-medium text-foreground">
                       {formatCurrency(mrr)}
                     </td>
+                    <td className="px-6 py-4">
+                      {nearestRenewal ? (
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "text-sm",
+                            isNearRenewal ? "text-warning font-medium" : "text-muted-foreground"
+                          )}>
+                            {nearestRenewal.toLocaleDateString("pt-BR")}
+                          </span>
+                          {isNearRenewal && (
+                            <Badge variant="outline" className="bg-warning/20 text-warning border-warning/30 text-xs">
+                              {daysUntilRenewal}d
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">
                       {new Date(client.created_at).toLocaleDateString("pt-BR")}
                     </td>
@@ -321,7 +355,7 @@ export default function Clients() {
               })}
               {filteredClients.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                     Nenhum cliente encontrado
                   </td>
                 </tr>
