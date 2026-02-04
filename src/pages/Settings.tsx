@@ -393,6 +393,12 @@ export default function Settings() {
               </TabsTrigger>
             )}
             {isAdmin && (
+              <TabsTrigger value="export" className="gap-2">
+                <FileDown className="h-4 w-4" />
+                <span className="hidden sm:inline">Exportar</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
               <TabsTrigger value="permissions" className="gap-2">
                 <Shield className="h-4 w-4" />
                 <span className="hidden sm:inline">Permissões</span>
