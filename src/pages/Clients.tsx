@@ -55,8 +55,10 @@ export default function Clients() {
 
       if (error) throw error;
       setClients(data || []);
-    } catch (error: any) {
-      console.error("Error fetching clients:", error);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error("Error fetching clients:", error);
+      }
       toast.error("Erro ao carregar clientes");
     } finally {
       setIsLoading(false);
