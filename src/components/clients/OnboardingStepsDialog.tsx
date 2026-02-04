@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useOnboardingTemplateSteps } from "@/hooks/useOnboardingTemplates";
 import { useClientOnboardingResponses, useUpsertOnboardingResponse } from "@/hooks/useOnboardingResponses";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface OnboardingStepsDialogProps {
   open: boolean;
