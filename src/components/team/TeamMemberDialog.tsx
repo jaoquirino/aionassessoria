@@ -193,7 +193,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email (opcional)</Label>
             <Input
               id="email"
               type="email"
@@ -201,6 +201,9 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@agencia.com"
             />
+            <p className="text-xs text-muted-foreground">
+              O email pode ser adicionado depois. Para vincular uma conta de login, use o botão "Vincular" após criar o membro.
+            </p>
           </div>
 
           <div className="space-y-2">
