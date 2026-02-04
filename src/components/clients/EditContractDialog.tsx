@@ -97,6 +97,7 @@ export function EditContractDialog({
       monthly_value: monthlyValue,
       start_date: startDate,
       renewal_date: renewalDate || null,
+      payment_due_day: paymentDueDay,
       minimum_duration_months: minimumDuration,
       status,
       notes: notes || null,
