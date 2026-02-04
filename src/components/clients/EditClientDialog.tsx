@@ -144,7 +144,15 @@ export function EditClientDialog({
       setName(client.name);
       setStatus(client.status);
       setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
+      setCnpj(client.cnpj || "");
+      setPhone(client.phone || "");
+      setEmail(client.email || "");
     }
+  };
+
+  const handleOpenOnboarding = (module: typeof selectedOnboardingModule) => {
+    setSelectedOnboardingModule(module);
+    setOnboardingDialogOpen(true);
   };
 
   const formatCurrency = (value: number) => {
