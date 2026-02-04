@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, UserCheck, Clock, Loader2, Pencil, AlertTriangle } from "lucide-react";
+import { Search, UserCheck, Clock, Loader2, Pencil, AlertTriangle, MoreHorizontal, FileText, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { AddClientDialog } from "@/components/clients/AddClientDialog";
 import { EditClientDialog } from "@/components/clients/EditClientDialog";
 import { useAllClients, type ClientWithContracts } from "@/hooks/useClients";
 import { differenceInDays } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const statusConfig = {
   onboarding: { label: "Em Onboarding", color: "bg-blue-500/20 text-blue-500 border-blue-500/30", icon: Clock },
@@ -88,6 +97,41 @@ export default function Clients() {
 
   const handleContinueOnboarding = (clientId: string) => {
     navigate(`/clientes/${clientId}/onboarding`);
+  };
+
+  const handleGoToContract = (client: ClientWithContracts) => {
+    setEditingClient(client);
+    setOpenContractOnEdit(true);
+  };
+
+  const handleCancelOnboarding = async (clientId: string) => {
+    try {
+      // Delete client module onboarding records
+      await supabase
+        .from("client_module_onboarding")
+        .delete()
+        .eq("client_id", clientId);
+
+      // Delete legacy client_onboarding records if any
+      await supabase
+        .from("client_onboarding")
+        .delete()
+        .eq("client_id", clientId);
+
+      // Update client status back to active (or another appropriate status)
+      const { error } = await supabase
+        .from("clients")
+        .update({ status: "active" })
+        .eq("id", clientId);
+
+      if (error) throw error;
+
+      toast.success("Onboarding cancelado com sucesso");
+      refetch();
+    } catch (error) {
+      console.error("Error canceling onboarding:", error);
+      toast.error("Erro ao cancelar onboarding");
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -242,9 +286,32 @@ export default function Clients() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-medium text-foreground">{client.name}</span>
-                  <Badge variant="outline" className={cn(statusConfig.onboarding.color)}>
-                    {statusConfig.onboarding.label}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className={cn(statusConfig.onboarding.color)}>
+                      {statusConfig.onboarding.label}
+                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-background border-border">
+                        <DropdownMenuItem onClick={() => handleGoToContract(client)}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Editar Contrato
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleCancelOnboarding(client.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Cancelar Onboarding
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 <Button
                   size="sm"
