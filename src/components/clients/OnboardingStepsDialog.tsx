@@ -93,13 +93,22 @@ export function OnboardingStepsDialog({
     setEditingNotes("");
   };
 
-  const handleSaveNotes = async (taskId: string) => {
+  const handleSaveNotes = async (taskId: string, currentStatus: OnboardingTask["status"]) => {
+    // Save notes
     await updateTaskField.mutateAsync({
       taskId,
       field: "description_notes",
       value: editingNotes,
     });
-    toast.success("Observações salvas");
+    
+    // Auto-complete task if notes were saved and task is not done
+    if (editingNotes.trim() && currentStatus !== "done") {
+      await updateTaskStatus.mutateAsync({ taskId, status: "done" });
+      toast.success("Observações salvas e etapa concluída");
+    } else {
+      toast.success("Observações salvas");
+    }
+    
     setEditingTaskId(null);
     setEditingNotes("");
   };
@@ -254,7 +263,7 @@ export function OnboardingStepsDialog({
                                         size="sm"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          handleSaveNotes(task.id);
+                                          handleSaveNotes(task.id, task.status);
                                         }}
                                         disabled={isSaving}
                                         className="h-8"
