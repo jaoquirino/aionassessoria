@@ -171,14 +171,14 @@ export function EditClientDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="client-status">Status</Label>
                 <Select value={status} onValueChange={(v) => setStatus(v as ClientStatus)}>
                   <SelectTrigger id="client-status">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[200]">
                     {statusOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -195,6 +195,7 @@ export function EditClientDialog({
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full"
                 />
               </div>
             </div>
@@ -204,12 +205,12 @@ export function EditClientDialog({
 
           {/* Contracts Section */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Contratos
               </h3>
-              <Button size="sm" variant="outline" onClick={() => setContractDialogOpen(true)}>
+              <Button size="sm" variant="outline" onClick={() => setContractDialogOpen(true)} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-1" />
                 Novo Contrato
               </Button>
@@ -220,7 +221,7 @@ export function EditClientDialog({
                 Nenhum contrato cadastrado
               </p>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              <div className="space-y-2 max-h-48 sm:max-h-60 overflow-y-auto">
                 {contracts.map((contract) => {
                   const contractStatus = getContractStatus(contract);
                   const daysUntilRenewal = contract.renewal_date 
@@ -237,10 +238,10 @@ export function EditClientDialog({
                       )}
                       onClick={() => setEditingContract(contract)}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-foreground">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="font-medium text-foreground text-sm sm:text-base">
                               {formatCurrency(contract.monthly_value)}/mês
                             </span>
                             <Badge 
@@ -250,7 +251,7 @@ export function EditClientDialog({
                               {statusConfig[contractStatus].label}
                             </Badge>
                           </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-x-4 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               Início: {format(new Date(contract.start_date), "dd/MM/yyyy")}
@@ -279,7 +280,7 @@ export function EditClientDialog({
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 self-end sm:self-start">
                           <Button
                             size="icon"
                             variant="ghost"

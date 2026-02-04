@@ -7,7 +7,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface EditDialogProps {
@@ -93,7 +92,11 @@ export function EditDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent 
-        className={cn("max-w-lg flex flex-col max-h-[90vh]", className)}
+        className={cn(
+          "max-w-lg flex flex-col max-h-[85vh] sm:max-h-[90vh]",
+          "w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-0",
+          className
+        )}
         onInteractOutside={(e) => {
           // Prevent default close behavior, we handle it in onOpenChange
         }}
@@ -102,15 +105,13 @@ export function EditDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          <div 
-            className="py-4 space-y-4"
-            onChange={() => markAsChanged()}
-            onInput={() => markAsChanged()}
-          >
-            {children}
-          </div>
-        </ScrollArea>
+        <div 
+          className="flex-1 overflow-y-auto -mx-6 px-6 py-4 space-y-4"
+          onChange={() => markAsChanged()}
+          onInput={() => markAsChanged()}
+        >
+          {children}
+        </div>
 
         <DialogFooter className="gap-2 sm:gap-0 flex-shrink-0 pt-4 border-t">
           <Button
@@ -118,6 +119,7 @@ export function EditDialog({
             variant="outline"
             onClick={handleCancel}
             disabled={isSaving}
+            className="w-full sm:w-auto"
           >
             {cancelLabel}
           </Button>
@@ -125,6 +127,7 @@ export function EditDialog({
             type="button"
             onClick={handleSave}
             disabled={isSaving}
+            className="w-full sm:w-auto"
           >
             {isSaving ? "Salvando..." : saveLabel}
           </Button>
