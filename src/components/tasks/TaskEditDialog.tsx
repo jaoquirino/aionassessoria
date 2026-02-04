@@ -62,6 +62,7 @@ interface TaskEditDialogProps {
   taskId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: string;
 }
 
 // Hook to fetch modules for a specific client
@@ -117,7 +118,7 @@ function useClientModules(clientId: string | null) {
   });
 }
 
-export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogProps) {
+export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "details" }: TaskEditDialogProps) {
   const { data: task, isLoading } = useTask(taskId);
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
@@ -245,9 +246,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
     ? task.checklist.filter(item => item.is_completed).length / task.checklist.length 
     : 0;
   
+  // Task can always be completed - no requirements for checklist or notes
   const canComplete = task && (
-    (!task.checklist?.length || task.checklist.every(item => item.is_completed)) &&
-    (task.description_notes?.trim() || (task.checklist && task.checklist.length > 0))
+    !task.checklist?.length || task.checklist.every(item => item.is_completed)
   );
 
   // Status color mapping
@@ -301,7 +302,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
             </div>
 
             <ScrollArea className="flex-1">
-              <Tabs defaultValue="details" className="w-full">
+              <Tabs defaultValue={initialTab} className="w-full">
                 <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 sticky top-0 bg-background z-10">
                   <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <FileText className="h-4 w-4 mr-2" />
@@ -366,7 +367,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                               {config.label}
                             </Badge>
                             {key === "done" && !canComplete && (
-                              <span className="text-xs text-muted-foreground ml-2">(checklist e anexo obrigatórios)</span>
+                              <span className="text-xs text-muted-foreground ml-2">(complete o checklist)</span>
                             )}
                           </SelectItem>
                         ))}
@@ -374,17 +375,12 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                     </Select>
                   </div>
 
-                  {/* Completion Warning */}
-                  {status !== "done" && !canComplete && (
+                  {/* Completion Warning - only show if checklist is incomplete */}
+                  {status !== "done" && task.checklist?.length > 0 && !task.checklist.every(i => i.is_completed) && (
                     <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 text-sm">
                       <p className="font-medium text-warning">Para marcar como Entregue:</p>
                       <ul className="mt-1 text-muted-foreground text-xs space-y-1">
-                        {task.checklist?.length && !task.checklist.every(i => i.is_completed) && (
-                          <li>• Complete todos os itens do checklist</li>
-                        )}
-                        {!task.description_notes?.trim() && (!task.checklist || task.checklist.length === 0) && (
-                          <li>• Adicione pelo menos observações ou checklist para concluir a tarefa</li>
-                        )}
+                        <li>• Complete todos os itens do checklist</li>
                       </ul>
                     </div>
                   )}

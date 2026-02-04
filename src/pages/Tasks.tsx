@@ -29,6 +29,7 @@ const typeOptions = [
 export default function Tasks() {
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskTab, setSelectedTaskTab] = useState<string>("details");
   const [filters, setFilters] = useState<FiltersState>({
     search: "",
     status: "all",
@@ -79,8 +80,9 @@ export default function Tasks() {
     updateStatus.mutate({ taskId, status: newStatus });
   };
 
-  const handleTaskClick = (taskId: string) => {
+  const handleTaskClick = (taskId: string, initialTab?: string) => {
     setSelectedTaskId(taskId);
+    setSelectedTaskTab(initialTab || "details");
   };
 
   // Quick create task - creates with no client pre-selected, opens edit modal
@@ -282,7 +284,8 @@ export default function Tasks() {
       <TaskEditDialog 
         taskId={selectedTaskId} 
         open={!!selectedTaskId} 
-        onOpenChange={(open) => !open && setSelectedTaskId(null)} 
+        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+        initialTab={selectedTaskTab}
       />
     </div>
   );
