@@ -54,6 +54,7 @@ export function EditContractDialog({
       setMonthlyValue(contract.monthly_value);
       setStartDate(format(new Date(contract.start_date), "yyyy-MM-dd"));
       setRenewalDate(contract.renewal_date ? format(new Date(contract.renewal_date), "yyyy-MM-dd") : "");
+      setPaymentDueDay((contract as any).payment_due_day || 10);
       setMinimumDuration(contract.minimum_duration_months);
       setStatus(contract.status);
       setNotes(contract.notes || "");
