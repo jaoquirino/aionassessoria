@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,6 +8,8 @@ import { useCreateContract, useUpdateContract, type Contract } from "@/hooks/use
 import { useAllModules } from "@/hooks/useModules";
 import { format, addMonths } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CurrencyInput } from "@/components/ui/currency-input";
+import { Input } from "@/components/ui/input";
 
 interface ContractDialogProps {
   clientId: string;
@@ -18,7 +19,7 @@ interface ContractDialogProps {
 }
 
 export function ContractDialog({ clientId, contract, open, onOpenChange }: ContractDialogProps) {
-  const [monthlyValue, setMonthlyValue] = useState("");
+  const [monthlyValue, setMonthlyValue] = useState(0);
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [minDuration, setMinDuration] = useState(6);
   const [renewalDate, setRenewalDate] = useState("");
@@ -33,13 +34,13 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
 
   useEffect(() => {
     if (contract) {
-      setMonthlyValue(String(contract.monthly_value));
+      setMonthlyValue(contract.monthly_value);
       setStartDate(contract.start_date);
       setMinDuration(contract.minimum_duration_months);
       setRenewalDate(contract.renewal_date || "");
       setNotes(contract.notes || "");
     } else {
-      setMonthlyValue("");
+      setMonthlyValue(0);
       setStartDate(format(new Date(), "yyyy-MM-dd"));
       setMinDuration(6);
       setRenewalDate(format(addMonths(new Date(), 6), "yyyy-MM-dd"));
@@ -64,13 +65,13 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   };
 
   const handleSave = async () => {
-    if (!monthlyValue || !startDate) return;
+    if (monthlyValue <= 0 || !startDate) return;
 
     try {
       if (isEditing && contract) {
         await updateContract.mutateAsync({
           id: contract.id,
-          monthly_value: Number(monthlyValue),
+          monthly_value: monthlyValue,
           start_date: startDate,
           minimum_duration_months: minDuration,
           renewal_date: renewalDate || null,
@@ -79,7 +80,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
       } else {
         await createContract.mutateAsync({
           client_id: clientId,
-          monthly_value: Number(monthlyValue),
+          monthly_value: monthlyValue,
           start_date: startDate,
           minimum_duration_months: minDuration,
           renewal_date: renewalDate || undefined,
@@ -104,15 +105,11 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="value">Valor Mensal (R$) *</Label>
-            <Input
+            <Label htmlFor="value">Valor Mensal *</Label>
+            <CurrencyInput
               id="value"
-              type="number"
-              min={0}
-              step={100}
               value={monthlyValue}
-              onChange={(e) => setMonthlyValue(e.target.value)}
-              placeholder="0,00"
+              onChange={setMonthlyValue}
             />
           </div>
 
@@ -134,10 +131,15 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="1">1 mês</SelectItem>
+                  <SelectItem value="2">2 meses</SelectItem>
                   <SelectItem value="3">3 meses</SelectItem>
+                  <SelectItem value="4">4 meses</SelectItem>
+                  <SelectItem value="5">5 meses</SelectItem>
                   <SelectItem value="6">6 meses</SelectItem>
                   <SelectItem value="12">12 meses</SelectItem>
                   <SelectItem value="24">24 meses</SelectItem>
+                  <SelectItem value="36">36 meses</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -189,7 +191,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !monthlyValue}>
+          <Button onClick={handleSave} disabled={isSaving || monthlyValue <= 0}>
             {isSaving ? "Salvando..." : isEditing ? "Salvar" : "Criar Contrato"}
           </Button>
         </div>

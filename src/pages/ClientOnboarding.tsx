@@ -204,6 +204,55 @@ export default function ClientOnboarding() {
     );
   }
 
+  // Show empty state when no steps exist
+  if (steps.length === 0) {
+    return (
+      <div className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-4"
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/clientes")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Onboarding: {client?.name}
+            </h1>
+            <p className="text-muted-foreground">Configuração do cliente</p>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="glass rounded-xl p-8 text-center"
+        >
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <FileText className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Nenhuma etapa cadastrada</h2>
+              <p className="text-muted-foreground mt-1">
+                As etapas de onboarding serão criadas automaticamente quando um novo cliente for cadastrado.
+              </p>
+            </div>
+            <Button onClick={() => navigate("/clientes")} className="mt-4">
+              Voltar para Clientes
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}

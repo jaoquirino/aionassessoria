@@ -1,24 +1,14 @@
-import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { cn } from "@/lib/utils";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 export function MainLayout() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+  const { isDark, toggleTheme } = useUserPreferences();
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar isDarkMode={isDarkMode} onToggleTheme={toggleTheme} />
+      <Sidebar isDarkMode={isDark} onToggleTheme={toggleTheme} />
       <main
         className={cn(
           "min-h-screen transition-all duration-300 pl-64"

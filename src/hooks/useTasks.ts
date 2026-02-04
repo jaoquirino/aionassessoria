@@ -39,6 +39,8 @@ export function useTasks() {
       if (error) throw error;
       return data as Task[];
     },
+    staleTime: 30000, // 30 seconds - data won't refetch if still fresh
+    gcTime: 300000, // 5 minutes - keep in cache for faster loading
   });
 }
 
