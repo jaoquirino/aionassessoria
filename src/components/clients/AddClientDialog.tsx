@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, ArrowRight, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,10 +20,10 @@ import { toast } from "sonner";
 
 interface AddClientDialogProps {
   onClientAdded?: () => void;
+  onClientCreatedForOnboarding?: (clientId: string) => void;
 }
 
-export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
-  const navigate = useNavigate();
+export function AddClientDialog({ onClientAdded, onClientCreatedForOnboarding }: AddClientDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [startOnboarding, setStartOnboarding] = useState(true);
@@ -59,8 +58,9 @@ export function AddClientDialog({ onClientAdded }: AddClientDialogProps) {
           setName("");
           onClientAdded?.();
 
-          if (startOnboarding && data) {
-            navigate(`/clientes/${data.id}/onboarding`);
+          // If onboarding is enabled, call the callback to open contract dialog
+          if (startOnboarding && data && onClientCreatedForOnboarding) {
+            onClientCreatedForOnboarding(data.id);
           }
         },
       }

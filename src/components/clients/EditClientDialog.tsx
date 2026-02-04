@@ -30,6 +30,7 @@ interface EditClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onClientUpdated?: () => void;
+  openContractDialogOnMount?: boolean;
 }
 
 const statusOptions: { value: ClientStatus; label: string }[] = [
@@ -50,12 +51,13 @@ export function EditClientDialog({
   client, 
   open, 
   onOpenChange, 
-  onClientUpdated 
+  onClientUpdated,
+  openContractDialogOnMount = false 
 }: EditClientDialogProps) {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ClientStatus>("active");
   const [startDate, setStartDate] = useState("");
-  const [contractDialogOpen, setContractDialogOpen] = useState(false);
+  const [contractDialogOpen, setContractDialogOpen] = useState(openContractDialogOnMount);
   const [editingContract, setEditingContract] = useState<ContractWithModules | null>(null);
   const [deleteClientOpen, setDeleteClientOpen] = useState(false);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
@@ -73,6 +75,13 @@ export function EditClientDialog({
       setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
     }
   }, [client]);
+
+  // Open contract dialog when requested via prop
+  useEffect(() => {
+    if (openContractDialogOnMount && open && client) {
+      setContractDialogOpen(true);
+    }
+  }, [openContractDialogOnMount, open, client]);
 
   const handleSave = async () => {
     if (!client) return;
