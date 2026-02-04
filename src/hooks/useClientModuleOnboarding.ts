@@ -132,6 +132,9 @@ export function useClientOnboardingProgress(clientId: string | null) {
           totalTasks: moduleTasks.length,
           completedTasks,
           progressPercent: moduleTasks.length > 0 ? Math.round((completedTasks / moduleTasks.length) * 100) : 0,
+          contractModuleId: onboarding.contract_module_id,
+          templateId: onboarding.template_id,
+          onboardingId: onboarding.id,
         };
       });
 
