@@ -6,12 +6,15 @@ import { EditDialog } from "@/components/ui/edit-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList } from "lucide-react";
+import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList, Eye, Play } from "lucide-react";
 import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
 import { useClientContractsWithModules, useDeleteContract, type ContractWithModules } from "@/hooks/useContracts";
 import { ContractDialog } from "./ContractDialog";
 import { EditContractDialog } from "./EditContractDialog";
-import { ClientOnboardingProgress } from "@/components/onboarding/ClientOnboardingProgress";
+import { ClientContactInfo } from "./ClientContactInfo";
+
+import { OnboardingStepsDialog } from "./OnboardingStepsDialog";
+import { useClientOnboardingProgress } from "@/hooks/useClientModuleOnboarding";
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -57,15 +60,26 @@ export function EditClientDialog({
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ClientStatus>("active");
   const [startDate, setStartDate] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractWithModules | null>(null);
   const [deleteClientOpen, setDeleteClientOpen] = useState(false);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+  const [onboardingDialogOpen, setOnboardingDialogOpen] = useState(false);
+  const [selectedOnboardingModule, setSelectedOnboardingModule] = useState<{
+    contractModuleId: string;
+    templateId: string;
+    moduleName: string;
+    isCompleted: boolean;
+  } | null>(null);
 
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const deleteContract = useDeleteContract();
   const { data: contracts = [] } = useClientContractsWithModules(client?.id || null);
+  const { data: onboardingProgress } = useClientOnboardingProgress(client?.id || "");
 
   // Sync form state when client changes
   useEffect(() => {
@@ -73,6 +87,9 @@ export function EditClientDialog({
       setName(client.name);
       setStatus(client.status);
       setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
+      setCnpj(client.cnpj || "");
+      setPhone(client.phone || "");
+      setEmail(client.email || "");
     }
   }, [client]);
 
@@ -93,6 +110,9 @@ export function EditClientDialog({
         name: name.trim(),
         status,
         created_at: new Date(startDate).toISOString(),
+        cnpj: cnpj || undefined,
+        phone: phone || undefined,
+        email: email || undefined,
       });
       onClientUpdated?.();
     } catch (error) {
@@ -124,7 +144,15 @@ export function EditClientDialog({
       setName(client.name);
       setStatus(client.status);
       setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
+      setCnpj(client.cnpj || "");
+      setPhone(client.phone || "");
+      setEmail(client.email || "");
     }
+  };
+
+  const handleOpenOnboarding = (module: typeof selectedOnboardingModule) => {
+    setSelectedOnboardingModule(module);
+    setOnboardingDialogOpen(true);
   };
 
   const formatCurrency = (value: number) => {
@@ -199,6 +227,21 @@ export function EditClientDialog({
                 />
               </div>
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Contact Info */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-foreground text-sm">Informações de Contato</h3>
+            <ClientContactInfo
+              cnpj={cnpj}
+              phone={phone}
+              email={email}
+              onCnpjChange={setCnpj}
+              onPhoneChange={setPhone}
+              onEmailChange={setEmail}
+            />
           </div>
 
           <Separator />
@@ -315,13 +358,94 @@ export function EditClientDialog({
           <Separator />
 
           {/* Onboarding Progress Section */}
-          {client && (
+          {client && onboardingProgress && onboardingProgress.totalModules > 0 && (
             <div className="space-y-3">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <ClipboardList className="h-4 w-4" />
-                Progresso do Onboarding
-              </h3>
-              <ClientOnboardingProgress clientId={client.id} showDetail={true} />
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Progresso do Onboarding
+                </h3>
+                {onboardingProgress.progressPercent === 100 && (
+                  <Badge className="bg-success/20 text-success border-success/30">
+                    Concluído
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Module Cards with Actions */}
+              <div className="space-y-2">
+                {onboardingProgress.modules.map((module) => {
+                  const isCompleted = module.status === "completed";
+                  
+                  return (
+                    <div 
+                      key={module.moduleId}
+                      className={cn(
+                        "p-3 rounded-lg border cursor-pointer transition-colors",
+                        isCompleted 
+                          ? "bg-success/5 border-success/20 hover:bg-success/10" 
+                          : "bg-muted/30 hover:bg-muted/50"
+                      )}
+                      onClick={() => handleOpenOnboarding({
+                        contractModuleId: module.contractModuleId,
+                        templateId: module.templateId || "",
+                        moduleName: module.moduleName,
+                        isCompleted,
+                      })}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{module.moduleName}</span>
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "text-xs",
+                                isCompleted 
+                                  ? "bg-success/20 text-success border-success/30" 
+                                  : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {isCompleted ? "Concluído" : `${module.progressPercent}%`}
+                            </Badge>
+                          </div>
+                          {!isCompleted && module.totalTasks > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {module.completedTasks}/{module.totalTasks} etapas
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={isCompleted ? "outline" : "default"}
+                          className="gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenOnboarding({
+                              contractModuleId: module.contractModuleId,
+                              templateId: module.templateId || "",
+                              moduleName: module.moduleName,
+                              isCompleted,
+                            });
+                          }}
+                        >
+                          {isCompleted ? (
+                            <>
+                              <Eye className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Ver</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Continuar</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -396,6 +520,20 @@ export function EditClientDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Onboarding Steps Dialog */}
+      {client && selectedOnboardingModule && (
+        <OnboardingStepsDialog
+          open={onboardingDialogOpen}
+          onOpenChange={setOnboardingDialogOpen}
+          clientId={client.id}
+          contractModuleId={selectedOnboardingModule.contractModuleId}
+          templateId={selectedOnboardingModule.templateId}
+          moduleName={selectedOnboardingModule.moduleName}
+          isCompleted={selectedOnboardingModule.isCompleted}
+          readOnly={selectedOnboardingModule.isCompleted}
+        />
+      )}
     </>
   );
 }

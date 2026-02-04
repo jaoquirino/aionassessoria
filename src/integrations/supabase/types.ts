@@ -126,25 +126,109 @@ export type Database = {
           },
         ]
       }
-      clients: {
+      client_onboarding_responses: {
         Row: {
+          client_id: string
+          completed_at: string | null
+          completed_by: string | null
+          contract_module_id: string
           created_at: string
           id: string
+          is_completed: boolean
+          response_value: string | null
+          template_step_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          contract_module_id: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          response_value?: string | null
+          template_step_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          contract_module_id?: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          response_value?: string | null
+          template_step_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_onboarding_responses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_onboarding_responses_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_onboarding_responses_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_onboarding_responses_contract_module_id_fkey"
+            columns: ["contract_module_id"]
+            isOneToOne: false
+            referencedRelation: "contract_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_onboarding_responses_template_step_id_fkey"
+            columns: ["template_step_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_template_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          id: string
           name: string
+          phone: string | null
           status: Database["public"]["Enums"]["client_status"]
           updated_at: string
         }
         Insert: {
+          cnpj?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name: string
+          phone?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           updated_at?: string
         }
         Update: {
+          cnpj?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
+          phone?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           updated_at?: string
         }
@@ -254,6 +338,8 @@ export type Database = {
           description: string | null
           id: string
           order_index: number
+          response_required: boolean | null
+          response_type: string | null
           responsible_role: string
           template_id: string
           title: string
@@ -264,6 +350,8 @@ export type Database = {
           description?: string | null
           id?: string
           order_index?: number
+          response_required?: boolean | null
+          response_type?: string | null
           responsible_role: string
           template_id: string
           title: string
@@ -274,6 +362,8 @@ export type Database = {
           description?: string | null
           id?: string
           order_index?: number
+          response_required?: boolean | null
+          response_type?: string | null
           responsible_role?: string
           template_id?: string
           title?: string
