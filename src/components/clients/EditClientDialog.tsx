@@ -12,7 +12,7 @@ import { useClientContractsWithModules, useDeleteContract, type ContractWithModu
 import { ContractDialog } from "./ContractDialog";
 import { EditContractDialog } from "./EditContractDialog";
 import { ClientContactInfo } from "./ClientContactInfo";
-import { ClientOnboardingProgress } from "@/components/onboarding/ClientOnboardingProgress";
+
 import { OnboardingStepsDialog } from "./OnboardingStepsDialog";
 import { useClientOnboardingProgress } from "@/hooks/useClientModuleOnboarding";
 import { format, differenceInDays } from "date-fns";
