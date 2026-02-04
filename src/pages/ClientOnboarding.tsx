@@ -84,7 +84,7 @@ export default function ClientOnboarding() {
   const { data: onboardings = [], isLoading: onboardingsLoading } = useClientModuleOnboardings(clientId || null);
 
   // Fetch related tasks
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [], refetch: refetchTasks } = useQuery({
     queryKey: ["onboarding_tasks", clientId],
     queryFn: async () => {
       if (!clientId) return [];
@@ -93,12 +93,29 @@ export default function ClientOnboarding() {
         .select("*")
         .eq("client_id", clientId)
         .eq("type", "project")
+        .is("archived_at", null)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data;
     },
     enabled: !!clientId,
   });
+
+  // Toggle task status
+  const handleToggleTaskStatus = async (taskId: string, currentStatus: string) => {
+    const newStatus = currentStatus === "done" ? "todo" : "done";
+    const { error } = await supabase
+      .from("tasks")
+      .update({ status: newStatus })
+      .eq("id", taskId);
+    
+    if (error) {
+      toast.error("Erro ao atualizar tarefa");
+    } else {
+      refetchTasks();
+      toast.success(newStatus === "done" ? "Tarefa concluída!" : "Tarefa reaberta");
+    }
+  };
 
   const updateStatus = useUpdateModuleOnboardingStatus();
 
@@ -378,11 +395,12 @@ export default function ClientOnboarding() {
                       {moduleTasks.map((task) => (
                         <div
                           key={task.id}
+                          onClick={() => handleToggleTaskStatus(task.id, task.status)}
                           className={cn(
-                            "flex items-center gap-3 rounded-lg border p-3",
+                            "flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
                             task.status === "done"
-                              ? "bg-green-500/5 border-green-500/20"
-                              : "bg-muted/30 border-border"
+                              ? "bg-green-500/5 border-green-500/20 hover:bg-green-500/10"
+                              : "bg-muted/30 border-border hover:bg-muted/50"
                           )}
                         >
                           {task.status === "done" ? (

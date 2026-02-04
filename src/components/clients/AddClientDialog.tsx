@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Plus, ArrowRight, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +24,6 @@ interface AddClientDialogProps {
 export function AddClientDialog({ onClientAdded, onClientCreatedForOnboarding }: AddClientDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [startOnboarding, setStartOnboarding] = useState(true);
   
   const createClient = useCreateClient();
 
@@ -39,7 +36,7 @@ export function AddClientDialog({ onClientAdded, onClientCreatedForOnboarding }:
     // Validate input
     const validation = clientSchema.safeParse({ 
       name, 
-      status: startOnboarding ? "onboarding" : "active" 
+      status: "onboarding"
     });
     
     if (!validation.success) {
@@ -50,7 +47,7 @@ export function AddClientDialog({ onClientAdded, onClientCreatedForOnboarding }:
     createClient.mutate(
       {
         name: validation.data.name,
-        status: validation.data.status as "onboarding" | "active",
+        status: "onboarding",
       },
       {
         onSuccess: (data) => {
@@ -58,8 +55,8 @@ export function AddClientDialog({ onClientAdded, onClientCreatedForOnboarding }:
           setName("");
           onClientAdded?.();
 
-          // If onboarding is enabled, call the callback to open contract dialog
-          if (startOnboarding && data && onClientCreatedForOnboarding) {
+          // Always open contract dialog after creating client
+          if (data && onClientCreatedForOnboarding) {
             onClientCreatedForOnboarding(data.id);
           }
         },
@@ -100,58 +97,9 @@ export function AddClientDialog({ onClientAdded, onClientCreatedForOnboarding }:
               />
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between rounded-lg border p-4 bg-muted/30"
-            >
-              <div className="space-y-0.5">
-                <Label htmlFor="onboarding" className="text-base font-medium">
-                  Iniciar Onboarding
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Inicie o processo de integração do cliente
-                </p>
-              </div>
-              <Switch
-                id="onboarding"
-                checked={startOnboarding}
-                onCheckedChange={setStartOnboarding}
-              />
-            </motion.div>
-
-            <AnimatePresence>
-              {startOnboarding && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="rounded-lg border border-primary/30 bg-primary/5 p-4"
-                >
-                  <p className="text-sm font-medium text-foreground mb-2">
-                    Etapas do Onboarding:
-                  </p>
-                  <ul className="space-y-1.5 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">1</span>
-                      Coleta de acessos
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">2</span>
-                      Briefing inicial
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">3</span>
-                      Definição de módulos
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">4</span>
-                      Reunião de kickoff
-                    </li>
-                  </ul>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <p className="text-sm text-muted-foreground">
+              Após criar o cliente, você poderá configurar o contrato e os módulos de onboarding.
+            </p>
           </div>
 
           <DialogFooter>
@@ -165,13 +113,11 @@ export function AddClientDialog({ onClientAdded, onClientCreatedForOnboarding }:
             <Button type="submit" disabled={createClient.isPending} className="gap-2">
               {createClient.isPending ? (
                 "Criando..."
-              ) : startOnboarding ? (
+              ) : (
                 <>
-                  Criar e Iniciar Onboarding
+                  Criar Cliente
                   <ArrowRight className="h-4 w-4" />
                 </>
-              ) : (
-                "Criar Cliente"
               )}
             </Button>
           </DialogFooter>
