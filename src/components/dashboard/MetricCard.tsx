@@ -36,18 +36,18 @@ export function MetricCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: delay * 0.1, duration: 0.4 }}
       className={cn(
-        "card-metric group cursor-pointer",
+        "card-metric group cursor-pointer overflow-hidden",
         status && statusColors[status]
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold tracking-tight text-foreground">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0 space-y-1">
+          <p className="text-sm font-medium text-muted-foreground truncate">{title}</p>
+          <p className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground break-words">
             {value}
           </p>
           {subtitle && (
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
+            <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
           )}
           {trend && (
             <p
@@ -63,7 +63,7 @@ export function MetricCard({
         </div>
         <div
           className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-xl transition-colors",
+            "flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl transition-colors",
             status === "critical"
               ? "bg-destructive/10 text-destructive"
               : status === "attention"
@@ -71,7 +71,7 @@ export function MetricCard({
               : "bg-primary/10 text-primary"
           )}
         >
-          <Icon className="h-6 w-6" />
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
         </div>
       </div>
       {status && (

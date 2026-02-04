@@ -113,6 +113,9 @@ export default function ClientOnboarding() {
       toast.error("Erro ao atualizar tarefa");
     } else {
       refetchTasks();
+      // Also invalidate onboarding progress queries
+      queryClient.invalidateQueries({ queryKey: ["client_onboarding_progress", clientId] });
+      queryClient.invalidateQueries({ queryKey: ["onboarding_overview"] });
       toast.success(newStatus === "done" ? "Tarefa concluída!" : "Tarefa reaberta");
     }
   };

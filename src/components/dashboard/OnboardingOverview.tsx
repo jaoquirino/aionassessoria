@@ -41,10 +41,20 @@ export function OnboardingOverview() {
           id,
           client_id,
           status,
+          contract_module_id,
           clients(id, name)
         `);
 
       if (error) throw error;
+
+      // Fetch all onboarding tasks to calculate progress
+      const { data: tasks, error: tasksError } = await supabase
+        .from("tasks")
+        .select("id, status, client_id, contract_module_id")
+        .eq("type", "project")
+        .is("archived_at", null);
+
+      if (tasksError) throw tasksError;
 
       // Group by client
       const clientMap = new Map<string, {
@@ -52,6 +62,8 @@ export function OnboardingOverview() {
         clientName: string;
         totalModules: number;
         completedModules: number;
+        totalTasks: number;
+        completedTasks: number;
       }>();
 
       for (const onboarding of onboardings || []) {
@@ -64,6 +76,8 @@ export function OnboardingOverview() {
             clientName,
             totalModules: 0,
             completedModules: 0,
+            totalTasks: 0,
+            completedTasks: 0,
           });
         }
 
@@ -72,25 +86,41 @@ export function OnboardingOverview() {
         if (onboarding.status === "completed") {
           client.completedModules++;
         }
+
+        // Count tasks for this module
+        const moduleTasks = (tasks || []).filter(t => t.contract_module_id === onboarding.contract_module_id);
+        client.totalTasks += moduleTasks.length;
+        client.completedTasks += moduleTasks.filter(t => t.status === "done").length;
       }
 
       const clientsWithProgress = Array.from(clientMap.values())
         .filter(c => c.totalModules > c.completedModules) // Only show clients with incomplete onboarding
         .map(c => ({
           ...c,
-          progressPercent: Math.round((c.completedModules / c.totalModules) * 100),
+          // Use task-based progress for more accurate measurement
+          progressPercent: c.totalTasks > 0 
+            ? Math.round((c.completedTasks / c.totalTasks) * 100) 
+            : (c.totalModules > 0 ? Math.round((c.completedModules / c.totalModules) * 100) : 0),
         }))
         .sort((a, b) => b.progressPercent - a.progressPercent)
         .slice(0, 5); // Top 5 clients
 
       const totalModules = onboardings?.length || 0;
       const completedModules = onboardings?.filter(o => o.status === "completed").length || 0;
+      const totalTasks = Array.from(clientMap.values()).reduce((sum, c) => sum + c.totalTasks, 0);
+      const completedTasks = Array.from(clientMap.values()).reduce((sum, c) => sum + c.completedTasks, 0);
 
       return {
         clientsInOnboarding: clientsWithProgress.length,
         totalModulesOnboarding: totalModules,
         completedModules,
-        clientsWithProgress,
+        clientsWithProgress: clientsWithProgress.map(c => ({
+          clientId: c.clientId,
+          clientName: c.clientName,
+          totalModules: c.totalModules,
+          completedModules: c.completedModules,
+          progressPercent: c.progressPercent,
+        })),
       };
     },
     staleTime: 60000,

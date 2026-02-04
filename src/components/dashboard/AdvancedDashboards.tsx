@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { useDeliveriesByClient, useFinancialEvolution } from "@/hooks/useDeliver
 import { useAllClients } from "@/hooks/useClients";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
+import { type PeriodOption, getPeriodDates } from "./PeriodSelector";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground", icon: Clock },
@@ -25,7 +26,11 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-export function DeliveriesDashboard() {
+interface DeliveriesDashboardProps {
+  period: PeriodOption;
+}
+
+export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const { data: clients, isLoading: clientsLoading } = useAllClients();
   const { data: deliveries, isLoading: deliveriesLoading } = useDeliveriesByClient(
@@ -34,10 +39,20 @@ export function DeliveriesDashboard() {
 
   const isLoading = clientsLoading || deliveriesLoading;
 
+  // Filter deliveries by period
+  const filteredDeliveries = useMemo(() => {
+    if (!deliveries) return [];
+    const { start, end } = getPeriodDates(period);
+    return deliveries.filter(d => {
+      const dueDate = new Date(d.dueDate);
+      return dueDate >= start && dueDate <= end;
+    });
+  }, [deliveries, period]);
+
   // Group deliveries by status
   const groupedDeliveries = {
-    done: deliveries?.filter(d => d.status === "done") || [],
-    pending: deliveries?.filter(d => d.status !== "done") || [],
+    done: filteredDeliveries.filter(d => d.status === "done"),
+    pending: filteredDeliveries.filter(d => d.status !== "done"),
   };
 
   if (isLoading) {
@@ -62,7 +77,7 @@ export function DeliveriesDashboard() {
             Entregas por Cliente
           </h2>
           <p className="text-sm text-muted-foreground">
-            {deliveries?.length || 0} entregáveis no total
+            {filteredDeliveries.length} entregáveis no período
           </p>
         </div>
         
@@ -107,7 +122,7 @@ export function DeliveriesDashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Peso Total</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{deliveries?.reduce((sum, d) => sum + d.weight, 0) || 0}</div>
+            <div className="text-2xl font-bold">{filteredDeliveries.reduce((sum, d) => sum + d.weight, 0)}</div>
           </CardContent>
         </Card>
       </div>
@@ -119,10 +134,10 @@ export function DeliveriesDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {deliveries?.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nenhuma entrega encontrada</p>
+            {filteredDeliveries.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nenhuma entrega encontrada no período</p>
             ) : (
-              deliveries?.map((delivery) => {
+              filteredDeliveries.map((delivery) => {
                 const StatusIcon = statusConfig[delivery.status]?.icon || Clock;
                 return (
                   <div

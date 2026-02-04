@@ -100,8 +100,9 @@ export default function Clients() {
   };
 
   const handleGoToContract = (client: ClientWithContracts) => {
+    // Set only the editing client, don't set openContractOnEdit to trigger onboarding progress
     setEditingClient(client);
-    setOpenContractOnEdit(true);
+    setOpenContractOnEdit(false);
   };
 
   const handleCancelOnboarding = async (clientId: string) => {
