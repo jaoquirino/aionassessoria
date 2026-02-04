@@ -39,8 +39,8 @@ export function OnboardingStepsDialog({
   templateId,
   moduleName,
   isCompleted = false,
-  readOnly = false,
 }: OnboardingStepsDialogProps) {
+  // Never read-only - always allow editing even after completion
   const [localResponses, setLocalResponses] = useState<Map<string, LocalResponse>>(new Map());
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [hasChanges, setHasChanges] = useState(false);
