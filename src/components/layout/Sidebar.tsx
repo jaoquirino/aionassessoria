@@ -17,14 +17,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRoles";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { toast } from "sonner";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
-
-interface SidebarProps {
-  isDarkMode: boolean;
-  onToggleTheme: () => void;
-}
 
 const adminNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -35,12 +31,13 @@ const adminNavigation = [
   { name: "Configurações", href: "/configuracoes", icon: Settings },
 ];
 
-export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
+export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { data: isAdmin } = useIsAdmin();
+  const { isDark, toggleTheme } = useUserPreferences();
 
   const handleLogout = async () => {
     const { error } = await signOut();
@@ -74,7 +71,7 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
               className="flex items-center"
             >
               <img 
-                src={isDarkMode ? logoDark : logoLight} 
+                src={isDark ? logoDark : logoLight} 
                 alt="AION Assessoria" 
                 className="h-8 w-auto"
               />
@@ -135,19 +132,19 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
           <Button
             variant="ghost"
             size={isCollapsed ? "icon" : "default"}
-            onClick={onToggleTheme}
+            onClick={toggleTheme}
             className={cn(
               "w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
               isCollapsed && "justify-center"
             )}
           >
-            {isDarkMode ? (
+            {isDark ? (
               <Sun className="h-5 w-5" />
             ) : (
               <Moon className="h-5 w-5" />
             )}
             {!isCollapsed && (
-              <span>{isDarkMode ? "Modo Claro" : "Modo Escuro"}</span>
+              <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>
             )}
           </Button>
           <Button
