@@ -9,6 +9,8 @@ export interface OnboardingTemplateStep {
   description: string | null;
   responsible_role: string;
   order_index: number;
+  response_type: string;
+  response_required: boolean;
   created_at: string;
   updated_at: string;
 }
