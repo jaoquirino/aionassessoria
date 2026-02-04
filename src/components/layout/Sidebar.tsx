@@ -17,14 +17,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRoles";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { toast } from "sonner";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
-
-interface SidebarProps {
-  isDarkMode: boolean;
-  onToggleTheme: () => void;
-}
 
 const adminNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
