@@ -38,17 +38,31 @@ export function useAllTeamMembers() {
   return useQuery({
     queryKey: ["all_team_members"],
     queryFn: async () => {
-      // Parallel fetch for better performance
-      const [membersRes, tasksRes] = await Promise.all([
-        supabase.from("team_members").select("*").order("name"),
-        supabase.from("tasks").select("assigned_to, weight, status, due_date").not("status", "eq", "done"),
-      ]);
+      // Fetch members first
+      const { data: members, error: membersError } = await supabase
+        .from("team_members")
+        .select("*")
+        .order("name");
 
-      if (membersRes.error) throw membersRes.error;
+      if (membersError) throw membersError;
+
+      // Only fetch tasks if we have members
+      if (!members || members.length === 0) {
+        return [];
+      }
+
+      // Fetch only necessary task data with limit and filter
+      const { data: tasks } = await supabase
+        .from("tasks")
+        .select("assigned_to, weight, status, due_date")
+        .not("status", "eq", "done")
+        .not("assigned_to", "is", null)
+        .is("archived_at", null)
+        .neq("type", "project"); // Exclude onboarding tasks
 
       const memberWeights = new Map<string, { currentWeight: number; activeTasks: number; overdueTasks: number }>();
       
-      tasksRes.data?.forEach(task => {
+      tasks?.forEach(task => {
         if (task.assigned_to) {
           const current = memberWeights.get(task.assigned_to) || { currentWeight: 0, activeTasks: 0, overdueTasks: 0 };
           current.currentWeight += task.weight;
@@ -60,14 +74,14 @@ export function useAllTeamMembers() {
         }
       });
 
-      return (membersRes.data as TeamMember[]).map(member => ({
+      return (members as TeamMember[]).map(member => ({
         ...member,
         currentWeight: memberWeights.get(member.id)?.currentWeight || 0,
         activeTasks: memberWeights.get(member.id)?.activeTasks || 0,
         overdueTasks: memberWeights.get(member.id)?.overdueTasks || 0,
       }));
     },
-    staleTime: 30000,
+    staleTime: 60000,
     gcTime: 300000,
   });
 }
