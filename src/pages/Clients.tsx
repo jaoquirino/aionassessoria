@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, UserCheck, Clock, Loader2, Pencil, AlertTriangle } from "lucide-react";
@@ -30,8 +30,22 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [editingClient, setEditingClient] = useState<ClientWithContracts | null>(null);
+  const [openContractOnEdit, setOpenContractOnEdit] = useState(false);
+  const [pendingClientId, setPendingClientId] = useState<string | null>(null);
 
   const { data: clients = [], isLoading, refetch } = useAllClients();
+
+  // When clients are loaded and we have a pending client to edit, open the edit dialog
+  useEffect(() => {
+    if (pendingClientId && clients.length > 0) {
+      const newClient = clients.find(c => c.id === pendingClientId);
+      if (newClient) {
+        setEditingClient(newClient);
+        setOpenContractOnEdit(true);
+        setPendingClientId(null);
+      }
+    }
+  }, [clients, pendingClientId]);
 
   const filteredClients = useMemo(() => {
     return clients.filter((client) => {
@@ -105,7 +119,14 @@ export default function Clients() {
             Gerencie clientes e contratos
           </p>
         </div>
-        <AddClientDialog onClientAdded={() => refetch()} />
+        <AddClientDialog 
+          onClientAdded={() => refetch()} 
+          onClientCreatedForOnboarding={(clientId) => {
+            // Set pending client ID and refetch - the useEffect will open the dialog
+            setPendingClientId(clientId);
+            refetch();
+          }}
+        />
       </motion.div>
 
       {/* Contract Alert */}
@@ -369,8 +390,14 @@ export default function Clients() {
       <EditClientDialog
         client={editingClient}
         open={!!editingClient}
-        onOpenChange={(open) => !open && setEditingClient(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingClient(null);
+            setOpenContractOnEdit(false);
+          }
+        }}
         onClientUpdated={() => refetch()}
+        openContractDialogOnMount={openContractOnEdit}
       />
     </div>
   );
