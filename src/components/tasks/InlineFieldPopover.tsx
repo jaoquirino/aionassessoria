@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { User } from "lucide-react";
+import { User, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
-import type { TeamMember, TaskPriority } from "@/types/tasks";
+import type { TeamMember, TaskPriority, Client } from "@/types/tasks";
 import { priorityConfig, roleOptions } from "@/types/tasks";
 
 interface InlineFieldPopoverProps {
@@ -251,6 +251,69 @@ export function PriorityPopover({
               </button>
             );
           })}
+        </div>
+        {isUpdating && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-md">
+            <span className="text-xs text-muted-foreground animate-pulse">Salvando...</span>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Client Popover
+interface ClientPopoverProps extends InlineFieldPopoverProps {
+  currentClient?: Client | null;
+  clients: Client[];
+  onSelect: (clientId: string) => void;
+  isUpdating?: boolean;
+}
+
+export function ClientPopover({ 
+  children, 
+  currentClient, 
+  clients, 
+  onSelect, 
+  isUpdating,
+  disabled 
+}: ClientPopoverProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (clientId: string) => {
+    onSelect(clientId);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger 
+        asChild 
+        disabled={disabled}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        {children}
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2 max-h-[300px] overflow-y-auto" align="start" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground px-2 py-1">Cliente</p>
+          {clients.map((client) => (
+            <button
+              key={client.id}
+              onClick={() => handleSelect(client.id)}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors",
+                currentClient?.id === client.id && "bg-muted"
+              )}
+            >
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <span className="truncate">{client.name}</span>
+            </button>
+          ))}
+          {clients.length === 0 && (
+            <p className="text-xs text-muted-foreground px-2 py-2">Nenhum cliente disponível</p>
+          )}
         </div>
         {isUpdating && (
           <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-md">

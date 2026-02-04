@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
-import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, User, Calendar } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, User, Calendar, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn, parseLocalDate } from "@/lib/utils";
-import type { Task, TeamMember, TaskPriority } from "@/types/tasks";
+import type { Task, TeamMember, TaskPriority, Client } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig, priorityConfig } from "@/types/tasks";
-import { AssigneePopover, DatePopover, RolePopover, PriorityPopover } from "./InlineFieldPopover";
+import { AssigneePopover, DatePopover, RolePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
 import { format } from "date-fns";
 
 interface TaskListViewProps {
@@ -12,9 +12,10 @@ interface TaskListViewProps {
   onTaskClick?: (taskId: string) => void;
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
   teamMembers?: TeamMember[];
+  clients?: Client[];
 }
 
-export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = [] }: TaskListViewProps) {
+export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = [], clients = [] }: TaskListViewProps) {
   const isOverdue = (task: Task) => {
     return parseLocalDate(task.due_date) < new Date() && task.status !== "done";
   };
@@ -73,7 +74,19 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                     </Badge>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span>{task.client?.name}</span>
+                    {/* Cliente - Clicável */}
+                    <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
+                      <ClientPopover
+                        currentClient={task.client}
+                        clients={clients}
+                        onSelect={(clientId) => onUpdateField?.(task.id, "client_id", clientId)}
+                      >
+                        <span className="cursor-pointer hover:text-foreground transition-colors flex items-center gap-1">
+                          <Building2 className="h-3 w-3" />
+                          {task.client?.name || "Sem cliente"}
+                        </span>
+                      </ClientPopover>
+                    </div>
                     {task.contract_module?.service_module?.name && (
                       <>
                         <span>·</span>

@@ -23,7 +23,6 @@ const statusOptions = [
 const typeOptions = [
   { value: "recurring", label: "Entrega recorrente" },
   { value: "planning", label: "Planejamento" },
-  { value: "project", label: "Projeto" },
   { value: "extra", label: "Extra" },
 ];
 
@@ -56,6 +55,9 @@ export default function Tasks() {
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
+      // Excluir tarefas do tipo "project" (onboarding) da listagem geral
+      if (task.type === "project") return false;
+      
       const matchesSearch =
         filters.search === "" ||
         task.title.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -260,6 +262,7 @@ export default function Tasks() {
               onUpdateField={handleUpdateField}
               onArchiveTask={(taskId) => archiveTask.mutate(taskId)}
               teamMembers={teamMembers}
+              clients={clients}
             />
           ) : (
             <TaskListView 
@@ -267,6 +270,7 @@ export default function Tasks() {
               onTaskClick={handleTaskClick}
               onUpdateField={handleUpdateField}
               teamMembers={teamMembers}
+              clients={clients}
             />
           )
         )}
