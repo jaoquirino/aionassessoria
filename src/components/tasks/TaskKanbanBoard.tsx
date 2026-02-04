@@ -224,7 +224,6 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
 
   const handleFieldClick = (e: React.MouseEvent | React.PointerEvent) => {
     e.stopPropagation();
-    e.preventDefault();
   };
 
   return (

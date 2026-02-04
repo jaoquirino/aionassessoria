@@ -228,7 +228,7 @@ export function PriorityPopover({
       <PopoverTrigger 
         asChild 
         disabled={disabled}
-        onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        onClick={(e) => { e.stopPropagation(); }}
         onPointerDown={(e) => { e.stopPropagation(); }}
       >
         {children}
