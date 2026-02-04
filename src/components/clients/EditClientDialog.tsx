@@ -70,7 +70,6 @@ export function EditClientDialog({
   const [onboardingDialogOpen, setOnboardingDialogOpen] = useState(false);
   const [selectedOnboardingModule, setSelectedOnboardingModule] = useState<{
     contractModuleId: string;
-    templateId: string;
     moduleName: string;
     isCompleted: boolean;
   } | null>(null);
@@ -388,7 +387,6 @@ export function EditClientDialog({
                       )}
                       onClick={() => handleOpenOnboarding({
                         contractModuleId: module.contractModuleId,
-                        templateId: module.templateId || "",
                         moduleName: module.moduleName,
                         isCompleted,
                       })}
@@ -423,7 +421,6 @@ export function EditClientDialog({
                             e.stopPropagation();
                             handleOpenOnboarding({
                               contractModuleId: module.contractModuleId,
-                              templateId: module.templateId || "",
                               moduleName: module.moduleName,
                               isCompleted,
                             });
@@ -528,7 +525,6 @@ export function EditClientDialog({
           onOpenChange={setOnboardingDialogOpen}
           clientId={client.id}
           contractModuleId={selectedOnboardingModule.contractModuleId}
-          templateId={selectedOnboardingModule.templateId}
           moduleName={selectedOnboardingModule.moduleName}
           isCompleted={selectedOnboardingModule.isCompleted}
         />
