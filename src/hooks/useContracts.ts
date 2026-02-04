@@ -50,9 +50,10 @@ export interface UpdateContractInput {
   monthly_value?: number;
   start_date?: string;
   minimum_duration_months?: number;
-  renewal_date?: string;
+  renewal_date?: string | null;
+  payment_due_day?: number;
   status?: string;
-  notes?: string;
+  notes?: string | null;
 }
 
 function computeContractStatus(contract: Contract): { status: "active" | "expiring_soon" | "renewing" | "ended"; daysUntilRenewal: number } {
