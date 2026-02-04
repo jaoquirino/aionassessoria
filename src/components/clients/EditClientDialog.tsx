@@ -231,6 +231,21 @@ export function EditClientDialog({
 
           <Separator />
 
+          {/* Contact Info */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-foreground text-sm">Informações de Contato</h3>
+            <ClientContactInfo
+              cnpj={cnpj}
+              phone={phone}
+              email={email}
+              onCnpjChange={setCnpj}
+              onPhoneChange={setPhone}
+              onEmailChange={setEmail}
+            />
+          </div>
+
+          <Separator />
+
           {/* Contracts Section */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
