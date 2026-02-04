@@ -11,9 +11,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn, parseLocalDate } from "@/lib/utils";
-import type { Task, TaskStatusDB, TaskPriority, TeamMember } from "@/types/tasks";
+import type { Task, TaskStatusDB, TaskPriority, TeamMember, Client } from "@/types/tasks";
 import { taskStatusConfig, priorityConfig } from "@/types/tasks";
-import { AssigneePopover, DatePopover, RolePopover, PriorityPopover } from "./InlineFieldPopover";
+import { AssigneePopover, DatePopover, RolePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
 import { format } from "date-fns";
 
 interface TaskKanbanBoardProps {
@@ -24,13 +24,14 @@ interface TaskKanbanBoardProps {
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
   onArchiveTask?: (taskId: string) => void;
   teamMembers?: TeamMember[];
+  clients?: Client[];
 }
 
 // Colunas incluindo "overdue" como primeira
 type KanbanColumn = "overdue" | TaskStatusDB;
 const columns: KanbanColumn[] = ["overdue", "todo", "in_progress", "review", "waiting_client", "done"];
 
-export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onUpdateField, onArchiveTask, teamMembers = [] }: TaskKanbanBoardProps) {
+export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onUpdateField, onArchiveTask, teamMembers = [], clients = [] }: TaskKanbanBoardProps) {
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<KanbanColumn | null>(null);
 
@@ -164,6 +165,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
                   onUpdateField={onUpdateField}
                   onArchive={onArchiveTask}
                   teamMembers={teamMembers}
+                  clients={clients}
                 />
               ))}
 
@@ -196,9 +198,10 @@ interface TaskCardProps {
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
   onArchive?: (taskId: string) => void;
   teamMembers: TeamMember[];
+  clients: Client[];
 }
 
-function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, onArchive, teamMembers }: TaskCardProps) {
+function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, onArchive, teamMembers, clients }: TaskCardProps) {
   const priority = task.priority as TaskPriority || "medium";
   const priorityInfo = priorityConfig[priority];
 
@@ -263,10 +266,18 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
             </div>
           </div>
 
-          {/* Cliente */}
-          <p className="text-xs text-muted-foreground truncate font-medium">
-            {task.client?.name || "Sem cliente"}
-          </p>
+          {/* Cliente - Clicável */}
+          <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
+            <ClientPopover
+              currentClient={task.client}
+              clients={clients}
+              onSelect={(clientId) => onUpdateField?.(task.id, "client_id", clientId)}
+            >
+              <p className="text-xs text-muted-foreground truncate font-medium cursor-pointer hover:text-foreground transition-colors">
+                {task.client?.name || "Sem cliente"}
+              </p>
+            </ClientPopover>
+          </div>
 
           {/* Prioridade - Clicável */}
           <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>
