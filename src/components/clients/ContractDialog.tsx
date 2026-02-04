@@ -194,14 +194,32 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="renewalDate">Data de Renovação</Label>
-            <Input
-              id="renewalDate"
-              type="date"
-              value={renewalDate}
-              onChange={(e) => setRenewalDate(e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="renewalDate">Data de Renovação</Label>
+              <Input
+                id="renewalDate"
+                type="date"
+                value={renewalDate}
+                onChange={(e) => setRenewalDate(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentDueDay">Dia de Vencimento</Label>
+              <Select value={String(paymentDueDay)} onValueChange={(v) => setPaymentDueDay(Number(v))}>
+                <SelectTrigger id="paymentDueDay">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                    <SelectItem key={day} value={String(day)}>
+                      Dia {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {!isEditing && modules.filter(m => m.is_active).length > 0 && (

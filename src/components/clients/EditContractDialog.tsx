@@ -163,6 +163,22 @@ export function EditContractDialog({
                 onChange={(e) => setRenewalDate(e.target.value)}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-due-day">Vencimento</Label>
+              <Select value={String(paymentDueDay)} onValueChange={(v) => setPaymentDueDay(Number(v))}>
+                <SelectTrigger id="payment-due-day">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                    <SelectItem key={day} value={String(day)}>
+                      Dia {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
