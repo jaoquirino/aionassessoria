@@ -119,8 +119,10 @@ export function EditContractDialog({
     onOpenChange(false);
   };
 
-  const isDesignModule = (moduleName: string) => {
-    const designKeywords = ["design", "arte", "visual", "gráfico"];
+  // Check if module needs deliverable tracking (has default limit or is design-related)
+  const moduleNeedsDeliverableLimit = (moduleName: string, defaultLimit: number | null) => {
+    if (defaultLimit !== null) return true;
+    const designKeywords = ["design", "arte", "visual", "gráfico", "video", "vídeo"];
     return designKeywords.some(k => moduleName.toLowerCase().includes(k));
   };
 
