@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -14,9 +14,7 @@ import {
   Trash2,
   AlertTriangle,
   MessageSquare,
-  Target,
   Package,
-  Link as LinkIcon,
   StickyNote,
   CalendarIcon,
   Archive,
@@ -24,8 +22,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -53,11 +49,14 @@ import {
   useDeleteAttachment,
   useAddComment,
   useTeamMembers,
+  useClients,
   useArchiveTask,
 } from "@/hooks/useTasks";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface TaskEditDialogProps {
   taskId: string | null;
@@ -65,9 +64,63 @@ interface TaskEditDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Hook to fetch modules for a specific client
+function useClientModules(clientId: string | null) {
+  return useQuery({
+    queryKey: ["client_modules", clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      
+      // Get active contracts for this client with their modules
+      const { data: contracts } = await supabase
+        .from("contracts")
+        .select(`
+          id,
+          contract_modules (
+            id,
+            module_id,
+            service_module:service_modules (
+              id,
+              name,
+              primary_role,
+              default_weight
+            )
+          )
+        `)
+        .eq("client_id", clientId)
+        .eq("status", "active");
+
+      // Flatten the modules
+      const modules: Array<{
+        contractModuleId: string;
+        moduleId: string;
+        moduleName: string;
+        primaryRole: string;
+      }> = [];
+      
+      contracts?.forEach(contract => {
+        contract.contract_modules?.forEach((cm: any) => {
+          if (cm.service_module) {
+            modules.push({
+              contractModuleId: cm.id,
+              moduleId: cm.module_id,
+              moduleName: cm.service_module.name,
+              primaryRole: cm.service_module.primary_role,
+            });
+          }
+        });
+      });
+
+      return modules;
+    },
+    enabled: !!clientId,
+  });
+}
+
 export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogProps) {
   const { data: task, isLoading } = useTask(taskId);
   const { data: teamMembers = [] } = useTeamMembers();
+  const { data: clients = [] } = useClients();
   const { data: comments = [] } = useTaskComments(taskId);
   
   const updateTask = useUpdateTask();
@@ -85,16 +138,18 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
   const [status, setStatus] = useState<TaskStatusDB>("todo");
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [dueDate, setDueDate] = useState<Date | undefined>();
-  const [descriptionObjective, setDescriptionObjective] = useState("");
-  const [descriptionDeliverable, setDescriptionDeliverable] = useState("");
-  const [descriptionReferences, setDescriptionReferences] = useState("");
   const [descriptionNotes, setDescriptionNotes] = useState("");
+  const [clientId, setClientId] = useState<string>("");
+  const [contractModuleId, setContractModuleId] = useState<string>("");
 
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [newAttachmentName, setNewAttachmentName] = useState("");
   const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [newComment, setNewComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch modules for the selected client
+  const { data: clientModules = [] } = useClientModules(clientId);
 
   // Sync form state when task changes
   useEffect(() => {
@@ -103,10 +158,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
       setStatus(task.status);
       setAssignedTo(task.assigned_to || "");
       setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
-      setDescriptionObjective(task.description_objective || "");
-      setDescriptionDeliverable(task.description_deliverable || "");
-      setDescriptionReferences(task.description_references || "");
       setDescriptionNotes(task.description_notes || "");
+      setClientId(task.client_id || "");
+      setContractModuleId(task.contract_module_id || "");
     }
   }, [task]);
 
@@ -115,16 +169,26 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
 
     setIsSaving(true);
     try {
+      // Find the contract_id from the selected module
+      let contractId = task.contract_id;
+      if (contractModuleId && contractModuleId !== task.contract_module_id) {
+        const { data: cm } = await supabase
+          .from("contract_modules")
+          .select("contract_id")
+          .eq("id", contractModuleId)
+          .single();
+        if (cm) contractId = cm.contract_id;
+      }
+
       await updateTask.mutateAsync({
         id: task.id,
         title,
         status,
         assigned_to: assignedTo || null,
         due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : task.due_date,
-        description_objective: descriptionObjective || null,
-        description_deliverable: descriptionDeliverable || null,
-        description_references: descriptionReferences || null,
         description_notes: descriptionNotes || null,
+        contract_module_id: contractModuleId || null,
+        contract_id: contractId,
       });
     } finally {
       setIsSaving(false);
@@ -138,10 +202,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
       setStatus(task.status);
       setAssignedTo(task.assigned_to || "");
       setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
-      setDescriptionObjective(task.description_objective || "");
-      setDescriptionDeliverable(task.description_deliverable || "");
-      setDescriptionReferences(task.description_references || "");
       setDescriptionNotes(task.description_notes || "");
+      setClientId(task.client_id || "");
+      setContractModuleId(task.contract_module_id || "");
     }
     onOpenChange(false);
   };
@@ -187,6 +250,19 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
     task.attachments && task.attachments.length > 0
   );
 
+  // Status color mapping
+  const getStatusColor = (statusKey: string) => {
+    const colors: Record<string, string> = {
+      overdue: "bg-destructive text-destructive-foreground",
+      todo: "bg-muted text-muted-foreground",
+      in_progress: "bg-primary text-primary-foreground",
+      review: "bg-warning text-warning-foreground",
+      waiting_client: "bg-info text-info-foreground",
+      done: "bg-success text-success-foreground",
+    };
+    return colors[statusKey] || "bg-muted text-muted-foreground";
+  };
+
   if (!open) return null;
 
   return (
@@ -200,9 +276,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
           </div>
         ) : task ? (
           <div className="flex flex-col h-full max-h-[90vh]">
-            {/* Header */}
-            <DialogHeader className="p-6 pb-4 border-b shrink-0">
-              <div className="flex items-center gap-2 mb-2">
+            {/* Header - Inline editable title */}
+            <div className="p-6 pb-4 border-b shrink-0">
+              <div className="flex items-center gap-2 mb-3">
                 <Badge variant="outline" className={cn("text-xs", taskTypeConfig[task.type].color)}>
                   {taskTypeConfig[task.type].label}
                 </Badge>
@@ -216,8 +292,13 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                   </Badge>
                 )}
               </div>
-              <DialogTitle className="text-lg">Editar Tarefa</DialogTitle>
-            </DialogHeader>
+              <Input 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)}
+                className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                placeholder="Título da tarefa"
+              />
+            </div>
 
             <ScrollArea className="flex-1">
               <Tabs defaultValue="details" className="w-full">
@@ -261,18 +342,16 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
 
                 {/* Details Tab */}
                 <TabsContent value="details" className="p-6 space-y-6 mt-0">
-                  {/* Title */}
-                  <div className="space-y-2">
-                    <Label>Título</Label>
-                    <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-                  </div>
-
-                  {/* Status */}
+                  {/* Status with colors */}
                   <div className="space-y-2">
                     <Label>Status</Label>
                     <Select value={status} onValueChange={(v) => setStatus(v as TaskStatusDB)}>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue>
+                          <Badge className={getStatusColor(status)}>
+                            {taskStatusConfig[status]?.label || status}
+                          </Badge>
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {(Object.entries(taskStatusConfig) as [string, typeof taskStatusConfig[keyof typeof taskStatusConfig]][])
@@ -283,7 +362,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                             value={key}
                             disabled={key === "done" && !canComplete}
                           >
-                            {config.label}
+                            <Badge className={getStatusColor(key)}>
+                              {config.label}
+                            </Badge>
                             {key === "done" && !canComplete && (
                               <span className="text-xs text-muted-foreground ml-2">(checklist e anexo obrigatórios)</span>
                             )}
@@ -359,21 +440,56 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                     </div>
                   </div>
 
-                  {/* Client & Module Info (read-only) */}
-                  <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-muted/50">
-                    <div>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  {/* Client & Module Selection */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
                         <Building2 className="h-3 w-3" /> Cliente
-                      </p>
-                      <p className="text-sm font-medium">{task.client?.name || "-"}</p>
+                      </Label>
+                      <Select 
+                        value={clientId} 
+                        onValueChange={(val) => {
+                          setClientId(val);
+                          setContractModuleId(""); // Reset module when client changes
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um cliente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clients.map((client) => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
                         <Package className="h-3 w-3" /> Módulo
-                      </p>
-                      <p className="text-sm font-medium">
-                        {task.contract_module?.service_module?.name || "-"}
-                      </p>
+                      </Label>
+                      <Select 
+                        value={contractModuleId} 
+                        onValueChange={setContractModuleId}
+                        disabled={!clientId || clientModules.length === 0}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={
+                            !clientId ? "Selecione um cliente primeiro" :
+                            clientModules.length === 0 ? "Nenhum módulo disponível" :
+                            "Selecione um módulo"
+                          } />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clientModules.map((module) => (
+                            <SelectItem key={module.contractModuleId} value={module.contractModuleId}>
+                              {module.moduleName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -387,55 +503,17 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
 
                   <Separator />
 
-                  {/* Description Sections */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1">
-                        <Target className="h-3 w-3" /> Objetivo
-                      </Label>
-                      <Textarea 
-                        value={descriptionObjective}
-                        onChange={(e) => setDescriptionObjective(e.target.value)}
-                        placeholder="O que queremos alcançar?"
-                        className="resize-none"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1">
-                        <Package className="h-3 w-3" /> O que deve ser entregue
-                      </Label>
-                      <Textarea 
-                        value={descriptionDeliverable}
-                        onChange={(e) => setDescriptionDeliverable(e.target.value)}
-                        placeholder="Descreva os entregáveis"
-                        className="resize-none"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1">
-                        <LinkIcon className="h-3 w-3" /> Referências
-                      </Label>
-                      <Textarea 
-                        value={descriptionReferences}
-                        onChange={(e) => setDescriptionReferences(e.target.value)}
-                        placeholder="Links e referências"
-                        className="resize-none"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1">
-                        <StickyNote className="h-3 w-3" /> Observações
-                      </Label>
-                      <Textarea 
-                        value={descriptionNotes}
-                        onChange={(e) => setDescriptionNotes(e.target.value)}
-                        placeholder="Notas adicionais"
-                        className="resize-none"
-                      />
-                    </div>
+                  {/* Single Observations Field */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1">
+                      <StickyNote className="h-3 w-3" /> Observações
+                    </Label>
+                    <Textarea 
+                      value={descriptionNotes}
+                      onChange={(e) => setDescriptionNotes(e.target.value)}
+                      placeholder="Notas adicionais, referências, objetivos e entregáveis"
+                      className="resize-none min-h-[120px]"
+                    />
                   </div>
                 </TabsContent>
 
@@ -529,8 +607,13 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                         placeholder="URL do link ou arquivo"
                         value={newAttachmentUrl}
                         onChange={(e) => setNewAttachmentUrl(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleAddAttachment()}
                       />
-                      <Button variant="outline" onClick={handleAddAttachment}>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleAddAttachment}
+                        disabled={!newAttachmentName.trim() || !newAttachmentUrl.trim()}
+                      >
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -660,7 +743,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange }: TaskEditDialogPro
                   onOpenChange(false); 
                 }}
                 disabled={isSaving || archiveTask.isPending}
-                className="text-muted-foreground hover:text-foreground gap-1 mr-auto"
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1 mr-auto"
               >
                 <Archive className="h-4 w-4" />
                 Arquivar

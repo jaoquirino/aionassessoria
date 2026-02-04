@@ -225,7 +225,7 @@ export default function Clients() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="grid grid-cols-2 gap-4 lg:grid-cols-5"
+        className="grid grid-cols-2 gap-4 lg:grid-cols-6"
       >
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">Em Onboarding</p>
@@ -240,14 +240,20 @@ export default function Clients() {
           </p>
         </div>
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Pausados</p>
+          <p className="text-sm text-muted-foreground">A Vencer</p>
           <p className="text-2xl font-bold text-warning">
+            {contractsNeedingAttention}
+          </p>
+        </div>
+        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
+          <p className="text-sm text-muted-foreground">Pausados</p>
+          <p className="text-2xl font-bold text-orange-500">
             {clients.filter((c) => c.status === "paused").length}
           </p>
         </div>
         <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
           <p className="text-sm text-muted-foreground">MRR Total</p>
-          <p className="text-2xl font-bold text-success">
+          <p className="text-xl font-bold text-success whitespace-nowrap">
             {formatCurrency(totalMRR)}
           </p>
         </div>

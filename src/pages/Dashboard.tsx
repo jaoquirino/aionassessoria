@@ -88,6 +88,7 @@ export default function Dashboard() {
           icon={AlertTriangle}
           status={stats.overdueTasks > 0 ? "critical" : "normal"}
           delay={0}
+          onClick={() => navigate("/tarefas?filter=overdue")}
         />
         <MetricCard
           title="Entregas Hoje"
@@ -96,6 +97,7 @@ export default function Dashboard() {
           icon={CheckCircle}
           status="normal"
           delay={1}
+          onClick={() => navigate("/tarefas?filter=today")}
         />
         <MetricCard
           title="Entregas da Semana"
@@ -104,6 +106,7 @@ export default function Dashboard() {
           icon={Clock}
           status={stats.weekDeliveries - stats.weekCompleted > 5 ? "attention" : "normal"}
           delay={2}
+          onClick={() => navigate("/tarefas?filter=week")}
         />
         {isAdmin ? (
           <MetricCard
@@ -113,6 +116,7 @@ export default function Dashboard() {
             icon={Calendar}
             status={stats.contractsInAlert > 0 ? "attention" : "normal"}
             delay={3}
+            onClick={() => navigate("/clientes")}
           />
         ) : (
           <MetricCard
@@ -122,6 +126,7 @@ export default function Dashboard() {
             icon={Clock}
             status={stats.totalWeight > stats.totalCapacity * 0.8 ? "attention" : "normal"}
             delay={3}
+            onClick={() => navigate("/tarefas")}
           />
         )}
       </div>
@@ -134,20 +139,22 @@ export default function Dashboard() {
             value={stats.activeClients}
             icon={Users}
             delay={4}
+            onClick={() => navigate("/clientes")}
           />
           <MetricCard
             title="Receita Mensal"
             value={formatCurrency(stats.monthlyRevenue)}
             icon={DollarSign}
             delay={5}
+            onClick={() => navigate("/clientes")}
           />
           <MetricCard
             title="Peso Total Operacional"
-            value={stats.totalWeight}
-            subtitle={`Capacidade: ${stats.totalCapacity}`}
+            value={`${stats.totalWeight} / ${stats.totalCapacity}`}
             icon={Clock}
             status={stats.totalWeight > stats.totalCapacity ? "critical" : stats.totalWeight > stats.totalCapacity * 0.8 ? "attention" : "normal"}
             delay={6}
+            onClick={() => navigate("/equipe")}
           />
         </div>
       )}
