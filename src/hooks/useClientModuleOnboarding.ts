@@ -99,6 +99,8 @@ export function useClientOnboardingProgress(clientId: string | null) {
         .select(`
           id,
           status,
+          template_id,
+          contract_module_id,
           contract_module:contract_modules(
             id,
             module_id,
