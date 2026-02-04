@@ -166,7 +166,7 @@ export function OnboardingStepsDialog({
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <ScrollArea className="flex-1 -mx-6 px-6">
+          <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
             <div className="space-y-3 py-4">
               <AnimatePresence mode="wait">
                 {steps.map((step, index) => {
