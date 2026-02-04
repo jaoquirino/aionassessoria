@@ -115,30 +115,19 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="weight">Peso Padrão</Label>
-              <Input
-                id="weight"
-                type="number"
-                min={1}
-                max={10}
-                value={defaultWeight}
-                onChange={(e) => setDefaultWeight(Number(e.target.value))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="limit">Limite de Entregáveis</Label>
-              <Input
-                id="limit"
-                type="number"
-                min={0}
-                value={deliverableLimit ?? ""}
-                onChange={(e) => setDeliverableLimit(e.target.value ? Number(e.target.value) : null)}
-                placeholder="Sem limite"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="weight">Peso Padrão</Label>
+            <Input
+              id="weight"
+              type="number"
+              min={1}
+              max={10}
+              value={defaultWeight}
+              onChange={(e) => setDefaultWeight(Number(e.target.value))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Peso operacional base para tarefas deste módulo
+            </p>
           </div>
 
           <div className="space-y-2">

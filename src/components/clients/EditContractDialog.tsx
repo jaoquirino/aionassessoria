@@ -39,6 +39,7 @@ export function EditContractDialog({
   const [monthlyValue, setMonthlyValue] = useState(0);
   const [startDate, setStartDate] = useState("");
   const [renewalDate, setRenewalDate] = useState("");
+  const [paymentDueDay, setPaymentDueDay] = useState(10);
   const [minimumDuration, setMinimumDuration] = useState(12);
   const [status, setStatus] = useState("active");
   const [notes, setNotes] = useState("");
@@ -53,6 +54,7 @@ export function EditContractDialog({
       setMonthlyValue(contract.monthly_value);
       setStartDate(format(new Date(contract.start_date), "yyyy-MM-dd"));
       setRenewalDate(contract.renewal_date ? format(new Date(contract.renewal_date), "yyyy-MM-dd") : "");
+      setPaymentDueDay((contract as any).payment_due_day || 10);
       setMinimumDuration(contract.minimum_duration_months);
       setStatus(contract.status);
       setNotes(contract.notes || "");
@@ -95,6 +97,7 @@ export function EditContractDialog({
       monthly_value: monthlyValue,
       start_date: startDate,
       renewal_date: renewalDate || null,
+      payment_due_day: paymentDueDay,
       minimum_duration_months: minimumDuration,
       status,
       notes: notes || null,
@@ -116,8 +119,10 @@ export function EditContractDialog({
     onOpenChange(false);
   };
 
-  const isDesignModule = (moduleName: string) => {
-    const designKeywords = ["design", "arte", "visual", "gráfico"];
+  // Check if module needs deliverable tracking (has default limit or is design-related)
+  const moduleNeedsDeliverableLimit = (moduleName: string, defaultLimit: number | null) => {
+    if (defaultLimit !== null) return true;
+    const designKeywords = ["design", "arte", "visual", "gráfico", "video", "vídeo"];
     return designKeywords.some(k => moduleName.toLowerCase().includes(k));
   };
 
@@ -140,7 +145,7 @@ export function EditContractDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="start-date">Data de Início</Label>
               <Input
@@ -152,13 +157,29 @@ export function EditContractDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="renewal-date">Data de Renovação</Label>
+              <Label htmlFor="renewal-date">Renovação</Label>
               <Input
                 id="renewal-date"
                 type="date"
                 value={renewalDate}
                 onChange={(e) => setRenewalDate(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-due-day">Vencimento</Label>
+              <Select value={String(paymentDueDay)} onValueChange={(v) => setPaymentDueDay(Number(v))}>
+                <SelectTrigger id="payment-due-day">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                    <SelectItem key={day} value={String(day)}>
+                      Dia {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -203,7 +224,7 @@ export function EditContractDialog({
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {allModules?.filter(m => m.is_active).map((module) => {
                 const config = moduleConfigs.find(c => c.moduleId === module.id);
-                const isDesign = isDesignModule(module.name);
+                const needsLimit = moduleNeedsDeliverableLimit(module.name, module.deliverable_limit);
                 
                 return (
                   <div 
@@ -227,8 +248,8 @@ export function EditContractDialog({
                       </p>
                     </div>
                     
-                    {/* Deliverable limit - shown for design modules or if already has a limit */}
-                    {(isDesign || module.deliverable_limit !== null) && config?.selected && (
+                    {/* Deliverable limit - shown for all selected modules */}
+                    {config?.selected && (
                       <div className="flex items-center gap-1.5">
                         <Input
                           type="number"
@@ -238,7 +259,7 @@ export function EditContractDialog({
                           placeholder="∞"
                           className="w-16 h-8 text-center text-sm"
                         />
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">entregáveis</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">entregas</span>
                       </div>
                     )}
                   </div>

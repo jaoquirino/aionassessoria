@@ -187,6 +187,9 @@ export function OnboardingStepsDialog({
                                 <Textarea
                                   id={`notes-${task.id}`}
                                   value={task.description_notes || ""}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  onFocus={(e) => e.stopPropagation()}
                                   onChange={(e) => {
                                     updateTaskField.mutate({
                                       taskId: task.id,

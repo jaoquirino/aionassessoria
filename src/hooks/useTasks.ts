@@ -468,7 +468,12 @@ export function useAddAttachment() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
-      toast.success("Anexo adicionado");
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Link adicionado");
+    },
+    onError: (error) => {
+      console.error("Error adding attachment:", error);
+      toast.error("Erro ao adicionar anexo: " + error.message);
     },
   });
 }

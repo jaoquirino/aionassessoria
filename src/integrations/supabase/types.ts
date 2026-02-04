@@ -290,6 +290,7 @@ export type Database = {
           minimum_duration_months: number
           monthly_value: number
           notes: string | null
+          payment_due_day: number | null
           renewal_date: string | null
           requires_onboarding: boolean
           start_date: string
@@ -303,6 +304,7 @@ export type Database = {
           minimum_duration_months?: number
           monthly_value: number
           notes?: string | null
+          payment_due_day?: number | null
           renewal_date?: string | null
           requires_onboarding?: boolean
           start_date: string
@@ -316,6 +318,7 @@ export type Database = {
           minimum_duration_months?: number
           monthly_value?: number
           notes?: string | null
+          payment_due_day?: number | null
           renewal_date?: string | null
           requires_onboarding?: boolean
           start_date?: string
