@@ -17,11 +17,13 @@ import type {
 import { toast } from "sonner";
 
 // Fetch all tasks with related data (uses public view for team_members to avoid RLS issues)
+// Excludes archived tasks by default
 export function useTasks() {
   return useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
       // Fetch tasks with client/contract info (no team_members join to avoid RLS permission error)
+      // Filter out archived tasks
       const { data: tasksData, error } = await supabase
         .from("tasks")
         .select(`
@@ -33,6 +35,7 @@ export function useTasks() {
             service_module:service_modules(*)
           )
         `)
+        .is("archived_at", null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -55,6 +58,27 @@ export function useTasks() {
     },
     staleTime: 30000,
     gcTime: 300000,
+  });
+}
+
+// Fetch archived tasks (admin only)
+export function useArchivedTasks() {
+  return useQuery({
+    queryKey: ["tasks", "archived"],
+    queryFn: async () => {
+      const { data: tasksData, error } = await supabase
+        .from("tasks")
+        .select(`
+          *,
+          client:clients(*)
+        `)
+        .not("archived_at", "is", null)
+        .order("archived_at", { ascending: false });
+
+      if (error) throw error;
+      return tasksData as Task[];
+    },
+    staleTime: 30000,
   });
 }
 
@@ -279,6 +303,50 @@ export function useDeleteTask() {
     },
     onError: (error) => {
       toast.error("Erro ao excluir tarefa: " + error.message);
+    },
+  });
+}
+
+// Archive task
+export function useArchiveTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ archived_at: new Date().toISOString() })
+        .eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Tarefa arquivada");
+    },
+    onError: (error) => {
+      toast.error("Erro ao arquivar tarefa: " + error.message);
+    },
+  });
+}
+
+// Unarchive task
+export function useUnarchiveTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ archived_at: null })
+        .eq("id", taskId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Tarefa restaurada");
+    },
+    onError: (error) => {
+      toast.error("Erro ao restaurar tarefa: " + error.message);
     },
   });
 }
