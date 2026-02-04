@@ -38,10 +38,17 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
   const [permission, setPermission] = useState("operational");
   const [capacityLimit, setCapacityLimit] = useState(15);
 
+  const { user } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
+  const { data: currentTeamMember } = useCurrentTeamMember();
   const createMember = useCreateTeamMember();
   const updateMember = useUpdateTeamMember();
+  const linkToMember = useLinkToTeamMember();
+  const unlinkMember = useUnlinkTeamMember();
 
   const isEditing = !!member;
+  const isLinkedToCurrentUser = member && (member as any).user_id === user?.id;
+  const canLinkAccount = isEditing && !isLinkedToCurrentUser && !currentTeamMember;
 
   useEffect(() => {
     if (member) {
@@ -104,6 +111,16 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
     }
   };
 
+  const handleLinkAccount = async () => {
+    if (!member) return;
+    await linkToMember.mutateAsync(member.id);
+  };
+
+  const handleUnlinkAccount = async () => {
+    if (!member) return;
+    await unlinkMember.mutateAsync(member.id);
+  };
+
   const isSaving = createMember.isPending || updateMember.isPending;
   const availableRoles = roleOptions.filter(r => !roles.includes(r));
 
@@ -115,6 +132,56 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Link Account Section */}
+          {isEditing && (
+            <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Vincular à sua conta</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isLinkedToCurrentUser 
+                      ? "Este membro está vinculado à sua conta"
+                      : canLinkAccount 
+                        ? "Vincule para ser atribuído como responsável em tarefas"
+                        : currentTeamMember
+                          ? "Sua conta já está vinculada a outro membro"
+                          : "Membro já vinculado a outra conta"
+                    }
+                  </p>
+                </div>
+                {isLinkedToCurrentUser ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleUnlinkAccount}
+                    disabled={unlinkMember.isPending}
+                    className="gap-1"
+                  >
+                    <Unlink className="h-3 w-3" />
+                    Desvincular
+                  </Button>
+                ) : canLinkAccount && (
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={handleLinkAccount}
+                    disabled={linkToMember.isPending}
+                    className="gap-1"
+                  >
+                    <Link2 className="h-3 w-3" />
+                    Vincular
+                  </Button>
+                )}
+              </div>
+              {isLinkedToCurrentUser && (
+                <Badge variant="secondary" className="gap-1">
+                  <Link2 className="h-3 w-3" />
+                  Minha conta
+                </Badge>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="name">Nome *</Label>
             <Input
