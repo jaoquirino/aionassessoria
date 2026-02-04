@@ -1,1 +1,10 @@
 project_id = "yrtluzlfqlqrulnrthjd"
+
+[functions.assign-first-admin]
+verify_jwt = false
+
+[functions.check-has-admin]
+verify_jwt = false
+
+[functions.validate-setup-token]
+verify_jwt = false
