@@ -257,10 +257,14 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   const handleAddAttachment = () => {
     if (!task || !newAttachmentName.trim() || !newAttachmentUrl.trim()) return;
+    let url = newAttachmentUrl.trim();
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+    }
     addAttachment.mutate({
       taskId: task.id,
       fileName: newAttachmentName.trim(),
-      fileUrl: newAttachmentUrl.trim(),
+      fileUrl: url,
     });
     setNewAttachmentName("");
     setNewAttachmentUrl("");
@@ -683,9 +687,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   {/* Attachments List */}
                   <div className="space-y-2">
                     {task.attachments?.map((attachment) => (
-                      <a 
+                      <a
                         key={attachment.id}
-                        href={attachment.file_url}
+                        href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden"
