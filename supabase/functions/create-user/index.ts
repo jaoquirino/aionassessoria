@@ -94,20 +94,34 @@
      }
  
      // Update profile with username
-     await supabase
+      const { error: profileUpdateError } = await supabase
        .from("profiles")
        .update({ 
          username,
          full_name: fullName || null,
        })
        .eq("user_id", newUser.user.id);
+
+      if (profileUpdateError) {
+        return new Response(
+          JSON.stringify({ error: profileUpdateError.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
  
      // Assign member role by default
       // Assign role based on permission - admin or member
-      const roleToAssign = permission === "admin" ? "admin" : "member";
-      await supabase
+       const roleToAssign = permission === "admin" ? "admin" : "member";
+       const { error: roleInsertError } = await supabase
        .from("user_roles")
-        .insert({ user_id: newUser.user.id, role: roleToAssign });
+         .insert({ user_id: newUser.user.id, role: roleToAssign });
+
+      if (roleInsertError) {
+        return new Response(
+          JSON.stringify({ error: roleInsertError.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
  
      // Create team member entry with roles
      if (roles && roles.length > 0) {
