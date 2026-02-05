@@ -168,18 +168,18 @@ export function EditContractDialog({
 
             <div className="space-y-2">
               <Label htmlFor="payment-due-day">Vencimento</Label>
-              <Select value={String(paymentDueDay)} onValueChange={(v) => setPaymentDueDay(Number(v))}>
-                <SelectTrigger id="payment-due-day">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                    <SelectItem key={day} value={String(day)}>
-                      Dia {day}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="payment-due-day"
+                type="number"
+                min={1}
+                max={31}
+                value={paymentDueDay}
+                onChange={(e) => {
+                  const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
+                  setPaymentDueDay(val);
+                }}
+                placeholder="1-31"
+              />
             </div>
           </div>
 
