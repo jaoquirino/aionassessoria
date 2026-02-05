@@ -22,6 +22,7 @@ import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, type AppRole } fr
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPreferences";
+import { useCapacitySettings } from "@/hooks/useCapacitySettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AvatarCropDialog } from "@/components/settings/AvatarCropDialog";
@@ -75,6 +76,16 @@ export default function Settings() {
 
   // Theme preferences
   const { theme, setTheme, isDark } = useUserPreferences();
+
+  // Capacity settings
+  const { settings: capacitySettings, updateSettings: updateCapacitySettings, updateTypeWeight } = useCapacitySettings();
+  const [capacityLimit, setCapacityLimit] = useState(capacitySettings.defaultCapacityLimit.toString());
+  const [alertAt80, setAlertAt80] = useState(capacitySettings.alertAt80Percent);
+  const [blockAboveLimit, setBlockAboveLimit] = useState(capacitySettings.blockAboveLimit);
+  const [recurringWeight, setRecurringWeight] = useState(capacitySettings.typeWeights.recurring.toString());
+  const [planningWeight, setPlanningWeight] = useState(capacitySettings.typeWeights.planning.toString());
+  const [projectWeight, setProjectWeight] = useState(capacitySettings.typeWeights.project.toString());
+  const [extraWeight, setExtraWeight] = useState(capacitySettings.typeWeights.extra.toString());
 
   const { data: users, isLoading: usersLoading } = useUsersWithRoles();
   const { data: currentMember } = useCurrentTeamMember();
@@ -296,6 +307,39 @@ export default function Settings() {
     } finally {
       setIsChangingPassword(false);
     }
+  };
+
+  // Sync capacity state when settings change
+  useEffect(() => {
+    setCapacityLimit(capacitySettings.defaultCapacityLimit.toString());
+    setAlertAt80(capacitySettings.alertAt80Percent);
+    setBlockAboveLimit(capacitySettings.blockAboveLimit);
+    setRecurringWeight(capacitySettings.typeWeights.recurring.toString());
+    setPlanningWeight(capacitySettings.typeWeights.planning.toString());
+    setProjectWeight(capacitySettings.typeWeights.project.toString());
+    setExtraWeight(capacitySettings.typeWeights.extra.toString());
+  }, [capacitySettings]);
+
+  const handleSaveCapacitySettings = () => {
+    const limit = parseInt(capacityLimit) || 15;
+    updateCapacitySettings({
+      defaultCapacityLimit: limit,
+      alertAt80Percent: alertAt80,
+      blockAboveLimit: blockAboveLimit,
+    });
+    toast.success("Configurações de capacidade salvas");
+  };
+
+  const handleSaveWeights = () => {
+    updateCapacitySettings({
+      typeWeights: {
+        recurring: parseInt(recurringWeight) || 2,
+        planning: parseInt(planningWeight) || 1,
+        project: parseInt(projectWeight) || 4,
+        extra: parseInt(extraWeight) || 3,
+      },
+    });
+    toast.success("Pesos salvos com sucesso");
   };
 
   const filteredUsers = users?.filter(
@@ -666,24 +710,36 @@ export default function Settings() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="defaultWeight">Peso máximo padrão por funcionário</Label>
-                  <Input id="defaultWeight" type="number" defaultValue="15" className="max-w-[200px]" />
+                  <Input 
+                    id="defaultWeight" 
+                    type="number" 
+                    value={capacityLimit}
+                    onChange={(e) => setCapacityLimit(e.target.value)}
+                    className="max-w-[200px]" 
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">Alerta de capacidade em 80%</p>
                     <p className="text-sm text-muted-foreground">Mostrar status de atenção</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={alertAt80}
+                    onCheckedChange={setAlertAt80}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">Bloquear atribuição acima do limite</p>
                     <p className="text-sm text-muted-foreground">Impedir atribuição quando capacidade excedida</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={blockAboveLimit}
+                    onCheckedChange={setBlockAboveLimit}
+                  />
                 </div>
               </div>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={handleSaveCapacitySettings}>
                 <Save className="h-4 w-4" />
                 Salvar Configurações
               </Button>
@@ -700,22 +756,42 @@ export default function Settings() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="recurringWeight">Entrega Recorrente</Label>
-                  <Input id="recurringWeight" type="number" defaultValue="2" />
+                  <Input 
+                    id="recurringWeight" 
+                    type="number" 
+                    value={recurringWeight}
+                    onChange={(e) => setRecurringWeight(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="planningWeight">Planejamento</Label>
-                  <Input id="planningWeight" type="number" defaultValue="1" />
+                  <Input 
+                    id="planningWeight" 
+                    type="number" 
+                    value={planningWeight}
+                    onChange={(e) => setPlanningWeight(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="projectWeight">Projeto</Label>
-                  <Input id="projectWeight" type="number" defaultValue="4" />
+                  <Input 
+                    id="projectWeight" 
+                    type="number" 
+                    value={projectWeight}
+                    onChange={(e) => setProjectWeight(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="extraWeight">Extra</Label>
-                  <Input id="extraWeight" type="number" defaultValue="3" />
+                  <Input 
+                    id="extraWeight" 
+                    type="number" 
+                    value={extraWeight}
+                    onChange={(e) => setExtraWeight(e.target.value)}
+                  />
                 </div>
               </div>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={handleSaveWeights}>
                 <Save className="h-4 w-4" />
                 Salvar Pesos
               </Button>

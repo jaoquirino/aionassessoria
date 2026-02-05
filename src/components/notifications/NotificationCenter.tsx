@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, X, CheckCircle2, AlertCircle, Info, Clock, User } from "lucide-react";
+import { Bell, X, CheckCircle2, AlertCircle, Info, Clock, User, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -66,7 +66,7 @@ export function ToastNotification({
   onNavigate: () => void;
 }) {
   useEffect(() => {
-    const timer = setTimeout(onClose, 6000);
+    const timer = setTimeout(onClose, 8000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -90,11 +90,7 @@ export function ToastNotification({
       initial={{ opacity: 0, x: 100, y: 0 }}
       animate={{ opacity: 1, x: 0, y: 0 }}
       exit={{ opacity: 0, x: 100, y: 0 }}
-      className="bg-card border rounded-lg shadow-lg p-4 w-80 cursor-pointer hover:bg-accent/50 transition-colors"
-      onClick={() => {
-        onNavigate();
-        onClose();
-      }}
+      className="bg-card border rounded-lg shadow-lg p-4 w-80"
     >
       <div className="flex items-start gap-3">
         <div className="shrink-0 mt-0.5">{getIcon()}</div>
@@ -105,18 +101,35 @@ export function ToastNotification({
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
             {notification.message}
           </p>
+          <div className="flex items-center gap-2 mt-3">
+            <Button
+              variant="default"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => {
+                onNavigate();
+                onClose();
+              }}
+            >
+              <ExternalLink className="h-3 w-3" />
+              Abrir
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={onClose}
+            >
+              Fechar
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 shrink-0 -mt-1 -mr-1"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
+        <button
+          className="shrink-0 -mt-1 -mr-1 p-1 rounded hover:bg-accent transition-colors"
+          onClick={onClose}
         >
-          <X className="h-4 w-4" />
-        </Button>
+          <X className="h-4 w-4 text-muted-foreground" />
+        </button>
       </div>
     </motion.div>
   );
@@ -322,11 +335,26 @@ export function NotificationToastContainer() {
   const [toasts, setToasts] = useState<Notification[]>([]);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!user) return;
 
-    // Subscribe to realtime task assignments
+    // Get team member id for current user
+    let teamMemberId: string | null = null;
+
+    const getTeamMemberId = async () => {
+      const { data } = await supabase
+        .from("team_members")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      teamMemberId = data?.id || null;
+    };
+
+    getTeamMemberId();
+
+    // Subscribe to realtime task changes
     const channel = supabase
       .channel("task_assignments")
       .on(
@@ -336,23 +364,16 @@ export function NotificationToastContainer() {
           schema: "public",
           table: "tasks",
         },
-        async (payload) => {
-          // Check if this is an assignment to the current user
-          const { data: teamMember } = await supabase
-            .from("team_members")
-            .select("id")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (!teamMember) return;
-
+        (payload) => {
+          if (!teamMemberId) return;
+          
           const newData = payload.new as any;
           const oldData = payload.old as any;
 
           // If assigned_to changed and now points to current user
           if (
-            newData.assigned_to === teamMember.id &&
-            oldData.assigned_to !== teamMember.id
+            newData.assigned_to === teamMemberId &&
+            oldData.assigned_to !== teamMemberId
           ) {
             const notification: Notification = {
               id: `toast-${Date.now()}`,
@@ -364,6 +385,37 @@ export function NotificationToastContainer() {
               created_at: new Date().toISOString(),
             };
             setToasts((prev) => [...prev, notification]);
+            // Invalidate notifications query to update bell
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "tasks",
+        },
+        (payload) => {
+          if (!teamMemberId) return;
+          
+          const newData = payload.new as any;
+
+          // If new task is assigned to current user
+          if (newData.assigned_to === teamMemberId) {
+            const notification: Notification = {
+              id: `toast-${Date.now()}`,
+              type: "task_assigned",
+              title: "Nova tarefa atribuída a você",
+              message: newData.title,
+              task_id: newData.id,
+              is_read: false,
+              created_at: new Date().toISOString(),
+            };
+            setToasts((prev) => [...prev, notification]);
+            // Invalidate notifications query to update bell
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
           }
         }
       )
@@ -372,7 +424,7 @@ export function NotificationToastContainer() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, queryClient]);
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
