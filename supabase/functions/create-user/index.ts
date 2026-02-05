@@ -2,7 +2,7 @@
  
  const corsHeaders = {
    "Access-Control-Allow-Origin": "*",
-   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
  };
  
  Deno.serve(async (req) => {
@@ -103,9 +103,11 @@
        .eq("user_id", newUser.user.id);
  
      // Assign member role by default
-     await supabase
+      // Assign role based on permission - admin or member
+      const roleToAssign = permission === "admin" ? "admin" : "member";
+      await supabase
        .from("user_roles")
-       .insert({ user_id: newUser.user.id, role: "member" });
+        .insert({ user_id: newUser.user.id, role: roleToAssign });
  
      // Create team member entry with roles
      if (roles && roles.length > 0) {

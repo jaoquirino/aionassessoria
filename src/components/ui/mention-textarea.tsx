@@ -175,14 +175,15 @@ export function MentionTextarea({
       {showSuggestions && filteredMembers.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-auto"
+          className="absolute z-[100] w-full mt-1 bg-popover border border-border rounded-md shadow-xl max-h-48 overflow-auto"
+          style={{ backgroundColor: 'hsl(var(--popover))' }}
         >
           {filteredMembers.map((member, index) => (
             <button
               key={member.id}
               type="button"
               className={cn(
-                "w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-accent transition-colors",
+                "w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-accent transition-colors text-popover-foreground",
                 index === selectedIndex && "bg-accent"
               )}
               onClick={() => insertMention(member)}
