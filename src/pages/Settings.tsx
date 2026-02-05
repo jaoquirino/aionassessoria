@@ -201,11 +201,28 @@ export default function Settings() {
     
     setIsSavingProfile(true);
     try {
+      // Check if username is taken by another user
+      if (username.trim()) {
+        const { data: existingUser } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("username", username.trim())
+          .neq("user_id", user.id)
+          .maybeSingle();
+        
+        if (existingUser) {
+          toast.error("Este nome de usuário já está em uso");
+          setIsSavingProfile(false);
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("profiles")
         .upsert({
           user_id: user.id,
           full_name: fullName.trim() || null,
+          username: username.trim() || null,
           avatar_url: avatarUrl || null,
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
