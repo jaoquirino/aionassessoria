@@ -229,12 +229,12 @@ export default function Auth() {
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <img 
-              src={logoDark} 
+              src={logoLight} 
               alt="AION Assessoria" 
               className="h-16 w-auto dark:block hidden"
             />
             <img 
-              src={logoLight} 
+              src={logoDark} 
               alt="AION Assessoria" 
               className="h-16 w-auto dark:hidden block"
             />
