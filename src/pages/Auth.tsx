@@ -19,8 +19,19 @@ const usernameSchema = z.string()
   .min(3, "Username deve ter no mínimo 3 caracteres")
   .regex(/^[a-zA-Z0-9_]+$/, "Username pode conter apenas letras, números e _");
 
-// Generate internal email from username
-const generateInternalEmail = (username: string) => `${username.toLowerCase()}@internal.local`;
+// Generate internal email from username  
+// Try both formats for backwards compatibility
+const generateInternalEmail = (username: string) => {
+  const lower = username.toLowerCase();
+  // If it looks like an email, use it directly
+  if (lower.includes('@')) {
+    return lower;
+  }
+  return `${lower}@internal.local`;
+};
+
+// Legacy email format for existing users
+const generateLegacyEmail = (username: string) => `${username.toLowerCase()}@aionassessoria.com`;
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -126,7 +137,16 @@ export default function Auth() {
 
     try {
       if (isLogin && !isSetupMode) {
-        const { error } = await signIn(internalEmail, password);
+        // Try internal.local format first
+        let { error } = await signIn(internalEmail, password);
+        
+        // If failed, try legacy email format
+        if (error && error.message.includes("Invalid login credentials")) {
+          const legacyEmail = generateLegacyEmail(username);
+          const legacyResult = await signIn(legacyEmail, password);
+          error = legacyResult.error;
+        }
+        
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
             toast.error("Usuário ou senha incorretos");
