@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, useIsAdmin, type AppRole } from "@/hooks/useUserRoles";
+import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPreferences";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,7 +71,8 @@ export default function Settings() {
   const { theme, setTheme, isDark } = useUserPreferences();
 
   const { data: users, isLoading: usersLoading } = useUsersWithRoles();
-  const { data: isAdmin } = useIsAdmin();
+  const { data: currentMember } = useCurrentTeamMember();
+  const isAdmin = currentMember?.permission === "admin";
   const setRole = useSetUserRole();
   const removeRole = useRemoveUserRole();
 
@@ -359,18 +361,22 @@ export default function Settings() {
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Perfil</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Notificações</span>
-            </TabsTrigger>
-            <TabsTrigger value="capacity" className="gap-2">
-              <Database className="h-4 w-4" />
-              <span className="hidden sm:inline">Capacidade</span>
-            </TabsTrigger>
             <TabsTrigger value="appearance" className="gap-2">
               <Palette className="h-4 w-4" />
               <span className="hidden sm:inline">Aparência</span>
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="notifications" className="gap-2">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Notificações</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="capacity" className="gap-2">
+                <Database className="h-4 w-4" />
+                <span className="hidden sm:inline">Capacidade</span>
+              </TabsTrigger>
+            )}
             {isAdmin && (
               <TabsTrigger value="onboarding" className="gap-2">
                 <ClipboardList className="h-4 w-4" />
