@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { Loader2 } from "lucide-react";
 import { NotificationToastContainer } from "@/components/notifications/NotificationCenter";
 import Dashboard from "./pages/Dashboard";
@@ -21,7 +22,7 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoutes() {
+function ProtectedRoutes({ children }: { children?: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -44,6 +45,26 @@ function ProtectedRoutes() {
   );
 }
 
+// Wrapper to check admin permission for routes
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { data: currentMember, isLoading } = useCurrentTeamMember();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  // Only admin permission can access
+  if (currentMember?.permission !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -55,12 +76,12 @@ const App = () => (
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route element={<ProtectedRoutes />}>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/clientes" element={<Clients />} />
+            <Route path="/clientes" element={<AdminRoute><Clients /></AdminRoute>} />
             <Route path="/clientes/:clientId/onboarding" element={<ClientOnboarding />} />
             <Route path="/tarefas" element={<Tasks />} />
-            <Route path="/equipe" element={<Team />} />
-            <Route path="/modulos" element={<Modules />} />
-            <Route path="/configuracoes" element={<Settings />} />
+            <Route path="/equipe" element={<AdminRoute><Team /></AdminRoute>} />
+            <Route path="/modulos" element={<AdminRoute><Modules /></AdminRoute>} />
+            <Route path="/configuracoes" element={<AdminRoute><Settings /></AdminRoute>} />
             <Route path="/onboarding-templates" element={<Navigate to="/configuracoes" replace />} />
             {/* Redirect old routes */}
             <Route path="/contratos" element={<Navigate to="/clientes" replace />} />

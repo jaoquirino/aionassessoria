@@ -13,29 +13,30 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { NotificationBell } from "@/components/notifications/NotificationCenter";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 
-const adminNavigation = [
+const allNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Clientes", href: "/clientes", icon: Users, adminOnly: true },
+  { name: "Clientes", href: "/clientes", icon: Users, permission: "admin" },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
-  { name: "Equipe", href: "/equipe", icon: UserCircle },
-  { name: "Módulos", href: "/modulos", icon: Puzzle },
+  { name: "Equipe", href: "/equipe", icon: UserCircle, permission: "admin" },
+  { name: "Módulos", href: "/modulos", icon: Puzzle, permission: "admin" },
 ];
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-  const { data: isAdmin } = useIsAdmin();
+  const { data: currentMember } = useCurrentTeamMember();
   const { isDark, toggleTheme } = useUserPreferences();
 
-  // Filter nav items based on role
-  const navigation = adminNavigation.filter(item => !item.adminOnly || isAdmin);
+  // Filter nav items based on permission
+  const isAdmin = currentMember?.permission === "admin";
+  const navigation = allNavigation.filter(item => !item.permission || item.permission === "admin" && isAdmin);
 
   return (
     <motion.aside
