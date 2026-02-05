@@ -211,13 +211,13 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
                 id="paymentDueDay"
                 type="number"
                 min={1}
-                max={28}
+                max={31}
                 value={paymentDueDay}
                 onChange={(e) => {
-                  const val = Math.min(28, Math.max(1, Number(e.target.value) || 1));
+                  const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
                   setPaymentDueDay(val);
                 }}
-                placeholder="1-28"
+                placeholder="1-31"
               />
             </div>
           </div>
