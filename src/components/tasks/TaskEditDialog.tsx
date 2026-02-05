@@ -695,12 +695,12 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                             : `https://${attachment.file_url}`;
                           window.open(url, "_blank", "noopener,noreferrer");
                         }}
-                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden cursor-pointer"
+                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden cursor-pointer"
                       >
                         <ExternalLink className="h-4 w-4 text-primary shrink-0" />
-                        <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex-1 min-w-0 overflow-hidden max-w-full">
                           <p className="text-sm font-medium truncate text-primary">{attachment.file_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
+                          <p className="text-xs text-muted-foreground break-all max-w-full">{attachment.file_url}</p>
                         </div>
                         <Button
                           variant="ghost"
