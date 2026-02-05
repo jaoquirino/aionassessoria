@@ -81,7 +81,7 @@ const App = () => (
             <Route path="/tarefas" element={<Tasks />} />
             <Route path="/equipe" element={<AdminRoute><Team /></AdminRoute>} />
             <Route path="/modulos" element={<AdminRoute><Modules /></AdminRoute>} />
-            <Route path="/configuracoes" element={<AdminRoute><Settings /></AdminRoute>} />
+            <Route path="/configuracoes" element={<Settings />} />
             <Route path="/onboarding-templates" element={<Navigate to="/configuracoes" replace />} />
             {/* Redirect old routes */}
             <Route path="/contratos" element={<Navigate to="/clientes" replace />} />
