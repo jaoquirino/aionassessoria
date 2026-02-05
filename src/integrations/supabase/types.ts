@@ -338,6 +338,42 @@ export type Database = {
           },
         ]
       }
+      kanban_columns: {
+        Row: {
+          color_class: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_protected: boolean
+          key: string
+          label: string
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          color_class?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_protected?: boolean
+          key: string
+          label: string
+          order_index?: number
+          updated_at?: string
+        }
+        Update: {
+          color_class?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_protected?: boolean
+          key?: string
+          label?: string
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       onboarding_template_steps: {
         Row: {
           created_at: string
@@ -491,6 +527,49 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      task_assignees: {
+        Row: {
+          created_at: string
+          id: string
+          task_id: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          task_id: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          task_id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignees_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignees_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignees_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_attachments: {
         Row: {
