@@ -19,6 +19,7 @@ export interface DashboardTask {
   title: string;
   clientName: string;
   assigneeName: string;
+  assigneeAvatar: string | null;
   dueDate: string;
   status: string;
   isOverdue: boolean;
@@ -122,6 +123,7 @@ export function useDashboardData() {
         title: t.title,
         clientName: clientMap.get(t.client_id) || "—",
         assigneeName: t.assigned_to ? memberMap.get(t.assigned_to) || "Não atribuído" : "Não atribuído",
+        assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
         status: t.status,
         isOverdue: new Date(t.due_date) < now && t.status !== "done",

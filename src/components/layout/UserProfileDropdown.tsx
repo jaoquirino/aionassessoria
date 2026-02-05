@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Settings, ChevronUp } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -31,6 +31,38 @@ export function UserProfileDropdown({ isCollapsed = false }: UserProfileDropdown
     if (user) {
       loadProfile();
     }
+  }, [user]);
+
+  // Subscribe to profile changes for real-time avatar updates
+  useEffect(() => {
+    if (!user) return;
+    
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            const newProfile = payload.new as { full_name: string | null; avatar_url: string | null; username: string | null };
+            setProfile({
+              full_name: newProfile.full_name,
+              avatar_url: newProfile.avatar_url,
+              username: newProfile.username,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const loadProfile = async () => {
@@ -86,13 +118,7 @@ export function UserProfileDropdown({ isCollapsed = false }: UserProfileDropdown
           </Avatar>
           {!isCollapsed && (
             <>
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-sm font-medium truncate">{getDisplayName()}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user?.email?.includes("@internal.local") ? profile.username : user?.email}
-                </p>
-              </div>
-              <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="flex-1 text-left text-sm font-medium truncate">{getDisplayName()}</span>
             </>
           )}
         </button>
@@ -102,13 +128,6 @@ export function UserProfileDropdown({ isCollapsed = false }: UserProfileDropdown
         align={isCollapsed ? "center" : "start"}
         className="w-56"
       >
-        <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{getDisplayName()}</p>
-          <p className="text-xs text-muted-foreground">
-            {user?.email?.includes("@internal.local") ? profile.username : user?.email}
-          </p>
-        </div>
-        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate("/configuracoes")} className="gap-2 cursor-pointer">
           <Settings className="h-4 w-4" />
           Configurações

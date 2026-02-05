@@ -201,11 +201,28 @@ export default function Settings() {
     
     setIsSavingProfile(true);
     try {
+      // Check if username is taken by another user
+      if (username.trim()) {
+        const { data: existingUser } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("username", username.trim())
+          .neq("user_id", user.id)
+          .maybeSingle();
+        
+        if (existingUser) {
+          toast.error("Este nome de usuário já está em uso");
+          setIsSavingProfile(false);
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("profiles")
         .upsert({
           user_id: user.id,
           full_name: fullName.trim() || null,
+          username: username.trim() || null,
           avatar_url: avatarUrl || null,
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
@@ -452,22 +469,20 @@ export default function Settings() {
               />
 
               {/* Username - readonly */}
-              {username && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <AtSign className="h-4 w-4" />
-                    Usuário
-                  </Label>
-                  <Input
-                    value={username}
-                    disabled
-                    className="bg-muted"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    O nome de usuário não pode ser alterado
-                  </p>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <AtSign className="h-4 w-4" />
+                  Usuário
+                </Label>
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Seu nome de usuário"
+                />
+                <p className="text-xs text-muted-foreground">
+                  O nome de usuário é usado para login
+                </p>
+              </div>
 
               {/* Name */}
               <div className="space-y-2">
