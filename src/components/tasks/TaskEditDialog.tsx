@@ -687,12 +687,15 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   {/* Attachments List */}
                   <div className="space-y-2">
                     {task.attachments?.map((attachment) => (
-                      <a
+                      <div
                         key={attachment.id}
-                        href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden"
+                        onClick={() => {
+                          const url = attachment.file_url.startsWith("http") 
+                            ? attachment.file_url 
+                            : `https://${attachment.file_url}`;
+                          window.open(url, "_blank", "noopener,noreferrer");
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden cursor-pointer"
                       >
                         <ExternalLink className="h-4 w-4 text-primary shrink-0" />
                         <div className="flex-1 min-w-0 overflow-hidden">
@@ -711,7 +714,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </a>
+                      </div>
                     ))}
 
                     {(!task.attachments || task.attachments.length === 0) && (
