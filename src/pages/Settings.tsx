@@ -17,21 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, useIsAdmin, type AppRole } from "@/hooks/useUserRoles";
+import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, type AppRole } from "@/hooks/useUserRoles";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPreferences";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { AvatarCropDialog } from "@/components/settings/AvatarCropDialog";
 import { PasswordInput } from "@/components/settings/PasswordInput";
 import { PasswordRequirements } from "@/components/settings/PasswordRequirements";
@@ -40,6 +32,7 @@ import { OnboardingTemplatesTab } from "@/components/settings/OnboardingTemplate
 import { ArchivedTasksTab } from "@/components/settings/ArchivedTasksTab";
 import { ClientDataExportTab } from "@/components/settings/ClientDataExportTab";
 import { CreateUserDialog } from "@/components/settings/CreateUserDialog";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +46,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Settings() {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [isDeletingUserId, setIsDeletingUserId] = useState<string | null>(null);
@@ -77,7 +71,7 @@ export default function Settings() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [currentPasswordState, setCurrentPasswordState] = useState<"valid" | "invalid" | "verifying" | null>(null);
-  const verifyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // (reserved) could be used for debounced password verification
 
   // Theme preferences
   const { theme, setTheme, isDark } = useUserPreferences();
