@@ -54,8 +54,6 @@ import { cn, parseLocalDate } from "@/lib/utils";
    useArchiveTask,
  } from "@/hooks/useTasks";
  import { useTaskAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
- import { StackedAvatars } from "./StackedAvatars";
- import type { TeamMember } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
@@ -437,20 +435,46 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
-                        <User className="h-3 w-3" /> Responsável
+                         <User className="h-3 w-3" /> Responsáveis
                       </Label>
-                      <Select value={assignedTo} onValueChange={setAssignedTo}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Não atribuído" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teamMembers.map((member) => (
-                            <SelectItem key={member.id} value={member.id}>
-                              {member.name} ({member.role})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                       <div className="space-y-2">
+                         {teamMembers.map((member) => {
+                           const isSelected = selectedAssignees.includes(member.id);
+                           return (
+                             <div key={member.id} className="flex items-center space-x-2">
+                               <Checkbox
+                                 id={`assignee-${member.id}`}
+                                 checked={isSelected}
+                                 onCheckedChange={(checked) => {
+                                   if (checked) {
+                                     setSelectedAssignees([...selectedAssignees, member.id]);
+                                   } else {
+                                     setSelectedAssignees(selectedAssignees.filter(id => id !== member.id));
+                                   }
+                                 }}
+                               />
+                               <label
+                                 htmlFor={`assignee-${member.id}`}
+                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
+                               >
+                                 {member.avatar_url ? (
+                                   <img src={member.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+                                 ) : (
+                                   <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
+                                     <span className="text-[10px] font-medium text-primary">
+                                       {member.name.charAt(0).toUpperCase()}
+                                     </span>
+                                   </div>
+                                 )}
+                                 {member.name}
+                               </label>
+                             </div>
+                           );
+                         })}
+                         {teamMembers.length === 0 && (
+                           <p className="text-sm text-muted-foreground">Nenhum membro disponível</p>
+                         )}
+                       </div>
                     </div>
 
                     <div className="space-y-2">
