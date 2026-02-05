@@ -207,18 +207,18 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
 
             <div className="space-y-2">
               <Label htmlFor="paymentDueDay">Dia de Vencimento</Label>
-              <Select value={String(paymentDueDay)} onValueChange={(v) => setPaymentDueDay(Number(v))}>
-                <SelectTrigger id="paymentDueDay">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
-                    <SelectItem key={day} value={String(day)}>
-                      Dia {day}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="paymentDueDay"
+                type="number"
+                min={1}
+                max={28}
+                value={paymentDueDay}
+                onChange={(e) => {
+                  const val = Math.min(28, Math.max(1, Number(e.target.value) || 1));
+                  setPaymentDueDay(val);
+                }}
+                placeholder="1-28"
+              />
             </div>
           </div>
 
