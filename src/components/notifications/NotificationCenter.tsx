@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,34 @@ interface Notification {
   task_id?: string;
   is_read: boolean;
   created_at: string;
+}
+
+const NOTIFICATIONS_STORAGE_KEY = "lovable_notifications_read";
+const NOTIFICATIONS_CLEARED_KEY = "lovable_notifications_cleared";
+
+// Helper to get read notification IDs from localStorage
+function getReadNotificationIds(): Set<string> {
+  try {
+    const stored = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+// Helper to save read notification IDs to localStorage
+function saveReadNotificationIds(ids: Set<string>) {
+  localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify([...ids]));
+}
+
+// Helper to get cleared timestamp
+function getClearedTimestamp(): string | null {
+  return localStorage.getItem(NOTIFICATIONS_CLEARED_KEY);
+}
+
+// Helper to set cleared timestamp
+function setClearedTimestamp() {
+  localStorage.setItem(NOTIFICATIONS_CLEARED_KEY, new Date().toISOString());
 }
 
 // Toast notification for real-time alerts
@@ -141,14 +169,24 @@ function useNotifications() {
 // Main notification bell component
 export function NotificationBell() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: notifications = [] } = useNotifications();
   const [open, setOpen] = useState(false);
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [readIds, setReadIds] = useState<Set<string>>(() => getReadNotificationIds());
+  const [clearedAt, setClearedAt] = useState<string | null>(() => getClearedTimestamp());
 
-  const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
+  // Filter notifications based on cleared timestamp
+  const visibleNotifications = notifications.filter((n) => {
+    if (!clearedAt) return true;
+    return new Date(n.created_at) > new Date(clearedAt);
+  });
+
+  const unreadCount = visibleNotifications.filter((n) => !readIds.has(n.id)).length;
 
   const handleNotificationClick = (notification: Notification) => {
-    setReadIds((prev) => new Set([...prev, notification.id]));
+    const newReadIds = new Set([...readIds, notification.id]);
+    setReadIds(newReadIds);
+    saveReadNotificationIds(newReadIds);
     if (notification.task_id) {
       navigate(`/tarefas?task=${notification.task_id}`);
     }
@@ -156,7 +194,16 @@ export function NotificationBell() {
   };
 
   const markAllAsRead = () => {
-    setReadIds(new Set(notifications.map((n) => n.id)));
+    const allIds = new Set(visibleNotifications.map((n) => n.id));
+    setReadIds(allIds);
+    saveReadNotificationIds(allIds);
+  };
+
+  const clearAllNotifications = () => {
+    setClearedTimestamp();
+    setClearedAt(new Date().toISOString());
+    setReadIds(new Set());
+    saveReadNotificationIds(new Set());
   };
 
   const getIcon = (type: Notification["type"]) => {
@@ -192,25 +239,37 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between p-3 border-b">
           <h4 className="font-medium text-sm">Notificações</h4>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7"
-              onClick={markAllAsRead}
-            >
-              Marcar todas como lidas
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {visibleNotifications.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-7 text-muted-foreground hover:text-destructive"
+                onClick={clearAllNotifications}
+              >
+                Limpar
+              </Button>
+            )}
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-7"
+                onClick={markAllAsRead}
+              >
+                Marcar lidas
+              </Button>
+            )}
+          </div>
         </div>
         <ScrollArea className="h-80">
-          {notifications.length === 0 ? (
+          {visibleNotifications.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">
               Nenhuma notificação
             </div>
           ) : (
             <div className="divide-y">
-              {notifications.map((notification) => {
+              {visibleNotifications.map((notification) => {
                 const isRead = readIds.has(notification.id);
                 return (
                   <div
