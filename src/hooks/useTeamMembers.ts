@@ -38,13 +38,27 @@ export function useAllTeamMembers() {
   return useQuery({
     queryKey: ["all_team_members"],
     queryFn: async () => {
-      // Fetch members first (includes user_id for linking)
-      const { data: members, error: membersError } = await supabase
+      // Fetch members with their user roles to filter out "sem acesso"
+      const { data: membersRaw, error: membersError } = await supabase
         .from("team_members")
         .select("*")
         .order("name");
 
       if (membersError) throw membersError;
+
+      // Get all user roles to check access
+      const { data: userRoles } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+
+      // Filter out members whose linked user has no role (sem acesso)
+      const members = (membersRaw || []).filter(member => {
+        // If member has no user_id linked, show them (legacy data)
+        if (!member.user_id) return true;
+        // Check if user has a role
+        const hasRole = userRoles?.some(ur => ur.user_id === member.user_id);
+        return hasRole;
+      });
 
       // Only fetch tasks if we have members
       if (!members || members.length === 0) {
