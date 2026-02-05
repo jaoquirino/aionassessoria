@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 
 export interface DashboardStats {
   overdueTasks: number;
@@ -58,7 +58,8 @@ export interface DashboardClientHealth {
 }
 
 export function useDashboardData() {
-  const { data: isAdmin } = useIsAdmin();
+  const { data: currentMember } = useCurrentTeamMember();
+  const isAdmin = currentMember?.permission === "admin";
 
   return useQuery({
     queryKey: ["dashboard", isAdmin],
@@ -239,7 +240,7 @@ export function useDashboardData() {
         team: dashboardTeam,
         contracts: dashboardContracts,
         clients: dashboardClients,
-        isAdmin: !!isAdmin,
+        isAdmin,
       };
     },
     staleTime: 30000,

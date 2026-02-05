@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
 import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
+import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
 
 interface TeamMemberWithStats extends TeamMember {
   currentWeight: number;
@@ -48,6 +49,7 @@ export default function Team() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMemberWithStats | null>(null);
   const [deletingMember, setDeletingMember] = useState<TeamMemberWithStats | null>(null);
+  const [tasksDialogMember, setTasksDialogMember] = useState<TeamMemberWithStats | null>(null);
 
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
   const deleteMember = useDeleteTeamMember();
@@ -79,6 +81,10 @@ export default function Team() {
   const handleEdit = (member: TeamMemberWithStats) => {
     setEditingMember(member);
     setDialogOpen(true);
+  };
+
+  const handleViewTasks = (member: TeamMemberWithStats) => {
+    setTasksDialogMember(member);
   };
 
   const handleDelete = async () => {
@@ -232,7 +238,7 @@ export default function Team() {
                 status === "critical" && "border-destructive/30",
                 status === "attention" && "border-warning/30"
               )}
-              onClick={() => handleEdit(member)}
+              onClick={() => handleViewTasks(member)}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -247,12 +253,24 @@ export default function Team() {
                     <p className="text-sm text-muted-foreground">{member.role}</p>
                   </div>
                 </div>
-                <button 
-                  className="rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                  onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                    onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
+                    title="Editar membro"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
+                    title="Remover membro"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -316,6 +334,12 @@ export default function Team() {
         member={editingMember}
         open={dialogOpen}
         onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingMember(null); }}
+      />
+
+      <TeamMemberTasksDialog
+        member={tasksDialogMember}
+        open={!!tasksDialogMember}
+        onOpenChange={(open) => { if (!open) setTasksDialogMember(null); }}
       />
 
       <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
