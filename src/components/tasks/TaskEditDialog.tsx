@@ -18,6 +18,7 @@ import {
   StickyNote,
   CalendarIcon,
   Archive,
+  Copy,
 } from "lucide-react";
 import {
   Dialog,
