@@ -299,7 +299,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden w-[calc(100%-2rem)] sm:w-full">
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-8 w-3/4" />
@@ -334,7 +334,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
             <ScrollArea className="flex-1">
               <Tabs defaultValue={initialTab} className="w-full">
-                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 sticky top-0 bg-background z-10">
+                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 px-4 sticky top-0 bg-background z-10 overflow-x-auto flex-nowrap">
                   <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <FileText className="h-4 w-4 mr-2" />
                     Detalhes
@@ -641,7 +641,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Attachments Tab - Simplified */}
-                <TabsContent value="attachments" className="p-6 space-y-4 mt-0">
+                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0">
                   {/* Add URL/Link */}
                   <div className="space-y-3">
                     <Label className="flex items-center gap-1">
@@ -656,7 +656,16 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       <Input
                         placeholder="https://..."
                         value={newAttachmentUrl}
-                        onChange={(e) => setNewAttachmentUrl(e.target.value)}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          setNewAttachmentUrl(val);
+                        }}
+                        onBlur={() => {
+                          let val = newAttachmentUrl.trim();
+                          if (val && !val.startsWith("http://") && !val.startsWith("https://")) {
+                            setNewAttachmentUrl("https://" + val);
+                          }
+                        }}
                         onKeyDown={(e) => e.key === "Enter" && handleAddAttachment()}
                       />
                       <Button 
@@ -679,10 +688,10 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         href={attachment.file_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group"
+                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden"
                       >
                         <ExternalLink className="h-4 w-4 text-primary shrink-0" />
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 overflow-hidden">
                           <p className="text-sm font-medium truncate text-primary">{attachment.file_name}</p>
                           <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
                         </div>
