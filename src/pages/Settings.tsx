@@ -38,12 +38,11 @@ import { isPasswordStrong } from "@/lib/passwordValidation";
 import { OnboardingTemplatesTab } from "@/components/settings/OnboardingTemplatesTab";
 import { ArchivedTasksTab } from "@/components/settings/ArchivedTasksTab";
 import { ClientDataExportTab } from "@/components/settings/ClientDataExportTab";
+import { CreateUserDialog } from "@/components/settings/CreateUserDialog";
 
 export default function Settings() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<AppRole>("member");
+  const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // User profile state
@@ -783,9 +782,9 @@ export default function Settings() {
                     className="pl-10"
                   />
                 </div>
-                <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
+                <Button onClick={() => setCreateUserDialogOpen(true)} className="gap-2">
                   <UserPlus className="h-4 w-4" />
-                  Convidar Membro
+                  Criar Usuário
                 </Button>
               </div>
 
@@ -912,48 +911,11 @@ export default function Settings() {
       </motion.div>
 
       {/* Invite Dialog */}
-      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convidar Membro</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="invite-email">Email</Label>
-              <Input
-                id="invite-email"
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="email@exemplo.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="invite-role">Nível de Acesso</Label>
-              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as AppRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="member">Membro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              O usuário precisará criar uma conta com este email para ter acesso ao sistema.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => setInviteDialogOpen(false)}>
-              Enviar Convite
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Create User Dialog */}
+      <CreateUserDialog 
+        open={createUserDialogOpen} 
+        onOpenChange={setCreateUserDialogOpen} 
+      />
     </div>
   );
 }
