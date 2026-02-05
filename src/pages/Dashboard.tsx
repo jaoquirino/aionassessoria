@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useDashboardData } from "@/hooks/useDashboard";
 import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
+import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
 import { PeriodSelector, type PeriodOption } from "@/components/dashboard/PeriodSelector";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -217,7 +218,17 @@ export default function Dashboard() {
                     <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                       <span>{task.clientName}</span>
                       <span>·</span>
+                    <div className="flex items-center gap-1">
+                      {task.assigneeAvatar && (
+                        <Avatar className="h-4 w-4">
+                          <AvatarImage src={task.assigneeAvatar} />
+                          <AvatarFallback className="text-[8px]">
+                            {task.assigneeName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                       <span>{task.assigneeName}</span>
+                    </div>
                     </div>
                   </div>
 
