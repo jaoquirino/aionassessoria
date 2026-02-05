@@ -61,8 +61,7 @@ export default function Team() {
     return teamMembers.filter((member) => {
       const matchesSearch =
         search === "" ||
-        member.name.toLowerCase().includes(search.toLowerCase()) ||
-        member.email?.toLowerCase().includes(search.toLowerCase());
+        member.name.toLowerCase().includes(search.toLowerCase());
 
       const matchesRole = roleFilter === "all" || member.role === roleFilter;
       const matchesPermission = permissionFilter === "all" || member.permission === permissionFilter;
