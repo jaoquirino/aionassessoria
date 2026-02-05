@@ -26,11 +26,11 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
    const { data: assigneesByTask = {} } = useTasksAssignees(taskIds);
    const setAssignees = useSetTaskAssignees();
  
-  const isOverdue = (task: Task) => {
    const handleSetAssignees = (taskId: string, memberIds: string[]) => {
      setAssignees.mutate({ taskId, memberIds });
    };
  
+   const isOverdue = (task: Task) => {
     return parseLocalDate(task.due_date) < new Date() && task.status !== "done";
   };
 
