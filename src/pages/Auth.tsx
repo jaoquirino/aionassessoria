@@ -156,6 +156,22 @@ export default function Auth() {
             toast.error(error.message);
           }
         } else {
+          // Block users without access (no role)
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData.session?.access_token;
+          if (token) {
+            const { data, error: accessError } = await supabase.functions.invoke("check-access", {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            if (accessError || !data?.hasAccess) {
+              await supabase.auth.signOut();
+              toast.error("Sua conta está sem acesso. Fale com um administrador.");
+              return;
+            }
+          }
+
           toast.success("Login realizado com sucesso!");
           navigate("/", { replace: true });
         }

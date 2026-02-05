@@ -17,21 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, useIsAdmin, type AppRole } from "@/hooks/useUserRoles";
+import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, type AppRole } from "@/hooks/useUserRoles";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPreferences";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { AvatarCropDialog } from "@/components/settings/AvatarCropDialog";
 import { PasswordInput } from "@/components/settings/PasswordInput";
 import { PasswordRequirements } from "@/components/settings/PasswordRequirements";
@@ -40,10 +32,24 @@ import { OnboardingTemplatesTab } from "@/components/settings/OnboardingTemplate
 import { ArchivedTasksTab } from "@/components/settings/ArchivedTasksTab";
 import { ClientDataExportTab } from "@/components/settings/ClientDataExportTab";
 import { CreateUserDialog } from "@/components/settings/CreateUserDialog";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Settings() {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
+  const [isDeletingUserId, setIsDeletingUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // User profile state
@@ -65,7 +71,7 @@ export default function Settings() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [currentPasswordState, setCurrentPasswordState] = useState<"valid" | "invalid" | "verifying" | null>(null);
-  const verifyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // (reserved) could be used for debounced password verification
 
   // Theme preferences
   const { theme, setTheme, isDark } = useUserPreferences();
@@ -303,6 +309,34 @@ export default function Settings() {
       removeRole.mutate(userId);
     } else {
       setRole.mutate({ userId, role: role as AppRole });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      setIsDeletingUserId(userId);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Sessão inválida");
+
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: { userId },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success("Usuário excluído");
+      // Refresh lists
+      queryClient.invalidateQueries({ queryKey: ["users_with_roles"] });
+      queryClient.invalidateQueries({ queryKey: ["team_members"] });
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao excluir usuário");
+    } finally {
+      setIsDeletingUserId(null);
     }
   };
 
@@ -854,6 +888,41 @@ export default function Settings() {
 
                             <div className="flex items-center gap-4">
                               {getRoleBadge(u.role)}
+
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    disabled={isDeletingUserId === u.id || u.id === user?.id}
+                                    title={u.id === user?.id ? "Você não pode excluir seu próprio usuário" : "Excluir usuário"}
+                                  >
+                                    {isDeletingUserId === u.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação remove o usuário e seus registros de acesso. Isso não pode ser desfeito.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteUser(u.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                               
                               <Select
                                 value={u.role || "none"}
