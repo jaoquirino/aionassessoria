@@ -22,7 +22,7 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoutes({ children }: { children?: React.ReactNode }) {
+function ProtectedRoutes() {
   const { user, loading } = useAuth();
 
   if (loading) {
