@@ -1,11 +1,15 @@
-import { motion } from "framer-motion";
-import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, User, Calendar, Building2, CheckSquare } from "lucide-react";
+ import { motion } from "framer-motion";
+ import { useMemo } from "react";
+ import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, Calendar, Building2, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn, parseLocalDate } from "@/lib/utils";
 import type { Task, TeamMember, TaskPriority, Client } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig, priorityConfig } from "@/types/tasks";
-import { AssigneePopover, DatePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
+ import { DatePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
+ import { MultiAssigneePopover } from "./MultiAssigneePopover";
+ import { StackedAvatars } from "./StackedAvatars";
+ import { useTasksAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
 import { format } from "date-fns";
 
 interface TaskListViewProps {
@@ -17,7 +21,16 @@ interface TaskListViewProps {
 }
 
 export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = [], clients = [] }: TaskListViewProps) {
-  const isOverdue = (task: Task) => {
+   // Fetch all task assignees
+   const taskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
+   const { data: assigneesByTask = {} } = useTasksAssignees(taskIds);
+   const setAssignees = useSetTaskAssignees();
+ 
+   const handleSetAssignees = (taskId: string, memberIds: string[]) => {
+     setAssignees.mutate({ taskId, memberIds });
+   };
+ 
+   const isOverdue = (task: Task) => {
     return parseLocalDate(task.due_date) < new Date() && task.status !== "done";
   };
 
@@ -27,9 +40,10 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
 
   return (
     <div className="space-y-3">
-      {tasks.map((task, index) => {
+       {tasks.map((task, index) => {
         const priority = task.priority as TaskPriority || "medium";
         const priorityInfo = priorityConfig[priority];
+         const taskAssignees = (assigneesByTask[task.id] || []).map(a => a.team_member).filter(Boolean) as TeamMember[];
         
         // Checklist progress
         const checklistTotal = task.checklist?.length || 0;
@@ -103,21 +117,20 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
                     )}
                     <span>·</span>
                     {/* Responsável - Clicável */}
-                    <AssigneePopover
-                      currentAssignee={task.assignee}
+                     <MultiAssigneePopover
+                       currentAssignees={taskAssignees}
                       teamMembers={teamMembers}
-                      onSelect={(memberId) => onUpdateField?.(task.id, "assigned_to", memberId)}
+                       onSelect={(memberIds) => handleSetAssignees(task.id, memberIds)}
                     >
                       <button
                         type="button"
                         onClick={handleFieldClick}
                         onPointerDown={handleFieldClick}
-                        className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                         className="inline-flex items-center gap-1 hover:opacity-80 transition-opacity"
                       >
-                        <User className="h-3 w-3" />
-                        <span className="truncate max-w-[220px]">{task.assignee?.name || "Não atribuído"}</span>
+                         <StackedAvatars assignees={taskAssignees} maxVisible={3} size="sm" />
                       </button>
-                    </AssigneePopover>
+                     </MultiAssigneePopover>
                   </div>
                 </div>
               </div>

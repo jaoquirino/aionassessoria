@@ -40,19 +40,20 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MentionTextarea } from "@/components/ui/mention-textarea";
 import { cn, parseLocalDate } from "@/lib/utils";
-import {
-  useTask,
-  useUpdateTask,
-  useAddChecklistItem,
-  useToggleChecklistItem,
-  useDeleteChecklistItem,
-  useAddAttachment,
-  useDeleteAttachment,
-  useAddComment,
-  useTeamMembers,
-  useClients,
-  useArchiveTask,
-} from "@/hooks/useTasks";
+ import {
+   useTask,
+   useUpdateTask,
+   useAddChecklistItem,
+   useToggleChecklistItem,
+   useDeleteChecklistItem,
+   useAddAttachment,
+   useDeleteAttachment,
+   useAddComment,
+   useTeamMembers,
+   useClients,
+   useArchiveTask,
+ } from "@/hooks/useTasks";
+ import { useTaskAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
@@ -129,6 +130,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
   const { data: comments = [] } = useTaskComments(taskId);
+   const { data: taskAssigneesData = [] } = useTaskAssignees(taskId);
+   const setTaskAssignees = useSetTaskAssignees();
   
   const updateTask = useUpdateTask();
   // const updateStatus = useUpdateTaskStatus();
@@ -143,7 +146,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   // Form state
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<TaskStatusDB>("todo");
-  const [assignedTo, setAssignedTo] = useState<string>("");
+   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const [descriptionNotes, setDescriptionNotes] = useState("");
   const [clientId, setClientId] = useState<string>("");
@@ -165,7 +168,6 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     if (task) {
       setTitle(task.title);
       setStatus(task.status);
-      setAssignedTo(task.assigned_to || "");
       setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
       setDescriptionNotes(task.description_notes || "");
       setClientId(task.client_id || "");
@@ -174,6 +176,11 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       setWeight(task.weight);
     }
   }, [task]);
+ 
+   // Sync assignees when data loads
+   useEffect(() => {
+     setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
+   }, [taskAssigneesData]);
 
   // Handler para mudar módulo e atualizar tipo/peso automaticamente
   const handleModuleChange = (newModuleId: string) => {
@@ -215,7 +222,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         title,
         status,
         client_id: clientId,
-        assigned_to: assignedTo || null,
+         assigned_to: selectedAssignees[0] || null, // Keep for backwards compatibility
         due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : task.due_date,
         description_notes: descriptionNotes || null,
         contract_module_id: contractModuleId || null,
@@ -223,6 +230,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         type: taskType,
         weight,
       });
+ 
+       // Save multiple assignees
+       await setTaskAssignees.mutateAsync({ taskId: task.id, memberIds: selectedAssignees });
     } finally {
       setIsSaving(false);
     }
@@ -233,7 +243,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     if (task) {
       setTitle(task.title);
       setStatus(task.status);
-      setAssignedTo(task.assigned_to || "");
+       setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
       setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
       setDescriptionNotes(task.description_notes || "");
       setClientId(task.client_id || "");
@@ -425,20 +435,46 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
-                        <User className="h-3 w-3" /> Responsável
+                         <User className="h-3 w-3" /> Responsáveis
                       </Label>
-                      <Select value={assignedTo} onValueChange={setAssignedTo}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Não atribuído" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teamMembers.map((member) => (
-                            <SelectItem key={member.id} value={member.id}>
-                              {member.name} ({member.role})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                       <div className="space-y-2">
+                         {teamMembers.map((member) => {
+                           const isSelected = selectedAssignees.includes(member.id);
+                           return (
+                             <div key={member.id} className="flex items-center space-x-2">
+                               <Checkbox
+                                 id={`assignee-${member.id}`}
+                                 checked={isSelected}
+                                 onCheckedChange={(checked) => {
+                                   if (checked) {
+                                     setSelectedAssignees([...selectedAssignees, member.id]);
+                                   } else {
+                                     setSelectedAssignees(selectedAssignees.filter(id => id !== member.id));
+                                   }
+                                 }}
+                               />
+                               <label
+                                 htmlFor={`assignee-${member.id}`}
+                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
+                               >
+                                 {member.avatar_url ? (
+                                   <img src={member.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+                                 ) : (
+                                   <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
+                                     <span className="text-[10px] font-medium text-primary">
+                                       {member.name.charAt(0).toUpperCase()}
+                                     </span>
+                                   </div>
+                                 )}
+                                 {member.name}
+                               </label>
+                             </div>
+                           );
+                         })}
+                         {teamMembers.length === 0 && (
+                           <p className="text-sm text-muted-foreground">Nenhum membro disponível</p>
+                         )}
+                       </div>
                     </div>
 
                     <div className="space-y-2">
