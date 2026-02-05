@@ -22,6 +22,7 @@ import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, type AppRole } fr
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPreferences";
+import { useCapacitySettings } from "@/hooks/useCapacitySettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AvatarCropDialog } from "@/components/settings/AvatarCropDialog";
@@ -75,6 +76,16 @@ export default function Settings() {
 
   // Theme preferences
   const { theme, setTheme, isDark } = useUserPreferences();
+
+  // Capacity settings
+  const { settings: capacitySettings, updateSettings: updateCapacitySettings, updateTypeWeight } = useCapacitySettings();
+  const [capacityLimit, setCapacityLimit] = useState(capacitySettings.defaultCapacityLimit.toString());
+  const [alertAt80, setAlertAt80] = useState(capacitySettings.alertAt80Percent);
+  const [blockAboveLimit, setBlockAboveLimit] = useState(capacitySettings.blockAboveLimit);
+  const [recurringWeight, setRecurringWeight] = useState(capacitySettings.typeWeights.recurring.toString());
+  const [planningWeight, setPlanningWeight] = useState(capacitySettings.typeWeights.planning.toString());
+  const [projectWeight, setProjectWeight] = useState(capacitySettings.typeWeights.project.toString());
+  const [extraWeight, setExtraWeight] = useState(capacitySettings.typeWeights.extra.toString());
 
   const { data: users, isLoading: usersLoading } = useUsersWithRoles();
   const { data: currentMember } = useCurrentTeamMember();
@@ -296,6 +307,39 @@ export default function Settings() {
     } finally {
       setIsChangingPassword(false);
     }
+  };
+
+  // Sync capacity state when settings change
+  useEffect(() => {
+    setCapacityLimit(capacitySettings.defaultCapacityLimit.toString());
+    setAlertAt80(capacitySettings.alertAt80Percent);
+    setBlockAboveLimit(capacitySettings.blockAboveLimit);
+    setRecurringWeight(capacitySettings.typeWeights.recurring.toString());
+    setPlanningWeight(capacitySettings.typeWeights.planning.toString());
+    setProjectWeight(capacitySettings.typeWeights.project.toString());
+    setExtraWeight(capacitySettings.typeWeights.extra.toString());
+  }, [capacitySettings]);
+
+  const handleSaveCapacitySettings = () => {
+    const limit = parseInt(capacityLimit) || 15;
+    updateCapacitySettings({
+      defaultCapacityLimit: limit,
+      alertAt80Percent: alertAt80,
+      blockAboveLimit: blockAboveLimit,
+    });
+    toast.success("Configurações de capacidade salvas");
+  };
+
+  const handleSaveWeights = () => {
+    updateCapacitySettings({
+      typeWeights: {
+        recurring: parseInt(recurringWeight) || 2,
+        planning: parseInt(planningWeight) || 1,
+        project: parseInt(projectWeight) || 4,
+        extra: parseInt(extraWeight) || 3,
+      },
+    });
+    toast.success("Pesos salvos com sucesso");
   };
 
   const filteredUsers = users?.filter(
