@@ -5,12 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Link2, Unlink } from "lucide-react";
+import { X, Link2, Unlink, Eye, EyeOff, AtSign, Loader2 } from "lucide-react";
 import { useCreateTeamMember, useUpdateTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
 import { useLinkToTeamMember, useUnlinkTeamMember, useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { cn } from "@/lib/utils";
+import { PasswordRequirements } from "@/components/settings/PasswordRequirements";
+import { isPasswordStrong } from "@/lib/passwordValidation";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TeamMemberDialogProps {
   member?: TeamMember | null;
@@ -33,13 +38,18 @@ const roleOptions = [
 
 export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialogProps) {
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [roles, setRoles] = useState<string[]>(["Designer"]);
   const [permission, setPermission] = useState("operational");
   const [capacityLimit, setCapacityLimit] = useState(15);
+  const [isCreatingWithLogin, setIsCreatingWithLogin] = useState(false);
 
   const { user } = useAuth();
   const { data: isAdmin } = useIsAdmin();
   const { data: currentTeamMember } = useCurrentTeamMember();
+  const queryClient = useQueryClient();
   const createMember = useCreateTeamMember();
   const updateMember = useUpdateTeamMember();
   const linkToMember = useLinkToTeamMember();
@@ -59,6 +69,9 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
       setCapacityLimit(member.capacity_limit);
     } else {
       setName("");
+      setUsername("");
+      setPassword("");
+      setShowPassword(false);
       setRoles(["Designer"]);
       setPermission("operational");
       setCapacityLimit(15);
@@ -92,15 +105,56 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           permission,
           capacity_limit: capacityLimit,
         });
+        onOpenChange(false);
+      } else if (username.trim() && password.trim()) {
+        // Create user with login credentials via edge function
+        if (!isPasswordStrong(password)) {
+          toast.error("A senha não atende aos requisitos de segurança");
+          return;
+        }
+
+        setIsCreatingWithLogin(true);
+        try {
+          const { data: session } = await supabase.auth.getSession();
+          
+          const response = await supabase.functions.invoke('create-user', {
+            headers: {
+              Authorization: `Bearer ${session.session?.access_token}`,
+            },
+            body: {
+              username: username.trim(),
+              password,
+              fullName: name.trim(),
+              roles,
+              permission,
+            },
+          });
+
+          if (response.error) {
+            throw new Error(response.error.message || "Erro ao criar usuário");
+          }
+
+          if (response.data?.error) {
+            throw new Error(response.data.error);
+          }
+
+          toast.success("Membro criado com acesso ao sistema!");
+          queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
+          queryClient.invalidateQueries({ queryKey: ["team_members"] });
+          onOpenChange(false);
+        } finally {
+          setIsCreatingWithLogin(false);
+        }
       } else {
+        // Create member without login (just team_members record)
         await createMember.mutateAsync({
           name: name.trim(),
           role: roleString,
           permission,
           capacity_limit: capacityLimit,
         });
+        onOpenChange(false);
       }
-      onOpenChange(false);
     } catch (error) {
       // Error handled by mutation
     }
@@ -116,8 +170,10 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
     await unlinkMember.mutateAsync(member.id);
   };
 
-  const isSaving = createMember.isPending || updateMember.isPending;
+  const isSaving = createMember.isPending || updateMember.isPending || isCreatingWithLogin;
   const availableRoles = roleOptions.filter(r => !roles.includes(r));
+  const canSubmit = name.trim() && roles.length > 0 && 
+    (isEditing || !username.trim() || (username.trim() && isPasswordStrong(password)));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,6 +242,56 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
               placeholder="Nome do membro"
             />
           </div>
+
+          {/* Username and Password - only for new members */}
+          {!isEditing && (
+            <>
+              <div className="p-3 rounded-lg border bg-muted/30 space-y-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Credenciais de Acesso</p>
+                  <p className="text-xs text-muted-foreground">
+                    Preencha para que o membro possa fazer login no sistema
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="flex items-center gap-2">
+                    <AtSign className="h-4 w-4" />
+                    Usuário
+                  </Label>
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
+                    placeholder="nome.usuario"
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 12 caracteres"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {password && <PasswordRequirements password={password} />}
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label>Cargos / Funções *</Label>
@@ -260,8 +366,13 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !name.trim() || roles.length === 0}>
-            {isSaving ? "Salvando..." : isEditing ? "Salvar" : "Adicionar"}
+          <Button onClick={handleSave} disabled={isSaving || !canSubmit}>
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {isCreatingWithLogin ? "Criando..." : "Salvando..."}
+              </>
+            ) : isEditing ? "Salvar" : "Adicionar"}
           </Button>
         </div>
       </DialogContent>
