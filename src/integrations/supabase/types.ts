@@ -207,6 +207,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_internal: boolean
           name: string
           phone: string | null
           status: Database["public"]["Enums"]["client_status"]
@@ -217,6 +218,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_internal?: boolean
           name: string
           phone?: string | null
           status?: Database["public"]["Enums"]["client_status"]
@@ -227,6 +229,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_internal?: boolean
           name?: string
           phone?: string | null
           status?: Database["public"]["Enums"]["client_status"]
