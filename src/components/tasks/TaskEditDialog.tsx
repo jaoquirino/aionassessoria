@@ -690,13 +690,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     {task.attachments?.map((attachment) => (
                       <div
                         key={attachment.id}
-                        onClick={() => {
-                          const url = attachment.file_url.startsWith("http") 
-                            ? attachment.file_url 
-                            : `https://${attachment.file_url}`;
-                          window.open(url, "_blank", "noopener,noreferrer");
-                        }}
-                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden cursor-pointer"
+                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden"
                       >
                         <ExternalLink className="h-4 w-4 text-primary shrink-0" />
                         <div className="flex-1 min-w-0 overflow-hidden max-w-full">
@@ -706,9 +700,25 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { 
-                            e.preventDefault(); 
+                          className="h-8 w-8 shrink-0"
+                          title="Copiar link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const url = attachment.file_url.startsWith("http") 
+                              ? attachment.file_url 
+                              : `https://${attachment.file_url}`;
+                            navigator.clipboard.writeText(url);
+                            import("sonner").then(({ toast }) => toast.success("Link copiado!"));
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          title="Excluir"
+                          onClick={(e) => {
                             e.stopPropagation();
                             deleteAttachment.mutate({ attachmentId: attachment.id, taskId: task.id }); 
                           }}
