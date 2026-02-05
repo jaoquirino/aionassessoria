@@ -9,6 +9,7 @@ import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useIsAdmin, useIsTeamMember } from "@/hooks/useUserRoles";
 import { Loader2 } from "lucide-react";
 import { NotificationToastContainer } from "@/components/notifications/NotificationCenter";
+import { AccessDeniedScreen } from "@/components/auth/AccessDeniedScreen";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import ClientOnboarding from "./pages/ClientOnboarding";
@@ -41,7 +42,7 @@ function ProtectedRoutes() {
 
   // User has no role - redirect to auth
   if (!isTeamMember) {
-    return <Navigate to="/auth" replace />;
+    return <AccessDeniedScreen />;
   }
 
   return (
