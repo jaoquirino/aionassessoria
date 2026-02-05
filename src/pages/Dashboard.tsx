@@ -324,6 +324,9 @@ export default function Dashboard() {
       {/* Onboarding Overview */}
       {isAdmin && <OnboardingOverview />}
 
+      {/* Onboarding Tasks Section */}
+      {isAdmin && <OnboardingTasksSection />}
+
       {/* Contract Alerts & Client Health (admin only) */}
       {isAdmin && (
         <div className="grid gap-6 lg:grid-cols-2">
