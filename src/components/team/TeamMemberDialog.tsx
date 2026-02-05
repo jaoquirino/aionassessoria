@@ -33,7 +33,6 @@ const roleOptions = [
 
 export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialogProps) {
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [roles, setRoles] = useState<string[]>(["Designer"]);
   const [permission, setPermission] = useState("operational");
   const [capacityLimit, setCapacityLimit] = useState(15);
@@ -53,7 +52,6 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
   useEffect(() => {
     if (member) {
       setName(member.name);
-      setEmail(member.email || "");
       // Parse multiple roles from comma-separated string
       const memberRoles = member.role?.split(",").map(r => r.trim()).filter(Boolean) || ["Designer"];
       setRoles(memberRoles);
@@ -61,7 +59,6 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
       setCapacityLimit(member.capacity_limit);
     } else {
       setName("");
-      setEmail("");
       setRoles(["Designer"]);
       setPermission("operational");
       setCapacityLimit(15);
@@ -91,7 +88,6 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
         await updateMember.mutateAsync({
           id: member.id,
           name: name.trim(),
-          email: email.trim() || null,
           role: roleString,
           permission,
           capacity_limit: capacityLimit,
@@ -99,7 +95,6 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
       } else {
         await createMember.mutateAsync({
           name: name.trim(),
-          email: email.trim() || undefined,
           role: roleString,
           permission,
           capacity_limit: capacityLimit,
@@ -190,20 +185,6 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
               onChange={(e) => setName(e.target.value)}
               placeholder="Nome do membro"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email (opcional)</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@agencia.com"
-            />
-            <p className="text-xs text-muted-foreground">
-              O email pode ser adicionado depois. Para vincular uma conta de login, use o botão "Vincular" após criar o membro.
-            </p>
           </div>
 
           <div className="space-y-2">
