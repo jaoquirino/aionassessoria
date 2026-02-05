@@ -124,18 +124,22 @@
       }
  
      // Create team member entry with roles
-     if (roles && roles.length > 0) {
-       const roleString = roles.join(", ");
-       
-       await supabase
-         .from("team_members")
-         .insert({
-           name: fullName || username,
-           role: roleString,
-           permission: permission || "operational",
-           user_id: newUser.user.id,
-         });
-     }
+      // Always create team member entry - use first role as primary or "Membro" as default
+      const roleString = roles && roles.length > 0 ? roles.join(", ") : "Membro";
+      
+      const { error: teamMemberError } = await supabase
+        .from("team_members")
+        .insert({
+          name: fullName || username,
+          role: roleString,
+          permission: permission || "operational",
+          user_id: newUser.user.id,
+        });
+      
+      if (teamMemberError) {
+        console.error("Error creating team member:", teamMemberError);
+        // Don't fail the whole operation, user was already created
+      }
  
      return new Response(
        JSON.stringify({ 
