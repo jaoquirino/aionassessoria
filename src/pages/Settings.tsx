@@ -710,24 +710,36 @@ export default function Settings() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="defaultWeight">Peso máximo padrão por funcionário</Label>
-                  <Input id="defaultWeight" type="number" defaultValue="15" className="max-w-[200px]" />
+                  <Input 
+                    id="defaultWeight" 
+                    type="number" 
+                    value={capacityLimit}
+                    onChange={(e) => setCapacityLimit(e.target.value)}
+                    className="max-w-[200px]" 
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">Alerta de capacidade em 80%</p>
                     <p className="text-sm text-muted-foreground">Mostrar status de atenção</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={alertAt80}
+                    onCheckedChange={setAlertAt80}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">Bloquear atribuição acima do limite</p>
                     <p className="text-sm text-muted-foreground">Impedir atribuição quando capacidade excedida</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={blockAboveLimit}
+                    onCheckedChange={setBlockAboveLimit}
+                  />
                 </div>
               </div>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={handleSaveCapacitySettings}>
                 <Save className="h-4 w-4" />
                 Salvar Configurações
               </Button>
@@ -744,22 +756,42 @@ export default function Settings() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="recurringWeight">Entrega Recorrente</Label>
-                  <Input id="recurringWeight" type="number" defaultValue="2" />
+                  <Input 
+                    id="recurringWeight" 
+                    type="number" 
+                    value={recurringWeight}
+                    onChange={(e) => setRecurringWeight(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="planningWeight">Planejamento</Label>
-                  <Input id="planningWeight" type="number" defaultValue="1" />
+                  <Input 
+                    id="planningWeight" 
+                    type="number" 
+                    value={planningWeight}
+                    onChange={(e) => setPlanningWeight(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="projectWeight">Projeto</Label>
-                  <Input id="projectWeight" type="number" defaultValue="4" />
+                  <Input 
+                    id="projectWeight" 
+                    type="number" 
+                    value={projectWeight}
+                    onChange={(e) => setProjectWeight(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="extraWeight">Extra</Label>
-                  <Input id="extraWeight" type="number" defaultValue="3" />
+                  <Input 
+                    id="extraWeight" 
+                    type="number" 
+                    value={extraWeight}
+                    onChange={(e) => setExtraWeight(e.target.value)}
+                  />
                 </div>
               </div>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={handleSaveWeights}>
                 <Save className="h-4 w-4" />
                 Salvar Pesos
               </Button>
