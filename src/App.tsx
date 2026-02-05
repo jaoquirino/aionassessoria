@@ -6,11 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { useIsAdmin, useIsTeamMember } from "@/hooks/useUserRoles";
 import { Loader2 } from "lucide-react";
 import { NotificationToastContainer } from "@/components/notifications/NotificationCenter";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import ClientOnboarding from "./pages/ClientOnboarding";
@@ -26,60 +24,10 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
-  const { user, session, loading } = useAuth();
-  const [accessChecked, setAccessChecked] = useState(false);
-  const [hasAccess, setHasAccess] = useState(false);
+  const { user, loading } = useAuth();
+  const { data: isTeamMember, isLoading: isTeamMemberLoading } = useIsTeamMember();
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const checkAccess = async () => {
-      if (!user || !session?.access_token) {
-        if (isMounted) {
-          setAccessChecked(true);
-          setHasAccess(false);
-        }
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase.functions.invoke("check-access", {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (error) throw error;
-
-        const allowed = !!data?.hasAccess;
-        if (!allowed) {
-          // Force sign out when user has no access
-          await supabase.auth.signOut();
-        }
-
-        if (isMounted) {
-          setHasAccess(allowed);
-          setAccessChecked(true);
-        }
-      } catch {
-        // Fail closed: if access can't be verified, log out
-        await supabase.auth.signOut();
-        if (isMounted) {
-          setHasAccess(false);
-          setAccessChecked(true);
-        }
-      }
-    };
-
-    setAccessChecked(false);
-    checkAccess();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.id, session?.access_token]);
-
-  if (loading) {
+  if (loading || isTeamMemberLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -91,15 +39,8 @@ function ProtectedRoutes() {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!accessChecked) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
+  // User has no role - redirect to auth
+  if (!isTeamMember) {
     return <Navigate to="/auth" replace />;
   }
 
