@@ -452,22 +452,20 @@ export default function Settings() {
               />
 
               {/* Username - readonly */}
-              {username && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <AtSign className="h-4 w-4" />
-                    Usuário
-                  </Label>
-                  <Input
-                    value={username}
-                    disabled
-                    className="bg-muted"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    O nome de usuário não pode ser alterado
-                  </p>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <AtSign className="h-4 w-4" />
+                  Usuário
+                </Label>
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Seu nome de usuário"
+                />
+                <p className="text-xs text-muted-foreground">
+                  O nome de usuário é usado para login
+                </p>
+              </div>
 
               {/* Name */}
               <div className="space-y-2">
