@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -82,6 +82,22 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: insertError.message }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
+      }
+
+      // Also create team_members entry for the first admin
+      const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin';
+      const { error: teamError } = await supabase
+        .from("team_members")
+        .insert({
+          name: fullName,
+          role: "Administrador",
+          permission: "admin",
+          user_id: user.id,
+          email: user.email,
+        });
+
+      if (teamError) {
+        console.error("Error creating team member for first admin:", teamError);
       }
 
       // Clear the make_admin flag from user metadata
