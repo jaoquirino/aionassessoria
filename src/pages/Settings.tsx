@@ -782,7 +782,6 @@ export default function Settings() {
                     className="pl-10"
                   />
                 </div>
-                <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
                 <Button onClick={() => setCreateUserDialogOpen(true)} className="gap-2">
                   <UserPlus className="h-4 w-4" />
                   Criar Usuário
