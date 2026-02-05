@@ -22,10 +22,10 @@ import logoDark from "@/assets/logo-dark.png";
 
 const allNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Clientes", href: "/clientes", icon: Users, permission: "admin" },
+  { name: "Clientes", href: "/clientes", icon: Users, adminOnly: true },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
-  { name: "Equipe", href: "/equipe", icon: UserCircle, permission: "admin" },
-  { name: "Módulos", href: "/modulos", icon: Puzzle, permission: "admin" },
+  { name: "Equipe", href: "/equipe", icon: UserCircle, adminOnly: true },
+  { name: "Módulos", href: "/modulos", icon: Puzzle, adminOnly: true },
 ];
 
 export function Sidebar() {
@@ -36,7 +36,7 @@ export function Sidebar() {
 
   // Filter nav items based on permission
   const isAdmin = currentMember?.permission === "admin";
-  const navigation = allNavigation.filter(item => !item.permission || item.permission === "admin" && isAdmin);
+  const navigation = allNavigation.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <motion.aside
