@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { 
@@ -19,6 +20,33 @@ import { toast } from "sonner";
 // Fetch all tasks with related data (uses public view for team_members to avoid RLS issues)
 // Excludes archived tasks by default
 export function useTasks() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("realtime:tasks")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks" },
+        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "task_assignees" },
+        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "task_checklist" },
+        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
@@ -46,23 +74,24 @@ export function useTasks() {
         supabase.from("task_checklist").select("*"),
       ]);
 
-      const membersMap = new Map(teamMembersRes.data?.map(m => [m.id, m]) || []);
-      
+      const membersMap = new Map(teamMembersRes.data?.map((m) => [m.id, m]) || []);
+
       // Group checklists by task_id
       const checklistByTask = new Map<string, typeof checklistRes.data>();
-      checklistRes.data?.forEach(item => {
+      checklistRes.data?.forEach((item) => {
         const existing = checklistByTask.get(item.task_id) || [];
         existing.push(item);
         checklistByTask.set(item.task_id, existing);
       });
 
       // Map assignee, creator, and checklist
-      const tasks = tasksData?.map(task => ({
-        ...task,
-        assignee: task.assigned_to ? membersMap.get(task.assigned_to) || null : null,
-        creator: task.created_by ? membersMap.get(task.created_by) || null : null,
-        checklist: checklistByTask.get(task.id) || [],
-      })) || [];
+      const tasks =
+        tasksData?.map((task) => ({
+          ...task,
+          assignee: task.assigned_to ? membersMap.get(task.assigned_to) || null : null,
+          creator: task.created_by ? membersMap.get(task.created_by) || null : null,
+          checklist: checklistByTask.get(task.id) || [],
+        })) || [];
 
       return tasks as Task[];
     },

@@ -24,6 +24,7 @@ interface TeamMemberTasksDialogProps {
     id: string;
     name: string;
     role: string;
+    permission?: string;
     avatar_url: string | null;
   } | null;
   open: boolean;
@@ -97,10 +98,12 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                  {member.name.split(" ").map(n => n[0]).join("")}
                </AvatarFallback>
              </Avatar>
-             <div>
-               <DialogTitle className="text-xl">{member.name}</DialogTitle>
-               <p className="text-sm text-muted-foreground">{member.role}</p>
-             </div>
+              <div>
+                <DialogTitle className="text-xl">{member.name}</DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  {member.permission === "admin" ? "Admin" : "Operacional"}
+                </p>
+              </div>
            </div>
          </DialogHeader>
  

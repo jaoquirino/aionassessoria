@@ -54,7 +54,16 @@ export default function Team() {
   const deleteMember = useDeleteTeamMember();
 
   const allRoles = useMemo(() => {
-    const roles = new Set(teamMembers.map((m) => m.role));
+    const roles = new Set<string>();
+    teamMembers.forEach((m) => {
+      // role pode vir legado como "Administrador"/"Membro" — ignorar esses valores no filtro de cargos
+      const raw = (m.role || "").split(",").map((r) => r.trim()).filter(Boolean);
+      raw.forEach((r) => {
+        const normalized = r.toLowerCase();
+        if (["membro", "operacional", "admin", "administrador"].includes(normalized)) return;
+        roles.add(r);
+      });
+    });
     return Array.from(roles).sort();
   }, [teamMembers]);
 
@@ -64,7 +73,14 @@ export default function Team() {
         search === "" ||
         member.name.toLowerCase().includes(search.toLowerCase());
 
-      const matchesRole = roleFilter === "all" || member.role === roleFilter;
+      const memberRoles = (member.role || "")
+        .split(",")
+        .map((r) => r.trim())
+        .filter(Boolean);
+
+      const matchesRole =
+        roleFilter === "all" ||
+        memberRoles.some((r) => r.toLowerCase() === roleFilter.toLowerCase());
 
       const status = getCapacityStatus(member.currentWeight, member.capacity_limit);
       const matchesCapacity = capacityFilter === "all" || status === capacityFilter;
@@ -138,10 +154,10 @@ export default function Team() {
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="w-full sm:w-[180px] bg-background">
-            <SelectValue placeholder="Função" />
+            <SelectValue placeholder="Cargos" />
           </SelectTrigger>
           <SelectContent className="bg-background border-border z-50">
-            <SelectItem value="all">Todas as funções</SelectItem>
+            <SelectItem value="all">Todos os cargos</SelectItem>
             {allRoles.map((role) => (
               <SelectItem key={role} value={role}>
                 {role}
@@ -238,7 +254,14 @@ export default function Team() {
                   </Avatar>
                   <div>
                     <h3 className="font-medium text-foreground">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground">{member.role}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(member.role || "")
+                        .split(",")
+                        .map((r) => r.trim())
+                        .filter(Boolean)
+                        .filter((r) => !["membro", "operacional", "admin", "administrador"].includes(r.toLowerCase()))
+                        .join(", ") || "—"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

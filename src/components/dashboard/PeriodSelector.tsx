@@ -124,29 +124,35 @@ export function getPeriodDates(period: PeriodOption, customRange?: CustomDateRan
   }
 
   const now = new Date();
-  const end = new Date(now);
   let start: Date;
+  let end: Date;
+
+  const setWindow = (days: number) => {
+    start = new Date(now);
+    start.setDate(start.getDate() - days);
+    end = new Date(now);
+    end.setDate(end.getDate() + days);
+  };
 
   switch (period) {
     case "7d":
-      start = new Date(now);
-      start.setDate(start.getDate() - 7);
+      setWindow(7);
       break;
     case "30d":
-      start = new Date(now);
-      start.setDate(start.getDate() - 30);
+      setWindow(30);
       break;
     case "90d":
-      start = new Date(now);
-      start.setDate(start.getDate() - 90);
+      setWindow(90);
       break;
     case "year":
       start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
       break;
     case "all":
-    case "custom":
     default:
       start = new Date(2020, 0, 1);
+      end = new Date(now);
+      end.setFullYear(end.getFullYear() + 10);
       break;
   }
 

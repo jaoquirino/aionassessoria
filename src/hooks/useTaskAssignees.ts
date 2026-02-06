@@ -1,6 +1,7 @@
- import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
- import { supabase } from "@/integrations/supabase/client";
- import type { TeamMember } from "@/types/tasks";
+import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { TeamMember } from "@/types/tasks";
  
  export interface TaskAssignee {
    id: string;
@@ -10,47 +11,64 @@
    team_member?: TeamMember;
  }
  
- // Fetch all assignees for tasks (bulk fetch for task list)
- export function useTasksAssignees(taskIds: string[]) {
-   return useQuery({
-     queryKey: ["task_assignees", taskIds],
-     queryFn: async () => {
-       if (taskIds.length === 0) return {};
- 
-       const { data, error } = await supabase
-         .from("task_assignees")
-         .select("*")
-         .in("task_id", taskIds);
- 
-       if (error) throw error;
- 
-       // Fetch team members
-       const memberIds = [...new Set(data?.map(a => a.team_member_id) || [])];
-       const { data: members } = await supabase
-         .from("team_members_public")
-         .select("*")
-         .in("id", memberIds);
- 
-       const membersMap = new Map(members?.map(m => [m.id, m]) || []);
- 
-       // Group by task_id
-       const result: Record<string, TaskAssignee[]> = {};
-       data?.forEach(assignee => {
-         if (!result[assignee.task_id]) {
-           result[assignee.task_id] = [];
-         }
-         result[assignee.task_id].push({
-           ...assignee,
-           team_member: membersMap.get(assignee.team_member_id) as TeamMember | undefined,
-         });
-       });
- 
-       return result;
-     },
-     enabled: taskIds.length > 0,
-     staleTime: 30000,
-   });
- }
+// Fetch all assignees for tasks (bulk fetch for task list)
+export function useTasksAssignees(taskIds: string[]) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("realtime:task_assignees")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "task_assignees" },
+        () => queryClient.invalidateQueries({ queryKey: ["task_assignees"] })
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return useQuery({
+    queryKey: ["task_assignees", taskIds],
+    queryFn: async () => {
+      if (taskIds.length === 0) return {};
+
+      const { data, error } = await supabase
+        .from("task_assignees")
+        .select("*")
+        .in("task_id", taskIds);
+
+      if (error) throw error;
+
+      // Fetch team members
+      const memberIds = [...new Set(data?.map((a) => a.team_member_id) || [])];
+      const { data: members } = await supabase
+        .from("team_members_public")
+        .select("*")
+        .in("id", memberIds);
+
+      const membersMap = new Map(members?.map((m) => [m.id, m]) || []);
+
+      // Group by task_id
+      const result: Record<string, TaskAssignee[]> = {};
+      data?.forEach((assignee) => {
+        if (!result[assignee.task_id]) {
+          result[assignee.task_id] = [];
+        }
+        result[assignee.task_id].push({
+          ...assignee,
+          team_member: membersMap.get(assignee.team_member_id) as TeamMember | undefined,
+        });
+      });
+
+      return result;
+    },
+    enabled: taskIds.length > 0,
+    staleTime: 30000,
+  });
+}
  
  // Fetch assignees for a single task
  export function useTaskAssignees(taskId: string | null) {
