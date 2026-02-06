@@ -152,16 +152,17 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                      memberTasks.active.map((task: Task, index: number) => {
                        const isOverdue = parseLocalDate(task.due_date) < now;
                        return (
-                         <motion.div
-                           key={task.id}
-                           initial={{ opacity: 0, y: 10 }}
-                           animate={{ opacity: 1, y: 0 }}
-                           transition={{ delay: 0.03 * index }}
-                           className={cn(
-                             "rounded-lg border p-4 transition-all",
-                             isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border"
-                           )}
-                         >
+                          <motion.div
+                            key={task.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.03 * index }}
+                            onClick={() => handleTaskClick(task.id)}
+                            className={cn(
+                              "rounded-lg border p-4 transition-all cursor-pointer hover:shadow-md",
+                              isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border hover:border-primary/30"
+                            )}
+                          >
                            <div className="flex items-start justify-between gap-4">
                              <div className="flex-1 min-w-0">
                                <div className="flex items-center gap-2">
