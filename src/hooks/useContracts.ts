@@ -62,7 +62,7 @@ function computeContractStatus(contract: Contract): { status: "active" | "expiri
     return { status: "ended", daysUntilRenewal: 0 };
   }
   
-  const renewalDate = contract.renewal_date ? new Date(contract.renewal_date) : null;
+  const renewalDate = contract.renewal_date ? parseLocalDate(contract.renewal_date) : null;
   const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : 999;
   
   if (daysUntilRenewal <= 7) {
