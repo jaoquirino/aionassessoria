@@ -160,13 +160,27 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [newComment, setNewComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const isDirtyRef = useRef(false);
+  const loadedTaskIdRef = useRef<string | null>(null);
 
   // Fetch modules for the selected client
   const { data: clientModules = [] } = useClientModules(clientId);
 
-  // Sync form state when task changes
+  // Reset dirty flag when dialog opens with a new task
   useEffect(() => {
-    if (task) {
+    if (open && taskId && taskId !== loadedTaskIdRef.current) {
+      isDirtyRef.current = false;
+      loadedTaskIdRef.current = taskId;
+    }
+    if (!open) {
+      isDirtyRef.current = false;
+      loadedTaskIdRef.current = null;
+    }
+  }, [open, taskId]);
+
+  // Sync form state when task loads initially (skip if user has local changes)
+  useEffect(() => {
+    if (task && !isDirtyRef.current) {
       setTitle(task.title);
       setStatus(task.status);
       setPriority(task.priority || "medium");
@@ -178,6 +192,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       setWeight(task.weight);
     }
   }, [task]);
+
+  // Mark form as dirty when any field changes
+  const markDirty = () => { isDirtyRef.current = true; };
  
    // Sync assignees when data loads
    useEffect(() => {
