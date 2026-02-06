@@ -91,8 +91,12 @@ export function Sidebar({ isCollapsed, onCollapsedChange }: SidebarProps) {
         {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         {!collapsed && <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>}
       </Button>
-      <UserProfileDropdown isCollapsed={collapsed} />
-      {!collapsed && <NotificationBell />}
+      <div className="flex items-center gap-1">
+        <div className="flex-1 min-w-0">
+          <UserProfileDropdown isCollapsed={collapsed} />
+        </div>
+        {!collapsed && <NotificationBell compact />}
+      </div>
     </div>
   );
 
