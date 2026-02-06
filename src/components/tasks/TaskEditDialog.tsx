@@ -198,17 +198,18 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
  
    // Sync assignees when data loads
    useEffect(() => {
-     setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
+     if (!isDirtyRef.current) {
+       setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
+     }
    }, [taskAssigneesData]);
 
   // Handler para mudar módulo e atualizar tipo/peso automaticamente
   const handleModuleChange = (newModuleId: string) => {
+    markDirty();
     setContractModuleId(newModuleId);
     const selectedModule = clientModules.find(m => m.contractModuleId === newModuleId);
     if (selectedModule) {
-      // Atualizar peso com o default_weight do módulo
       setWeight(selectedModule.defaultWeight);
-      // Atualizar tipo: recorrente → recurring, senão project
       setTaskType(selectedModule.isRecurring ? "recurring" : "project");
     }
   };
