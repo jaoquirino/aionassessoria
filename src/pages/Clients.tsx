@@ -316,6 +316,9 @@ export default function Clients() {
                   MRR
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Mensalidade
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Vencimento
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
