@@ -135,27 +135,35 @@ export function Sidebar({ isCollapsed, onCollapsedChange }: SidebarProps) {
     >
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
-          <div className="flex items-center overflow-hidden">
-            {isCollapsed ? (
-              <img src={logoIcon} alt="AION" className="h-8 w-8 shrink-0" />
-            ) : (
+        <div className={cn(
+          "flex h-16 items-center border-b border-sidebar-border",
+          isCollapsed ? "justify-center px-2" : "justify-between px-4"
+        )}>
+          {isCollapsed ? (
+            <button
+              onClick={() => onCollapsedChange(false)}
+              className="flex items-center justify-center rounded-lg hover:bg-sidebar-accent p-1.5 transition-colors"
+            >
+              <img src={logoIcon} alt="AION" className="h-6 w-6" />
+            </button>
+          ) : (
+            <>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <img src={isDark ? logoLight : logoDark} alt="AION Assessoria" className="h-8 w-auto" />
               </motion.div>
-            )}
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {!isCollapsed && <NotificationBell />}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onCollapsedChange(!isCollapsed)}
-              className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
-            >
-              <ChevronLeft className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")} />
-            </Button>
-          </div>
+              <div className="flex items-center gap-1">
+                <NotificationBell />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onCollapsedChange(true)}
+                  className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Nav */}
