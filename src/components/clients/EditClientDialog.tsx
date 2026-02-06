@@ -16,7 +16,8 @@ import { ClientContactInfo } from "./ClientContactInfo";
 import { OnboardingStepsDialog } from "./OnboardingStepsDialog";
 import { useClientOnboardingProgress } from "@/hooks/useClientModuleOnboarding";
 import { format, differenceInDays } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   AlertDialog,
   AlertDialogAction,

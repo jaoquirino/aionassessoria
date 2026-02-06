@@ -18,6 +18,7 @@ import { EditClientDialog } from "@/components/clients/EditClientDialog";
 import { OnboardingClientCard } from "@/components/clients/OnboardingClientCard";
 import { useAllClients, type ClientWithContracts } from "@/hooks/useClients";
 import { differenceInDays } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 

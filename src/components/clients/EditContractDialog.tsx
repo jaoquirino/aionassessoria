@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useUpdateContract, type ContractWithModules } from "@/hooks/useContracts";
 import { useAllModules } from "@/hooks/useModules";
 import { useUpdateContractModules } from "@/hooks/useContractModules";

@@ -11,6 +11,8 @@ import { useCreateContract, useUpdateContract, type Contract } from "@/hooks/use
 import { useAllModules } from "@/hooks/useModules";
 import { useGenerateModuleOnboarding } from "@/hooks/useClientModuleOnboarding";
 import { format, addMonths } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
