@@ -296,7 +296,7 @@ export function EditClientDialog({
                           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-x-4 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              Início: {format(new Date(contract.start_date), "dd/MM/yyyy")}
+                              Início: {parseLocalDate(contract.start_date).toLocaleDateString("pt-BR")}
                             </span>
                             {contract.renewal_date && (
                               <span className="flex items-center gap-1">
