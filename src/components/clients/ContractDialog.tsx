@@ -182,9 +182,9 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate">Data de Início *</Label>
+              <Label htmlFor="startDate">Data de Entrada *</Label>
               <DatePicker
                 id="startDate"
                 value={startDate}
@@ -212,32 +212,15 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="renewalDate">Vencimento do Contrato</Label>
+              <Label htmlFor="renewalDate">Vencimento</Label>
               <DatePicker
                 id="renewalDate"
                 value={renewalDate}
                 onChange={setRenewalDate}
                 placeholder="Selecionar data"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="paymentDueDay">Dia de Vencimento</Label>
-              <Input
-                id="paymentDueDay"
-                type="number"
-                min={1}
-                max={31}
-                value={paymentDueDay}
-                onChange={(e) => {
-                  const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
-                  setPaymentDueDay(val);
-                }}
-                placeholder="1-31"
+                disabled
               />
             </div>
           </div>
