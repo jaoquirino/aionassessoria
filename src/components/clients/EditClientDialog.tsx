@@ -143,7 +143,7 @@ export function EditClientDialog({
     if (client) {
       setName(client.name);
       setStatus(client.status);
-      setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
+      setStartDate(client.created_at.split("T")[0]);
       setCnpj(client.cnpj || "");
       setPhone(client.phone || "");
       setEmail(client.email || "");
