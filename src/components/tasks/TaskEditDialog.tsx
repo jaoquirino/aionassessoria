@@ -254,6 +254,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
        // Save multiple assignees
        await setTaskAssignees.mutateAsync({ taskId: task.id, memberIds: selectedAssignees });
+      isDirtyRef.current = false;
     } finally {
       setIsSaving(false);
     }
