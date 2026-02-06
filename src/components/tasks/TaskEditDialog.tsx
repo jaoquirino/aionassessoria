@@ -153,6 +153,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const [contractModuleId, setContractModuleId] = useState<string>("");
   const [taskType, setTaskType] = useState<TaskType>("recurring");
   const [weight, setWeight] = useState<number>(2);
+  const [priority, setPriority] = useState<string>("medium");
 
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [newAttachmentName, setNewAttachmentName] = useState("");
