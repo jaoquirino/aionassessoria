@@ -18,6 +18,7 @@ import {
   StickyNote,
   CalendarIcon,
   Archive,
+  Copy,
 } from "lucide-react";
 import {
   Dialog,
@@ -37,20 +38,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MentionTextarea } from "@/components/ui/mention-textarea";
 import { cn, parseLocalDate } from "@/lib/utils";
-import {
-  useTask,
-  useUpdateTask,
-  useAddChecklistItem,
-  useToggleChecklistItem,
-  useDeleteChecklistItem,
-  useAddAttachment,
-  useDeleteAttachment,
-  useAddComment,
-  useTeamMembers,
-  useClients,
-  useArchiveTask,
-} from "@/hooks/useTasks";
+ import {
+   useTask,
+   useUpdateTask,
+   useAddChecklistItem,
+   useToggleChecklistItem,
+   useDeleteChecklistItem,
+   useAddAttachment,
+   useDeleteAttachment,
+   useAddComment,
+   useTeamMembers,
+   useClients,
+   useArchiveTask,
+ } from "@/hooks/useTasks";
+ import { useTaskAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
@@ -127,6 +130,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
   const { data: comments = [] } = useTaskComments(taskId);
+   const { data: taskAssigneesData = [] } = useTaskAssignees(taskId);
+   const setTaskAssignees = useSetTaskAssignees();
   
   const updateTask = useUpdateTask();
   // const updateStatus = useUpdateTaskStatus();
@@ -141,7 +146,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   // Form state
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<TaskStatusDB>("todo");
-  const [assignedTo, setAssignedTo] = useState<string>("");
+   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const [descriptionNotes, setDescriptionNotes] = useState("");
   const [clientId, setClientId] = useState<string>("");
@@ -163,7 +168,6 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     if (task) {
       setTitle(task.title);
       setStatus(task.status);
-      setAssignedTo(task.assigned_to || "");
       setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
       setDescriptionNotes(task.description_notes || "");
       setClientId(task.client_id || "");
@@ -172,6 +176,11 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       setWeight(task.weight);
     }
   }, [task]);
+ 
+   // Sync assignees when data loads
+   useEffect(() => {
+     setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
+   }, [taskAssigneesData]);
 
   // Handler para mudar módulo e atualizar tipo/peso automaticamente
   const handleModuleChange = (newModuleId: string) => {
@@ -213,7 +222,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         title,
         status,
         client_id: clientId,
-        assigned_to: assignedTo || null,
+         assigned_to: selectedAssignees[0] || null, // Keep for backwards compatibility
         due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : task.due_date,
         description_notes: descriptionNotes || null,
         contract_module_id: contractModuleId || null,
@@ -221,6 +230,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         type: taskType,
         weight,
       });
+ 
+       // Save multiple assignees
+       await setTaskAssignees.mutateAsync({ taskId: task.id, memberIds: selectedAssignees });
     } finally {
       setIsSaving(false);
     }
@@ -231,7 +243,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     if (task) {
       setTitle(task.title);
       setStatus(task.status);
-      setAssignedTo(task.assigned_to || "");
+       setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
       setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
       setDescriptionNotes(task.description_notes || "");
       setClientId(task.client_id || "");
@@ -256,10 +268,14 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   const handleAddAttachment = () => {
     if (!task || !newAttachmentName.trim() || !newAttachmentUrl.trim()) return;
+    let url = newAttachmentUrl.trim();
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+    }
     addAttachment.mutate({
       taskId: task.id,
       fileName: newAttachmentName.trim(),
-      fileUrl: newAttachmentUrl.trim(),
+      fileUrl: url,
     });
     setNewAttachmentName("");
     setNewAttachmentUrl("");
@@ -298,7 +314,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden w-[calc(100%-2rem)] sm:w-full">
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-8 w-3/4" />
@@ -333,7 +349,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
             <ScrollArea className="flex-1">
               <Tabs defaultValue={initialTab} className="w-full">
-                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 sticky top-0 bg-background z-10">
+                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 px-4 sticky top-0 bg-background z-10 overflow-x-auto flex-nowrap">
                   <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <FileText className="h-4 w-4 mr-2" />
                     Detalhes
@@ -419,20 +435,46 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
-                        <User className="h-3 w-3" /> Responsável
+                         <User className="h-3 w-3" /> Responsáveis
                       </Label>
-                      <Select value={assignedTo} onValueChange={setAssignedTo}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Não atribuído" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teamMembers.map((member) => (
-                            <SelectItem key={member.id} value={member.id}>
-                              {member.name} ({member.role})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                       <div className="space-y-2">
+                         {teamMembers.map((member) => {
+                           const isSelected = selectedAssignees.includes(member.id);
+                           return (
+                             <div key={member.id} className="flex items-center space-x-2">
+                               <Checkbox
+                                 id={`assignee-${member.id}`}
+                                 checked={isSelected}
+                                 onCheckedChange={(checked) => {
+                                   if (checked) {
+                                     setSelectedAssignees([...selectedAssignees, member.id]);
+                                   } else {
+                                     setSelectedAssignees(selectedAssignees.filter(id => id !== member.id));
+                                   }
+                                 }}
+                               />
+                               <label
+                                 htmlFor={`assignee-${member.id}`}
+                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex items-center gap-2"
+                               >
+                                 {member.avatar_url ? (
+                                   <img src={member.avatar_url} alt="" className="h-5 w-5 rounded-full object-cover" />
+                                 ) : (
+                                   <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
+                                     <span className="text-[10px] font-medium text-primary">
+                                       {member.name.charAt(0).toUpperCase()}
+                                     </span>
+                                   </div>
+                                 )}
+                                 {member.name}
+                               </label>
+                             </div>
+                           );
+                         })}
+                         {teamMembers.length === 0 && (
+                           <p className="text-sm text-muted-foreground">Nenhum membro disponível</p>
+                         )}
+                       </div>
                     </div>
 
                     <div className="space-y-2">
@@ -548,15 +590,16 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                   <Separator />
 
-                  {/* Single Observations Field */}
+                  {/* Single Observations Field with @ mentions */}
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1">
                       <StickyNote className="h-3 w-3" /> Observações
+                      <span className="text-xs text-muted-foreground ml-2">(use @ para mencionar alguém)</span>
                     </Label>
-                    <Textarea 
+                    <MentionTextarea 
                       value={descriptionNotes}
-                      onChange={(e) => setDescriptionNotes(e.target.value)}
-                      placeholder="Notas adicionais, referências, objetivos e entregáveis"
+                      onValueChange={(val) => setDescriptionNotes(val)}
+                      placeholder="Notas adicionais, referências, objetivos e entregáveis. Use @ para mencionar alguém."
                       className="resize-none min-h-[120px]"
                     />
                   </div>
@@ -639,7 +682,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Attachments Tab - Simplified */}
-                <TabsContent value="attachments" className="p-6 space-y-4 mt-0">
+                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0">
                   {/* Add URL/Link */}
                   <div className="space-y-3">
                     <Label className="flex items-center gap-1">
@@ -654,7 +697,16 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       <Input
                         placeholder="https://..."
                         value={newAttachmentUrl}
-                        onChange={(e) => setNewAttachmentUrl(e.target.value)}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          setNewAttachmentUrl(val);
+                        }}
+                        onBlur={() => {
+                          let val = newAttachmentUrl.trim();
+                          if (val && !val.startsWith("http://") && !val.startsWith("https://")) {
+                            setNewAttachmentUrl("https://" + val);
+                          }
+                        }}
                         onKeyDown={(e) => e.key === "Enter" && handleAddAttachment()}
                       />
                       <Button 
@@ -672,31 +724,44 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   {/* Attachments List */}
                   <div className="space-y-2">
                     {task.attachments?.map((attachment) => (
-                      <a 
+                      <div
                         key={attachment.id}
-                        href={attachment.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group"
+                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden"
                       >
                         <ExternalLink className="h-4 w-4 text-primary shrink-0" />
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 overflow-hidden max-w-full">
                           <p className="text-sm font-medium truncate text-primary">{attachment.file_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
+                          <p className="text-xs text-muted-foreground break-all max-w-full">{attachment.file_url}</p>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { 
-                            e.preventDefault(); 
+                          className="h-8 w-8 shrink-0"
+                          title="Copiar link"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const url = attachment.file_url.startsWith("http") 
+                              ? attachment.file_url 
+                              : `https://${attachment.file_url}`;
+                            navigator.clipboard.writeText(url);
+                            import("sonner").then(({ toast }) => toast.success("Link copiado!"));
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          title="Excluir"
+                          onClick={(e) => {
                             e.stopPropagation();
                             deleteAttachment.mutate({ attachmentId: attachment.id, taskId: task.id }); 
                           }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </a>
+                      </div>
                     ))}
 
                     {(!task.attachments || task.attachments.length === 0) && (
@@ -731,11 +796,98 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   {/* History List */}
                   <div className="space-y-3">
                     {task.history?.map((entry) => {
+                      const priorityLabels: Record<string, string> = {
+                        low: "Baixa",
+                        medium: "Média",
+                        high: "Alta",
+                        urgent: "Pra ontem",
+                      };
+
+                      // Get color based on action type
+                      const getHistoryColor = () => {
+                        switch (entry.action_type) {
+                          case "status_change":
+                          case "status_changed":
+                            return {
+                              border: "border-primary",
+                              bg: "bg-primary/10",
+                              icon: "text-primary",
+                            };
+                          case "priority_changed":
+                            return {
+                              border: "border-warning",
+                              bg: "bg-warning/10",
+                              icon: "text-warning",
+                            };
+                          case "assignee_change":
+                          case "assignee_changed":
+                            return {
+                              border: "border-info",
+                              bg: "bg-info/10",
+                              icon: "text-info",
+                            };
+                          case "created":
+                            return {
+                              border: "border-success",
+                              bg: "bg-success/10",
+                              icon: "text-success",
+                            };
+                          case "archived":
+                            return {
+                              border: "border-destructive",
+                              bg: "bg-destructive/10",
+                              icon: "text-destructive",
+                            };
+                          case "unarchived":
+                            return {
+                              border: "border-success",
+                              bg: "bg-success/10",
+                              icon: "text-success",
+                            };
+                          case "due_date_changed":
+                            return {
+                              border: "border-orange-500",
+                              bg: "bg-orange-500/10",
+                              icon: "text-orange-500",
+                            };
+                          case "title_changed":
+                          case "notes_changed":
+                          case "objective_changed":
+                            return {
+                              border: "border-purple-500",
+                              bg: "bg-purple-500/10",
+                              icon: "text-purple-500",
+                            };
+                          case "type_changed":
+                          case "module_changed":
+                          case "client_changed":
+                          case "contract_changed":
+                            return {
+                              border: "border-cyan-500",
+                              bg: "bg-cyan-500/10",
+                              icon: "text-cyan-500",
+                            };
+                          case "comment":
+                            return {
+                              border: "border-muted-foreground",
+                              bg: "bg-muted",
+                              icon: "text-muted-foreground",
+                            };
+                          default:
+                            return {
+                              border: "border-muted",
+                              bg: "bg-muted",
+                              icon: "text-muted-foreground",
+                            };
+                        }
+                      };
+
                       const getHistoryMessage = () => {
                         switch (entry.action_type) {
                           case "comment":
                             return <span className="text-foreground">{entry.comment}</span>;
                           case "status_change":
+                          case "status_changed":
                             return (
                               <>
                                 Status alterado de{" "}
@@ -748,8 +900,65 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                                 </span>
                               </>
                             );
+                          case "priority_changed":
+                            return (
+                              <>
+                                Prioridade alterada de{" "}
+                                <span className="font-medium text-foreground">
+                                  {priorityLabels[entry.old_value || ""] || entry.old_value}
+                                </span>{" "}
+                                para{" "}
+                                <span className="font-medium text-foreground">
+                                  {priorityLabels[entry.new_value || ""] || entry.new_value}
+                                </span>
+                              </>
+                            );
                           case "assignee_change":
+                          case "assignee_changed":
                             return "Responsável alterado";
+                          case "title_changed":
+                            return (
+                              <>
+                                Título alterado de{" "}
+                                <span className="font-medium text-foreground">"{entry.old_value}"</span>{" "}
+                                para{" "}
+                                <span className="font-medium text-foreground">"{entry.new_value}"</span>
+                              </>
+                            );
+                          case "due_date_changed":
+                            return (
+                              <>
+                                Prazo alterado de{" "}
+                                <span className="font-medium text-foreground">{entry.old_value}</span>{" "}
+                                para{" "}
+                                <span className="font-medium text-foreground">{entry.new_value}</span>
+                              </>
+                            );
+                          case "type_changed":
+                            const typeLabels: Record<string, string> = {
+                              recurring: "Recorrente",
+                              planning: "Planejamento",
+                              project: "Projeto",
+                              extra: "Extra",
+                            };
+                            return (
+                              <>
+                                Tipo alterado de{" "}
+                                <span className="font-medium text-foreground">{typeLabels[entry.old_value || ""] || entry.old_value}</span>{" "}
+                                para{" "}
+                                <span className="font-medium text-foreground">{typeLabels[entry.new_value || ""] || entry.new_value}</span>
+                              </>
+                            );
+                          case "module_changed":
+                            return "Módulo alterado";
+                          case "client_changed":
+                            return "Cliente alterado";
+                          case "contract_changed":
+                            return "Contrato alterado";
+                          case "notes_changed":
+                            return "Observações atualizadas";
+                          case "objective_changed":
+                            return "Objetivo atualizado";
                           case "field_change":
                             const fieldLabels: Record<string, string> = {
                               title: "Título",
@@ -769,7 +978,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           case "unarchived":
                             return "Tarefa restaurada";
                           default:
-                            return entry.action_type;
+                            return entry.action_type.replace(/_/g, " ");
                         }
                       };
 
@@ -778,18 +987,22 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           case "comment":
                             return <MessageSquare className="h-4 w-4" />;
                           case "status_change":
+                          case "status_changed":
                             return <Clock className="h-4 w-4" />;
                           case "assignee_change":
+                          case "assignee_changed":
                             return <User className="h-4 w-4" />;
                           default:
                             return <History className="h-4 w-4" />;
                         }
                       };
 
+                      const colors = getHistoryColor();
+
                       return (
-                        <div key={entry.id} className="flex gap-3 text-sm border-l-2 border-muted pl-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                            {getIcon()}
+                        <div key={entry.id} className={cn("flex gap-3 text-sm border-l-2 pl-3", colors.border)}>
+                          <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", colors.bg)}>
+                            <span className={colors.icon}>{getIcon()}</span>
                           </div>
                           <div className="flex-1">
                             <p className="text-muted-foreground">{getHistoryMessage()}</p>

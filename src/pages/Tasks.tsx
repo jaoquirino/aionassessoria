@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AlertTriangle, LayoutGrid, List, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ const typeOptions = [
 ];
 
 export default function Tasks() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTaskTab, setSelectedTaskTab] = useState<string>("details");
@@ -45,6 +47,16 @@ export default function Tasks() {
   const updateField = useUpdateTaskField();
   const createTask = useCreateTask();
   const archiveTask = useArchiveTask();
+
+  // Handle task opening from URL query param (e.g., from notifications)
+  useEffect(() => {
+    const taskIdFromUrl = searchParams.get("task");
+    if (taskIdFromUrl) {
+      setSelectedTaskId(taskIdFromUrl);
+      // Remove query param after opening
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const assigneeOptions = useMemo(() => {
     return teamMembers.map((m) => ({ value: m.id, label: m.name }));

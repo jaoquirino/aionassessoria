@@ -9,6 +9,8 @@ export interface OnboardingTemplateStep {
   description: string | null;
   responsible_role: string;
   order_index: number;
+  response_type: string;
+  response_required: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -53,6 +55,26 @@ export function useOnboardingTemplates() {
         steps: template.steps?.sort((a, b) => a.order_index - b.order_index) || [],
       }));
     },
+  });
+}
+
+// Fetch steps by template ID
+export function useOnboardingTemplateSteps(templateId: string | null) {
+  return useQuery({
+    queryKey: ["onboarding_template_steps", templateId],
+    queryFn: async () => {
+      if (!templateId) return [];
+      
+      const { data, error } = await supabase
+        .from("onboarding_template_steps")
+        .select("*")
+        .eq("template_id", templateId)
+        .order("order_index");
+
+      if (error) throw error;
+      return data as OnboardingTemplateStep[];
+    },
+    enabled: !!templateId,
   });
 }
 

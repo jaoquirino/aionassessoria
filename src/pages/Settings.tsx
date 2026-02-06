@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Mail, Trash2, ClipboardList, Archive } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,37 +17,46 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, useIsAdmin, type AppRole } from "@/hooks/useUserRoles";
+import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, type AppRole } from "@/hooks/useUserRoles";
+import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPreferences";
+import { useCapacitySettings } from "@/hooks/useCapacitySettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { AvatarCropDialog } from "@/components/settings/AvatarCropDialog";
 import { PasswordInput } from "@/components/settings/PasswordInput";
 import { PasswordRequirements } from "@/components/settings/PasswordRequirements";
 import { isPasswordStrong } from "@/lib/passwordValidation";
 import { OnboardingTemplatesTab } from "@/components/settings/OnboardingTemplatesTab";
 import { ArchivedTasksTab } from "@/components/settings/ArchivedTasksTab";
+import { ClientDataExportTab } from "@/components/settings/ClientDataExportTab";
+import { CreateUserDialog } from "@/components/settings/CreateUserDialog";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Settings() {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<AppRole>("member");
+  const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
+  const [isDeletingUserId, setIsDeletingUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // User profile state
   const { user } = useAuth();
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -57,23 +66,30 @@ export default function Settings() {
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState("");
   
-  // Email change
-  const [newEmail, setNewEmail] = useState("");
-  const [isChangingEmail, setIsChangingEmail] = useState(false);
-  
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [currentPasswordState, setCurrentPasswordState] = useState<"valid" | "invalid" | "verifying" | null>(null);
-  const verifyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // (reserved) could be used for debounced password verification
 
   // Theme preferences
   const { theme, setTheme, isDark } = useUserPreferences();
 
+  // Capacity settings
+  const { settings: capacitySettings, updateSettings: updateCapacitySettings, updateTypeWeight } = useCapacitySettings();
+  const [capacityLimit, setCapacityLimit] = useState(capacitySettings.defaultCapacityLimit.toString());
+  const [alertAt80, setAlertAt80] = useState(capacitySettings.alertAt80Percent);
+  const [blockAboveLimit, setBlockAboveLimit] = useState(capacitySettings.blockAboveLimit);
+  const [recurringWeight, setRecurringWeight] = useState(capacitySettings.typeWeights.recurring.toString());
+  const [planningWeight, setPlanningWeight] = useState(capacitySettings.typeWeights.planning.toString());
+  const [projectWeight, setProjectWeight] = useState(capacitySettings.typeWeights.project.toString());
+  const [extraWeight, setExtraWeight] = useState(capacitySettings.typeWeights.extra.toString());
+
   const { data: users, isLoading: usersLoading } = useUsersWithRoles();
-  const { data: isAdmin } = useIsAdmin();
+  const { data: currentMember } = useCurrentTeamMember();
+  const isAdmin = currentMember?.permission === "admin";
   const setRole = useSetUserRole();
   const removeRole = useRemoveUserRole();
 
@@ -81,7 +97,6 @@ export default function Settings() {
   useEffect(() => {
     if (user) {
       loadProfile();
-      setNewEmail(user.email || "");
     }
   }, [user]);
 
@@ -90,13 +105,14 @@ export default function Settings() {
     
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, avatar_url")
+      .select("full_name, avatar_url, username")
       .eq("user_id", user.id)
       .maybeSingle();
     
     if (data) {
       setFullName(data.full_name || "");
       setAvatarUrl(data.avatar_url || "");
+      setUsername(data.username || "");
     }
   };
 
@@ -204,11 +220,28 @@ export default function Settings() {
     
     setIsSavingProfile(true);
     try {
+      // Check if username is taken by another user
+      if (username.trim()) {
+        const { data: existingUser } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("username", username.trim())
+          .neq("user_id", user.id)
+          .maybeSingle();
+        
+        if (existingUser) {
+          toast.error("Este nome de usuário já está em uso");
+          setIsSavingProfile(false);
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("profiles")
         .upsert({
           user_id: user.id,
           full_name: fullName.trim() || null,
+          username: username.trim() || null,
           avatar_url: avatarUrl || null,
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
@@ -219,28 +252,6 @@ export default function Settings() {
       toast.error("Erro ao atualizar perfil: " + error.message);
     } finally {
       setIsSavingProfile(false);
-    }
-  };
-
-  const handleChangeEmail = async () => {
-    if (!newEmail || newEmail === user?.email) {
-      toast.error("Digite um novo email");
-      return;
-    }
-
-    setIsChangingEmail(true);
-    try {
-      const { error } = await supabase.auth.updateUser({
-        email: newEmail,
-      });
-
-      if (error) throw error;
-      
-      toast.success("Email de confirmação enviado para o novo endereço");
-    } catch (error: any) {
-      toast.error("Erro ao alterar email: " + error.message);
-    } finally {
-      setIsChangingEmail(false);
     }
   };
 
@@ -298,6 +309,39 @@ export default function Settings() {
     }
   };
 
+  // Sync capacity state when settings change
+  useEffect(() => {
+    setCapacityLimit(capacitySettings.defaultCapacityLimit.toString());
+    setAlertAt80(capacitySettings.alertAt80Percent);
+    setBlockAboveLimit(capacitySettings.blockAboveLimit);
+    setRecurringWeight(capacitySettings.typeWeights.recurring.toString());
+    setPlanningWeight(capacitySettings.typeWeights.planning.toString());
+    setProjectWeight(capacitySettings.typeWeights.project.toString());
+    setExtraWeight(capacitySettings.typeWeights.extra.toString());
+  }, [capacitySettings]);
+
+  const handleSaveCapacitySettings = () => {
+    const limit = parseInt(capacityLimit) || 15;
+    updateCapacitySettings({
+      defaultCapacityLimit: limit,
+      alertAt80Percent: alertAt80,
+      blockAboveLimit: blockAboveLimit,
+    });
+    toast.success("Configurações de capacidade salvas");
+  };
+
+  const handleSaveWeights = () => {
+    updateCapacitySettings({
+      typeWeights: {
+        recurring: parseInt(recurringWeight) || 2,
+        planning: parseInt(planningWeight) || 1,
+        project: parseInt(projectWeight) || 4,
+        extra: parseInt(extraWeight) || 3,
+      },
+    });
+    toast.success("Pesos salvos com sucesso");
+  };
+
   const filteredUsers = users?.filter(
     (u) =>
       u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -309,6 +353,34 @@ export default function Settings() {
       removeRole.mutate(userId);
     } else {
       setRole.mutate({ userId, role: role as AppRole });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      setIsDeletingUserId(userId);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Sessão inválida");
+
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: { userId },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success("Usuário excluído");
+      // Refresh lists
+      queryClient.invalidateQueries({ queryKey: ["users_with_roles"] });
+      queryClient.invalidateQueries({ queryKey: ["team_members"] });
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao excluir usuário");
+    } finally {
+      setIsDeletingUserId(null);
     }
   };
 
@@ -332,7 +404,7 @@ export default function Settings() {
     return (
       <Badge variant="secondary">
         <Shield className="h-3 w-3 mr-1" />
-        Membro
+        Operacional
       </Badge>
     );
   };
@@ -367,18 +439,22 @@ export default function Settings() {
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Perfil</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Notificações</span>
-            </TabsTrigger>
-            <TabsTrigger value="capacity" className="gap-2">
-              <Database className="h-4 w-4" />
-              <span className="hidden sm:inline">Capacidade</span>
-            </TabsTrigger>
             <TabsTrigger value="appearance" className="gap-2">
               <Palette className="h-4 w-4" />
               <span className="hidden sm:inline">Aparência</span>
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="notifications" className="gap-2">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Notificações</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="capacity" className="gap-2">
+                <Database className="h-4 w-4" />
+                <span className="hidden sm:inline">Capacidade</span>
+              </TabsTrigger>
+            )}
             {isAdmin && (
               <TabsTrigger value="onboarding" className="gap-2">
                 <ClipboardList className="h-4 w-4" />
@@ -389,6 +465,12 @@ export default function Settings() {
               <TabsTrigger value="archived" className="gap-2">
                 <Archive className="h-4 w-4" />
                 <span className="hidden sm:inline">Arquivadas</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="export" className="gap-2">
+                <FileDown className="h-4 w-4" />
+                <span className="hidden sm:inline">Exportar</span>
               </TabsTrigger>
             )}
             {isAdmin && (
@@ -470,6 +552,22 @@ export default function Settings() {
                 isSaving={isUploadingAvatar}
               />
 
+              {/* Username - readonly */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <AtSign className="h-4 w-4" />
+                  Usuário
+                </Label>
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Seu nome de usuário"
+                />
+                <p className="text-xs text-muted-foreground">
+                  O nome de usuário é usado para login
+                </p>
+              </div>
+
               {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="fullName">Nome completo</Label>
@@ -479,48 +577,14 @@ export default function Settings() {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Seu nome"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Quando preenchido, o nome será exibido no lugar do usuário
+                </p>
               </div>
 
               <Button onClick={handleSaveProfile} disabled={isSavingProfile} className="gap-2">
                 <Save className="h-4 w-4" />
                 {isSavingProfile ? "Salvando..." : "Salvar Perfil"}
-              </Button>
-            </div>
-
-            {/* Email Change */}
-            <div className="glass rounded-xl p-6 space-y-6">
-              <div>
-                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Alterar Email
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Um email de confirmação será enviado para o novo endereço
-                </p>
-              </div>
-              <Separator />
-              
-              <div className="space-y-4 max-w-sm">
-                <div className="space-y-2">
-                  <Label htmlFor="newEmail">Novo email</Label>
-                  <Input
-                    id="newEmail"
-                    type="email"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="novo@email.com"
-                  />
-                </div>
-              </div>
-
-              <Button 
-                onClick={handleChangeEmail} 
-                disabled={isChangingEmail || !newEmail || newEmail === user?.email}
-                variant="outline"
-                className="gap-2"
-              >
-                <Mail className="h-4 w-4" />
-                {isChangingEmail ? "Enviando..." : "Alterar Email"}
               </Button>
             </div>
 
@@ -646,24 +710,36 @@ export default function Settings() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="defaultWeight">Peso máximo padrão por funcionário</Label>
-                  <Input id="defaultWeight" type="number" defaultValue="15" className="max-w-[200px]" />
+                  <Input 
+                    id="defaultWeight" 
+                    type="number" 
+                    value={capacityLimit}
+                    onChange={(e) => setCapacityLimit(e.target.value)}
+                    className="max-w-[200px]" 
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">Alerta de capacidade em 80%</p>
                     <p className="text-sm text-muted-foreground">Mostrar status de atenção</p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={alertAt80}
+                    onCheckedChange={setAlertAt80}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">Bloquear atribuição acima do limite</p>
                     <p className="text-sm text-muted-foreground">Impedir atribuição quando capacidade excedida</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={blockAboveLimit}
+                    onCheckedChange={setBlockAboveLimit}
+                  />
                 </div>
               </div>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={handleSaveCapacitySettings}>
                 <Save className="h-4 w-4" />
                 Salvar Configurações
               </Button>
@@ -680,22 +756,42 @@ export default function Settings() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="recurringWeight">Entrega Recorrente</Label>
-                  <Input id="recurringWeight" type="number" defaultValue="2" />
+                  <Input 
+                    id="recurringWeight" 
+                    type="number" 
+                    value={recurringWeight}
+                    onChange={(e) => setRecurringWeight(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="planningWeight">Planejamento</Label>
-                  <Input id="planningWeight" type="number" defaultValue="1" />
+                  <Input 
+                    id="planningWeight" 
+                    type="number" 
+                    value={planningWeight}
+                    onChange={(e) => setPlanningWeight(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="projectWeight">Projeto</Label>
-                  <Input id="projectWeight" type="number" defaultValue="4" />
+                  <Input 
+                    id="projectWeight" 
+                    type="number" 
+                    value={projectWeight}
+                    onChange={(e) => setProjectWeight(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="extraWeight">Extra</Label>
-                  <Input id="extraWeight" type="number" defaultValue="3" />
+                  <Input 
+                    id="extraWeight" 
+                    type="number" 
+                    value={extraWeight}
+                    onChange={(e) => setExtraWeight(e.target.value)}
+                  />
                 </div>
               </div>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={handleSaveWeights}>
                 <Save className="h-4 w-4" />
                 Salvar Pesos
               </Button>
@@ -775,7 +871,7 @@ export default function Settings() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <Shield className="h-4 w-4 text-info" />
-                      Membros
+                      Operacionais
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -817,9 +913,9 @@ export default function Settings() {
                     className="pl-10"
                   />
                 </div>
-                <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
+                <Button onClick={() => setCreateUserDialogOpen(true)} className="gap-2">
                   <UserPlus className="h-4 w-4" />
-                  Convidar Membro
+                  Criar Usuário
                 </Button>
               </div>
 
@@ -868,6 +964,41 @@ export default function Settings() {
 
                             <div className="flex items-center gap-4">
                               {getRoleBadge(u.role)}
+
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    disabled={isDeletingUserId === u.id || u.id === user?.id}
+                                    title={u.id === user?.id ? "Você não pode excluir seu próprio usuário" : "Excluir usuário"}
+                                  >
+                                    {isDeletingUserId === u.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação remove o usuário e seus registros de acesso. Isso não pode ser desfeito.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteUser(u.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                               
                               <Select
                                 value={u.role || "none"}
@@ -878,7 +1009,7 @@ export default function Settings() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="member">Membro</SelectItem>
+                                  <SelectItem value="member">Operacional</SelectItem>
                                   <SelectItem value="none">Sem acesso</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -909,7 +1040,7 @@ export default function Settings() {
                   <div className="flex items-start gap-3">
                     <Badge variant="secondary" className="shrink-0">
                       <Shield className="h-3 w-3 mr-1" />
-                      Membro
+                      Operacional
                     </Badge>
                     <p className="text-sm text-muted-foreground">
                       Acesso operacional: pode visualizar e editar dados, criar tarefas. Não pode excluir ou gerenciar equipe.
@@ -935,52 +1066,22 @@ export default function Settings() {
               <ArchivedTasksTab />
             </TabsContent>
           )}
+
+          {/* Client Data Export Tab (Admin Only) */}
+          {isAdmin && (
+            <TabsContent value="export">
+              <ClientDataExportTab />
+            </TabsContent>
+          )}
         </Tabs>
       </motion.div>
 
       {/* Invite Dialog */}
-      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convidar Membro</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="invite-email">Email</Label>
-              <Input
-                id="invite-email"
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="email@exemplo.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="invite-role">Nível de Acesso</Label>
-              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as AppRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="member">Membro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              O usuário precisará criar uma conta com este email para ter acesso ao sistema.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => setInviteDialogOpen(false)}>
-              Enviar Convite
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Create User Dialog */}
+      <CreateUserDialog 
+        open={createUserDialogOpen} 
+        onOpenChange={setCreateUserDialogOpen} 
+      />
     </div>
   );
 }

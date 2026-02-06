@@ -8,6 +8,9 @@ export interface Client {
   id: string;
   name: string;
   status: ClientStatus;
+  cnpj: string | null;
+  phone: string | null;
+  email: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,13 +28,19 @@ export interface ClientWithContracts extends Client {
 export interface CreateClientInput {
   name: string;
   status?: ClientStatus;
+  cnpj?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface UpdateClientInput {
   id: string;
   name?: string;
   status?: ClientStatus;
-  created_at?: string; // For changing "start date"
+  created_at?: string;
+  cnpj?: string;
+  phone?: string;
+  email?: string;
 }
 
 // Fetch all clients
@@ -105,7 +114,7 @@ export function useCreateClient() {
   });
 }
 
-// Update client
+// Update client with optimistic updates
 export function useUpdateClient() {
   const queryClient = useQueryClient();
 
@@ -122,14 +131,45 @@ export function useUpdateClient() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["all_clients"] });
+      await queryClient.cancelQueries({ queryKey: ["client", variables.id] });
+
+      // Snapshot previous values
+      const previousClients = queryClient.getQueryData(["all_clients"]);
+      const previousClient = queryClient.getQueryData(["client", variables.id]);
+
+      // Optimistically update all_clients
+      queryClient.setQueryData(["all_clients"], (old: ClientWithContracts[] | undefined) => {
+        if (!old) return old;
+        return old.map((c) =>
+          c.id === variables.id ? { ...c, ...variables } : c
+        );
+      });
+
+      // Optimistically update single client
+      queryClient.setQueryData(["client", variables.id], (old: ClientWithContracts | undefined) => {
+        if (!old) return old;
+        return { ...old, ...variables };
+      });
+
+      return { previousClients, previousClient };
+    },
+    onError: (_error, variables, context) => {
+      // Rollback on error
+      if (context?.previousClients) {
+        queryClient.setQueryData(["all_clients"], context.previousClients);
+      }
+      if (context?.previousClient) {
+        queryClient.setQueryData(["client", variables.id], context.previousClient);
+      }
+      toast.error("Erro ao atualizar cliente");
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["all_clients"] });
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       queryClient.invalidateQueries({ queryKey: ["client", variables.id] });
-      toast.success("Cliente atualizado");
-    },
-    onError: (error) => {
-      toast.error("Erro ao atualizar cliente: " + error.message);
     },
   });
 }

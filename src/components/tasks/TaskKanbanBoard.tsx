@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
-import { AlertTriangle, GripVertical, Plus, User, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare } from "lucide-react";
+ import { useState, useMemo, useEffect } from "react";
+ import { motion, Reorder } from "framer-motion";
+ import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -14,27 +14,44 @@ import {
 import { cn, parseLocalDate } from "@/lib/utils";
 import type { Task, TaskStatusDB, TaskPriority, TeamMember, Client } from "@/types/tasks";
 import { taskStatusConfig, priorityConfig } from "@/types/tasks";
-import { AssigneePopover, DatePopover, RolePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
+ import { DatePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
+ import { MultiAssigneePopover } from "./MultiAssigneePopover";
+ import { StackedAvatars } from "./StackedAvatars";
+ import { KanbanColumnMenu, AddColumnDialog } from "./KanbanColumnMenu";
+ import { useKanbanColumns, useUpdateKanbanColumn, useDeleteKanbanColumn, useCreateKanbanColumn, useReorderKanbanColumns, type KanbanColumn } from "@/hooks/useKanbanColumns";
+ import { useTasksAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
 import { format } from "date-fns";
 
-interface TaskKanbanBoardProps {
-  tasks: Task[];
-  onTaskMove?: (taskId: string, newStatus: TaskStatusDB) => void;
-  onTaskClick?: (taskId: string, initialTab?: string) => void;
-  onAddTask?: (status: TaskStatusDB) => void;
-  onUpdateField?: (taskId: string, field: string, value: unknown) => void;
-  onArchiveTask?: (taskId: string) => void;
-  teamMembers?: TeamMember[];
-  clients?: Client[];
-}
-
-// Colunas incluindo "overdue" como primeira
-type KanbanColumn = "overdue" | TaskStatusDB;
-const columns: KanbanColumn[] = ["overdue", "todo", "in_progress", "review", "waiting_client", "done"];
+ interface TaskKanbanBoardProps {
+   tasks: Task[];
+   onTaskMove?: (taskId: string, newStatus: TaskStatusDB) => void;
+   onTaskClick?: (taskId: string, initialTab?: string) => void;
+   onAddTask?: (status: TaskStatusDB) => void;
+   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
+   onArchiveTask?: (taskId: string) => void;
+   teamMembers?: TeamMember[];
+   clients?: Client[];
+ }
+ 
+ type KanbanColumnKey = "overdue" | TaskStatusDB | string;
 
 export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onUpdateField, onArchiveTask, teamMembers = [], clients = [] }: TaskKanbanBoardProps) {
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
-  const [dragOverColumn, setDragOverColumn] = useState<KanbanColumn | null>(null);
+   const [dragOverColumn, setDragOverColumn] = useState<KanbanColumnKey | null>(null);
+   const [addColumnOpen, setAddColumnOpen] = useState(false);
+   const [addColumnAfterIndex, setAddColumnAfterIndex] = useState<number>(0);
+ 
+   // Fetch dynamic columns
+   const { data: kanbanColumns = [] } = useKanbanColumns();
+   const updateColumn = useUpdateKanbanColumn();
+   const deleteColumn = useDeleteKanbanColumn();
+   const createColumn = useCreateKanbanColumn();
+   const reorderColumns = useReorderKanbanColumns();
+ 
+   // Fetch all task assignees
+   const taskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
+   const { data: assigneesByTask = {} } = useTasksAssignees(taskIds);
+   const setAssignees = useSetTaskAssignees();
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     setDraggedTask(taskId);
@@ -46,16 +63,21 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
     setDragOverColumn(null);
   };
 
-  const handleDragOver = (e: React.DragEvent, column: KanbanColumn) => {
+   const handleDragOver = (e: React.DragEvent, column: KanbanColumnKey) => {
     e.preventDefault();
     setDragOverColumn(column);
   };
 
-  const handleDrop = (e: React.DragEvent, column: KanbanColumn) => {
+   const handleDrop = (e: React.DragEvent, column: KanbanColumnKey) => {
     e.preventDefault();
     // Não permite drop na coluna "overdue" - ela é automática
-    if (draggedTask && onTaskMove && column !== "overdue") {
-      onTaskMove(draggedTask, column);
+     if (draggedTask && onTaskMove && column !== "overdue") {
+       // Map column key to valid TaskStatusDB (for custom columns, map to closest)
+       const validStatuses: TaskStatusDB[] = ["todo", "in_progress", "review", "waiting_client", "done"];
+       const targetStatus = validStatuses.includes(column as TaskStatusDB) 
+         ? (column as TaskStatusDB) 
+         : "todo";
+       onTaskMove(draggedTask, targetStatus);
     }
     setDraggedTask(null);
     setDragOverColumn(null);
@@ -73,89 +95,111 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
 
   // Organizar tarefas por coluna
   const tasksByColumn = useMemo(() => {
-    const result: Record<KanbanColumn, Task[]> = {
-      overdue: [],
-      todo: [],
-      in_progress: [],
-      review: [],
-      waiting_client: [],
-      done: [],
-    };
+     const result: Record<string, Task[]> = {};
+     
+     // Initialize all columns
+     kanbanColumns.forEach(col => {
+       result[col.key] = [];
+     });
 
     tasks.forEach((task) => {
       if (isUrgentOrOverdue(task)) {
-        result.overdue.push(task);
+         if (result.overdue) {
+           result.overdue.push(task);
+         }
       } else {
-        result[task.status].push(task);
+         if (result[task.status]) {
+           result[task.status].push(task);
+         }
       }
     });
 
     // Ordenar por prioridade
     const priorityOrder = (p: TaskPriority) => priorityConfig[p]?.order || 99;
     
-    Object.keys(result).forEach((key) => {
-      result[key as KanbanColumn].sort((a, b) => 
+     Object.keys(result).forEach((key) => {
+       result[key].sort((a, b) => 
         priorityOrder(a.priority as TaskPriority) - priorityOrder(b.priority as TaskPriority)
       );
     });
 
     return result;
-  }, [tasks]);
-
-  const getColumnConfig = (column: KanbanColumn) => {
-    if (column === "overdue") {
-      return {
-        bgClass: "bg-destructive/10 border-destructive/30",
-        label: "Pra ontem 🔥",
-      };
-    }
-    
-    const configs: Record<TaskStatusDB, { bgClass: string; label: string }> = {
-      todo: { bgClass: "bg-muted/50 border-muted-foreground/20", label: taskStatusConfig.todo.label },
-      in_progress: { bgClass: "bg-primary/10 border-primary/30", label: taskStatusConfig.in_progress.label },
-      review: { bgClass: "bg-warning/10 border-warning/30", label: taskStatusConfig.review.label },
-      waiting_client: { bgClass: "bg-info/10 border-info/30", label: taskStatusConfig.waiting_client.label },
-      done: { bgClass: "bg-success/10 border-success/30", label: taskStatusConfig.done.label },
-    };
-    return configs[column];
-  };
+   }, [tasks, kanbanColumns]);
+ 
+   // Handle column operations
+   const handleEditColumn = (id: string, label: string, colorClass: string) => {
+     updateColumn.mutate({ id, label, color_class: colorClass });
+   };
+ 
+   const handleDeleteColumn = (id: string) => {
+     deleteColumn.mutate(id);
+   };
+ 
+   const handleAddColumnAfter = (afterIndex: number) => {
+     setAddColumnAfterIndex(afterIndex);
+     setAddColumnOpen(true);
+   };
+ 
+   const handleCreateColumn = (label: string, colorClass: string) => {
+     // Generate unique key from label
+     const key = label.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+     createColumn.mutate({
+       key,
+       label,
+       color_class: colorClass,
+       order_index: addColumnAfterIndex + 1,
+     });
+   };
+ 
+   // Handle multiple assignees
+   const handleSetAssignees = (taskId: string, memberIds: string[]) => {
+     setAssignees.mutate({ taskId, memberIds });
+   };
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin">
-      {columns.map((column) => {
-        const columnTasks = tasksByColumn[column];
+     <>
+       <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin">
+         {kanbanColumns.map((column) => {
+           const columnTasks = tasksByColumn[column.key] || [];
         const totalWeight = columnTasks.reduce((acc, t) => acc + t.weight, 0);
-        const config = getColumnConfig(column);
 
         return (
           <motion.div
-            key={column}
+             key={column.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
               "rounded-xl border-2 border-dashed p-3 min-h-[500px] min-w-[280px] w-[280px] flex-shrink-0 snap-start transition-colors",
-              config.bgClass,
-              dragOverColumn === column && column !== "overdue" && "border-primary bg-primary/5"
+               column.color_class,
+               dragOverColumn === column.key && column.key !== "overdue" && "border-primary bg-primary/5"
             )}
-            onDragOver={(e) => handleDragOver(e, column)}
+             onDragOver={(e) => handleDragOver(e, column.key)}
             onDragLeave={() => setDragOverColumn(null)}
-            onDrop={(e) => handleDrop(e, column)}
+             onDrop={(e) => handleDrop(e, column.key)}
           >
             <div className="flex items-center justify-between mb-4 px-1">
               <div className="flex items-center gap-2">
                 <h3 className={cn(
                   "font-semibold text-sm",
-                  column === "overdue" ? "text-destructive" : "text-foreground"
+                   column.key === "overdue" ? "text-destructive" : "text-foreground"
                 )}>
-                  {config.label}
+                   {column.label}
                 </h3>
-                <Badge variant={column === "overdue" ? "destructive" : "secondary"} className="text-xs">
+                 <Badge variant={column.key === "overdue" ? "destructive" : "secondary"} className="text-xs">
                   {columnTasks.length}
                 </Badge>
               </div>
-              <span className="text-xs text-muted-foreground">
-                P{totalWeight}
-              </span>
+               <div className="flex items-center gap-1">
+                 <span className="text-xs text-muted-foreground">
+                   P{totalWeight}
+                 </span>
+                 <KanbanColumnMenu
+                   column={column}
+                   onEdit={handleEditColumn}
+                   onDelete={handleDeleteColumn}
+                   onAddAfter={handleAddColumnAfter}
+                 />
+               </div>
             </div>
 
             <div className="space-y-3">
@@ -173,13 +217,21 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
                   onArchive={onArchiveTask}
                   teamMembers={teamMembers}
                   clients={clients}
+                   assignees={(assigneesByTask[task.id] || []).map(a => a.team_member).filter(Boolean) as TeamMember[]}
+                   onSetAssignees={(memberIds) => handleSetAssignees(task.id, memberIds)}
                 />
               ))}
 
               {/* Add Task Button */}
-              {column !== "done" && column !== "overdue" && onAddTask && (
+               {column.key !== "done" && column.key !== "overdue" && onAddTask && (
                 <button
-                  onClick={() => onAddTask(column)}
+                   onClick={() => {
+                     const validStatuses: TaskStatusDB[] = ["todo", "in_progress", "review", "waiting_client", "done"];
+                     const status = validStatuses.includes(column.key as TaskStatusDB) 
+                       ? (column.key as TaskStatusDB) 
+                       : "todo";
+                     onAddTask(status);
+                   }}
                   className="w-full rounded-lg border-2 border-dashed border-muted-foreground/30 p-3 flex items-center justify-center gap-2 text-muted-foreground/60 hover:border-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30 transition-all cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
@@ -190,7 +242,14 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
           </motion.div>
         );
       })}
-    </div>
+       </div>
+ 
+       <AddColumnDialog
+         open={addColumnOpen}
+         onOpenChange={setAddColumnOpen}
+         onAdd={handleCreateColumn}
+       />
+     </>
   );
 }
 
@@ -206,9 +265,11 @@ interface TaskCardProps {
   onArchive?: (taskId: string) => void;
   teamMembers: TeamMember[];
   clients: Client[];
+   assignees: TeamMember[];
+   onSetAssignees: (memberIds: string[]) => void;
 }
 
-function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, onArchive, teamMembers, clients }: TaskCardProps) {
+ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, onArchive, teamMembers, clients, assignees, onSetAssignees }: TaskCardProps) {
   const priority = task.priority as TaskPriority || "medium";
   const priorityInfo = priorityConfig[priority];
 
@@ -313,23 +374,20 @@ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, 
           </PriorityPopover>
 
           {/* Responsável - Clicável */}
-          <AssigneePopover
-            currentAssignee={task.assignee}
+           <MultiAssigneePopover
+             currentAssignees={assignees}
             teamMembers={teamMembers}
-            onSelect={(memberId) => onUpdateField?.(task.id, "assigned_to", memberId)}
+             onSelect={onSetAssignees}
           >
             <button 
               type="button"
               onClick={handleFieldClick} 
               onPointerDown={handleFieldClick}
-              className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+               className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
             >
-              <User className="h-3 w-3" />
-              <span className="truncate">
-                {task.assignee?.name || "Não atribuído"}
-              </span>
+               <StackedAvatars assignees={assignees} maxVisible={3} />
             </button>
-          </AssigneePopover>
+           </MultiAssigneePopover>
 
           {/* Checklist Progress - Clickable */}
           {checklistTotal > 0 && (

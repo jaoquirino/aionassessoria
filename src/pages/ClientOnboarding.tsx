@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,19 +11,33 @@ import {
   Loader2,
   ChevronRight,
   FileText,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useClientModuleOnboardings,
   useUpdateModuleOnboardingStatus,
   type ClientModuleOnboarding,
 } from "@/hooks/useClientModuleOnboarding";
+
+type OnboardingTask = {
+  id: string;
+  title: string;
+  status: string;
+  contract_module_id: string | null;
+  description_notes: string | null;
+  description_objective: string | null;
+};
 
 interface Client {
   id: string;
@@ -63,6 +77,7 @@ export default function ClientOnboarding() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+  const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
 
   // Fetch client
   const { data: client, isLoading: clientLoading } = useQuery({
@@ -84,7 +99,7 @@ export default function ClientOnboarding() {
   const { data: onboardings = [], isLoading: onboardingsLoading } = useClientModuleOnboardings(clientId || null);
 
   // Fetch related tasks
-  const { data: tasks = [], refetch: refetchTasks } = useQuery({
+  const { data: tasks = [] } = useQuery({
     queryKey: ["onboarding_tasks", clientId],
     queryFn: async () => {
       if (!clientId) return [];
@@ -96,9 +111,44 @@ export default function ClientOnboarding() {
         .is("archived_at", null)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data;
+      return data as OnboardingTask[];
     },
     enabled: !!clientId,
+  });
+
+  const toggleTaskExpanded = (taskId: string) => {
+    setExpandedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  };
+
+  const updateTaskNotes = useMutation({
+    mutationFn: async ({ taskId, notes }: { taskId: string; notes: string }) => {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ description_notes: notes })
+        .eq("id", taskId);
+      if (error) throw error;
+    },
+    onMutate: async ({ taskId, notes }) => {
+      await queryClient.cancelQueries({ queryKey: ["onboarding_tasks", clientId] });
+      const previous = queryClient.getQueryData(["onboarding_tasks", clientId]);
+      queryClient.setQueryData(["onboarding_tasks", clientId], (old: OnboardingTask[] | undefined) => {
+        if (!old) return old;
+        return old.map((t) => (t.id === taskId ? { ...t, description_notes: notes } : t));
+      });
+      return { previous };
+    },
+    onError: (error, _, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(["onboarding_tasks", clientId], ctx.previous);
+      toast.error("Erro ao salvar informações: " + (error as Error).message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks", clientId] });
+    },
   });
 
   // Toggle task status
@@ -112,7 +162,7 @@ export default function ClientOnboarding() {
     if (error) {
       toast.error("Erro ao atualizar tarefa");
     } else {
-      refetchTasks();
+      queryClient.invalidateQueries({ queryKey: ["onboarding_tasks", clientId] });
       // Also invalidate onboarding progress queries
       queryClient.invalidateQueries({ queryKey: ["client_onboarding_progress", clientId] });
       queryClient.invalidateQueries({ queryKey: ["onboarding_overview"] });
@@ -138,8 +188,9 @@ export default function ClientOnboarding() {
   }
 
   const activeOnboarding = onboardings.find((o) => o.id === activeModuleId);
-  const moduleTasks = tasks.filter(
-    (t) => t.contract_module_id === activeOnboarding?.contract_module_id
+  const moduleTasks = useMemo(
+    () => tasks.filter((t) => t.contract_module_id === activeOnboarding?.contract_module_id),
+    [tasks, activeOnboarding?.contract_module_id]
   );
 
   const handleStartModule = async (onboarding: ClientModuleOnboarding) => {
@@ -397,42 +448,102 @@ export default function ClientOnboarding() {
                   </h3>
                   {moduleTasks.length > 0 ? (
                     <div className="space-y-2">
-                      {moduleTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          onClick={() => handleToggleTaskStatus(task.id, task.status)}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
-                            task.status === "done"
-                              ? "bg-green-500/5 border-green-500/20 hover:bg-green-500/10"
-                              : "bg-muted/30 border-border hover:bg-muted/50"
-                          )}
-                        >
-                          {task.status === "done" ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-                          ) : (
-                            <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p
+                      {moduleTasks.map((task) => {
+                        const isExpanded = expandedTaskIds.has(task.id);
+                        const isDone = task.status === "done";
+
+                        return (
+                          <Collapsible key={task.id} open={isExpanded} onOpenChange={() => toggleTaskExpanded(task.id)}>
+                            <div
                               className={cn(
-                                "text-sm font-medium truncate",
-                                task.status === "done" && "line-through text-muted-foreground"
+                                "rounded-lg border transition-colors",
+                                isDone
+                                  ? "bg-success/5 border-success/20"
+                                  : "bg-muted/30 border-border"
                               )}
                             >
-                              {task.title}
-                            </p>
-                            {task.description_objective && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {task.description_objective}
-                              </p>
-                            )}
-                          </div>
-                          <Badge variant="outline" className="text-xs shrink-0">
-                            {task.status === "done" ? "Concluída" : "Pendente"}
-                          </Badge>
-                        </div>
-                      ))}
+                              <div className="flex items-start gap-3 p-3">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleToggleTaskStatus(task.id, task.status);
+                                  }}
+                                  className="mt-0.5 shrink-0"
+                                  aria-label={isDone ? "Reabrir tarefa" : "Concluir tarefa"}
+                                >
+                                  {isDone ? (
+                                    <CheckCircle2 className="h-5 w-5 text-success" />
+                                  ) : (
+                                    <Circle className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </button>
+
+                                <CollapsibleTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="flex-1 min-w-0 text-left"
+                                    aria-label={isExpanded ? "Recolher detalhes" : "Expandir para escrever"}
+                                  >
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p
+                                        className={cn(
+                                          "text-sm font-medium truncate",
+                                          isDone && "line-through text-muted-foreground"
+                                        )}
+                                      >
+                                        {task.title}
+                                      </p>
+                                      <Badge variant="outline" className="text-xs shrink-0">
+                                        {isDone ? "Concluída" : "Pendente"}
+                                      </Badge>
+                                    </div>
+                                    {task.description_objective && !isExpanded && (
+                                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                        {task.description_objective}
+                                      </p>
+                                    )}
+                                  </button>
+                                </CollapsibleTrigger>
+
+                                <button
+                                  type="button"
+                                  className="mt-0.5 shrink-0"
+                                  aria-hidden="true"
+                                  tabIndex={-1}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                  )}
+                                </button>
+                              </div>
+
+                              <CollapsibleContent>
+                                <div className="px-3 pb-3 pt-0">
+                                  <div className="pl-8 space-y-2">
+                                    <Label htmlFor={`onboarding-notes-${task.id}`}>
+                                      Informações coletadas
+                                    </Label>
+                                    <Textarea
+                                      id={`onboarding-notes-${task.id}`}
+                                      value={task.description_notes || ""}
+                                      onChange={(e) => {
+                                        // Atualiza na hora (otimista) e sincroniza em background
+                                        updateTaskNotes.mutate({ taskId: task.id, notes: e.target.value });
+                                      }}
+                                      placeholder="Escreva aqui as informações desta tarefa..."
+                                      rows={3}
+                                    />
+                                  </div>
+                                </div>
+                              </CollapsibleContent>
+                            </div>
+                          </Collapsible>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">

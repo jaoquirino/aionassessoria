@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { 
@@ -19,6 +20,33 @@ import { toast } from "sonner";
 // Fetch all tasks with related data (uses public view for team_members to avoid RLS issues)
 // Excludes archived tasks by default
 export function useTasks() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("realtime:tasks")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks" },
+        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "task_assignees" },
+        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "task_checklist" },
+        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
@@ -46,23 +74,24 @@ export function useTasks() {
         supabase.from("task_checklist").select("*"),
       ]);
 
-      const membersMap = new Map(teamMembersRes.data?.map(m => [m.id, m]) || []);
-      
+      const membersMap = new Map(teamMembersRes.data?.map((m) => [m.id, m]) || []);
+
       // Group checklists by task_id
       const checklistByTask = new Map<string, typeof checklistRes.data>();
-      checklistRes.data?.forEach(item => {
+      checklistRes.data?.forEach((item) => {
         const existing = checklistByTask.get(item.task_id) || [];
         existing.push(item);
         checklistByTask.set(item.task_id, existing);
       });
 
       // Map assignee, creator, and checklist
-      const tasks = tasksData?.map(task => ({
-        ...task,
-        assignee: task.assigned_to ? membersMap.get(task.assigned_to) || null : null,
-        creator: task.created_by ? membersMap.get(task.created_by) || null : null,
-        checklist: checklistByTask.get(task.id) || [],
-      })) || [];
+      const tasks =
+        tasksData?.map((task) => ({
+          ...task,
+          assignee: task.assigned_to ? membersMap.get(task.assigned_to) || null : null,
+          creator: task.created_by ? membersMap.get(task.created_by) || null : null,
+          checklist: checklistByTask.get(task.id) || [],
+        })) || [];
 
       return tasks as Task[];
     },
@@ -226,7 +255,7 @@ export function useUpdateTask() {
   });
 }
 
-// Update task status
+// Update task status with optimistic update
 export function useUpdateTaskStatus() {
   const queryClient = useQueryClient();
 
@@ -242,12 +271,34 @@ export function useUpdateTaskStatus() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ taskId, status }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      
+      // Snapshot previous value
+      const previousTasks = queryClient.getQueryData(["tasks"]);
+      
+      // Optimistically update the cache
+      queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.map((task) =>
+          task.id === taskId ? { ...task, status } : task
+        );
+      });
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      // Rollback on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks);
+      }
+      toast.error("Erro ao atualizar status: " + error.message);
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
-    },
-    onError: (error) => {
-      toast.error("Erro ao atualizar status: " + error.message);
+      queryClient.invalidateQueries({ queryKey: ["onboarding_module_tasks"] });
     },
   });
 }
@@ -294,6 +345,7 @@ export function useUpdateTaskField() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["onboarding_module_tasks"] });
     },
   });
 }
@@ -447,7 +499,12 @@ export function useAddAttachment() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
-      toast.success("Anexo adicionado");
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.success("Link adicionado");
+    },
+    onError: (error) => {
+      console.error("Error adding attachment:", error);
+      toast.error("Erro ao adicionar anexo: " + error.message);
     },
   });
 }

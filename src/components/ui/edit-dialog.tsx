@@ -92,29 +92,34 @@ export function EditDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent 
-        className={cn("max-w-lg", className)}
+        className={cn(
+          "max-w-lg flex flex-col max-h-[85vh] sm:max-h-[90vh]",
+          "w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-0",
+          className
+        )}
         onInteractOutside={(e) => {
           // Prevent default close behavior, we handle it in onOpenChange
         }}
       >
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
         <div 
-          className="py-4 space-y-4"
+          className="flex-1 overflow-y-auto -mx-6 px-6 py-4 space-y-4"
           onChange={() => markAsChanged()}
           onInput={() => markAsChanged()}
         >
           {children}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0 flex-shrink-0 pt-4 border-t">
           <Button
             type="button"
             variant="outline"
             onClick={handleCancel}
             disabled={isSaving}
+            className="w-full sm:w-auto"
           >
             {cancelLabel}
           </Button>
@@ -122,6 +127,7 @@ export function EditDialog({
             type="button"
             onClick={handleSave}
             disabled={isSaving}
+            className="w-full sm:w-auto"
           >
             {isSaving ? "Salvando..." : saveLabel}
           </Button>

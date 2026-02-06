@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 
 export interface DashboardStats {
   overdueTasks: number;
@@ -19,6 +19,7 @@ export interface DashboardTask {
   title: string;
   clientName: string;
   assigneeName: string;
+  assigneeAvatar: string | null;
   dueDate: string;
   status: string;
   isOverdue: boolean;
@@ -57,7 +58,8 @@ export interface DashboardClientHealth {
 }
 
 export function useDashboardData() {
-  const { data: isAdmin } = useIsAdmin();
+  const { data: currentMember } = useCurrentTeamMember();
+  const isAdmin = currentMember?.permission === "admin";
 
   return useQuery({
     queryKey: ["dashboard", isAdmin],
@@ -72,7 +74,7 @@ export function useDashboardData() {
       // Parallel fetch for all data - much faster
       const [tasksRes, clientsRes, contractsRes, teamMembersRes] = await Promise.all([
         supabase.from("tasks").select("*").order("due_date"),
-        supabase.from("clients").select("*"),
+        supabase.from("clients").select("*, is_internal"),
         supabase.from("contracts").select("*, client:clients(name)").eq("status", "active"),
         supabase.from("team_members_public").select("*").eq("is_active", true),
       ]);
@@ -82,10 +84,17 @@ export function useDashboardData() {
       const contracts = contractsRes.data || [];
       const teamMembers = teamMembersRes.data || [];
 
+      // Create internal client IDs set for filtering
+      const internalClientIds = new Set(
+        clients.filter((c: { is_internal?: boolean }) => c.is_internal).map((c: { id: string }) => c.id)
+      );
+
       const now = new Date();
 
       // Filter out onboarding (project) tasks from general stats
+      // Also filter out tasks from internal clients for weight calculations
       const operationalTasks = tasks.filter(t => t.type !== "project");
+      const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
 
       // Calculate stats (excluding onboarding tasks)
       const overdueTasks = operationalTasks.filter(t => new Date(t.due_date) < now && t.status !== "done").length;
@@ -107,9 +116,12 @@ export function useDashboardData() {
       }).length;
 
       const activeClients = clients.filter(c => c.status === "active").length;
-      const monthlyRevenue = contracts.reduce((sum, c) => sum + Number(c.monthly_value), 0);
+      // Exclude internal clients from revenue calculation
+      const monthlyRevenue = contracts
+        .filter((c: { client_id: string }) => !internalClientIds.has(c.client_id))
+        .reduce((sum: number, c: { monthly_value: number }) => sum + Number(c.monthly_value), 0);
 
-      const activeTasks = operationalTasks.filter(t => t.status !== "done");
+      const activeTasks = operationalTasksForWeight.filter(t => t.status !== "done");
       const totalWeight = activeTasks.reduce((sum, t) => sum + t.weight, 0);
       const totalCapacity = teamMembers.reduce((sum, m) => sum + (m.capacity_limit || 0), 0);
 
@@ -122,6 +134,7 @@ export function useDashboardData() {
         title: t.title,
         clientName: clientMap.get(t.client_id) || "—",
         assigneeName: t.assigned_to ? memberMap.get(t.assigned_to) || "Não atribuído" : "Não atribuído",
+        assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
         status: t.status,
         isOverdue: new Date(t.due_date) < now && t.status !== "done",
@@ -130,8 +143,9 @@ export function useDashboardData() {
       }));
 
       // Map team capacity (using operational tasks only)
+      // Also exclude internal client tasks from weight calculation
       const memberTaskStats = new Map<string, { weight: number; count: number; overdue: number }>();
-      operationalTasks.filter(t => t.status !== "done").forEach(t => {
+      operationalTasksForWeight.filter(t => t.status !== "done").forEach(t => {
         if (t.assigned_to) {
           const curr = memberTaskStats.get(t.assigned_to) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
@@ -178,7 +192,7 @@ export function useDashboardData() {
 
       // Client health (using operational tasks only)
       const clientTaskStats = new Map<string, { weight: number; pending: number; delivered: number }>();
-      operationalTasks.forEach(t => {
+      operationalTasksForWeight.forEach(t => {
         const curr = clientTaskStats.get(t.client_id) || { weight: 0, pending: 0, delivered: 0 };
         if (t.status !== "done") {
           curr.weight += t.weight;
@@ -191,13 +205,14 @@ export function useDashboardData() {
       });
 
       const clientRevenueMap = new Map<string, number>();
-      contracts.forEach(c => {
+      // Exclude internal clients from revenue map
+      contracts.filter((c: { client_id: string }) => !internalClientIds.has(c.client_id)).forEach((c: { client_id: string; monthly_value: number }) => {
         const curr = clientRevenueMap.get(c.client_id) || 0;
         clientRevenueMap.set(c.client_id, curr + Number(c.monthly_value));
       });
 
       const dashboardClients: DashboardClientHealth[] = clients
-        .filter(c => c.status === "active")
+        .filter((c: { status: string; is_internal?: boolean }) => c.status === "active" && !c.is_internal)
         .map(c => {
           const stats = clientTaskStats.get(c.id) || { weight: 0, pending: 0, delivered: 0 };
           const revenue = clientRevenueMap.get(c.id) || 0;
@@ -237,7 +252,7 @@ export function useDashboardData() {
         team: dashboardTeam,
         contracts: dashboardContracts,
         clients: dashboardClients,
-        isAdmin: !!isAdmin,
+        isAdmin,
       };
     },
     staleTime: 30000,

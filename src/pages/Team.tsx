@@ -26,6 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
 import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
+import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
 
 interface TeamMemberWithStats extends TeamMember {
   currentWeight: number;
@@ -43,36 +44,65 @@ function getCapacityStatus(current: number, max: number) {
 export default function Team() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [permissionFilter, setPermissionFilter] = useState("all");
   const [capacityFilter, setCapacityFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMemberWithStats | null>(null);
   const [deletingMember, setDeletingMember] = useState<TeamMemberWithStats | null>(null);
+  const [tasksDialogMember, setTasksDialogMember] = useState<TeamMemberWithStats | null>(null);
 
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
   const deleteMember = useDeleteTeamMember();
 
+  // Lista fixa de cargos/funções disponíveis (mesma do TeamMemberDialog)
+  const roleOptions = [
+    "Designer",
+    "Gestor de Tráfego",
+    "Copywriter",
+    "Comercial",
+    "Atendimento",
+    "Desenvolvedor",
+    "Social Media",
+    "Estrategista",
+    "Diretor de Arte",
+    "Produtor de Conteúdo",
+  ];
+
   const allRoles = useMemo(() => {
-    const roles = new Set(teamMembers.map((m) => m.role));
-    return Array.from(roles).sort();
+    // Coleta cargos reais atribuídos aos membros
+    const assignedRoles = new Set<string>();
+    teamMembers.forEach((m) => {
+      const raw = (m.role || "").split(",").map((r) => r.trim()).filter(Boolean);
+      raw.forEach((r) => {
+        // Só inclui se for um dos cargos válidos
+        if (roleOptions.some(opt => opt.toLowerCase() === r.toLowerCase())) {
+          assignedRoles.add(r);
+        }
+      });
+    });
+    return Array.from(assignedRoles).sort();
   }, [teamMembers]);
 
   const filteredTeam = useMemo(() => {
     return teamMembers.filter((member) => {
       const matchesSearch =
         search === "" ||
-        member.name.toLowerCase().includes(search.toLowerCase()) ||
-        member.email?.toLowerCase().includes(search.toLowerCase());
+        member.name.toLowerCase().includes(search.toLowerCase());
 
-      const matchesRole = roleFilter === "all" || member.role === roleFilter;
-      const matchesPermission = permissionFilter === "all" || member.permission === permissionFilter;
+      const memberRoles = (member.role || "")
+        .split(",")
+        .map((r) => r.trim())
+        .filter(Boolean);
+
+      const matchesRole =
+        roleFilter === "all" ||
+        memberRoles.some((r) => r.toLowerCase() === roleFilter.toLowerCase());
 
       const status = getCapacityStatus(member.currentWeight, member.capacity_limit);
       const matchesCapacity = capacityFilter === "all" || status === capacityFilter;
 
-      return matchesSearch && matchesRole && matchesPermission && matchesCapacity;
+      return matchesSearch && matchesRole && matchesCapacity;
     });
-  }, [teamMembers, search, roleFilter, permissionFilter, capacityFilter]);
+  }, [teamMembers, search, roleFilter, capacityFilter]);
 
   const totalCapacity = teamMembers.reduce((acc, m) => acc + m.capacity_limit, 0);
   const usedCapacity = teamMembers.reduce((acc, m) => acc + m.currentWeight, 0);
@@ -80,6 +110,10 @@ export default function Team() {
   const handleEdit = (member: TeamMemberWithStats) => {
     setEditingMember(member);
     setDialogOpen(true);
+  };
+
+  const handleViewTasks = (member: TeamMemberWithStats) => {
+    setTasksDialogMember(member);
   };
 
   const handleDelete = async () => {
@@ -113,7 +147,7 @@ export default function Team() {
         </div>
         <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4" />
-          Novo Membro
+          Novo Integrante
         </Button>
       </motion.div>
 
@@ -135,25 +169,15 @@ export default function Team() {
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="w-full sm:w-[180px] bg-background">
-            <SelectValue placeholder="Função" />
+            <SelectValue placeholder="Cargos" />
           </SelectTrigger>
           <SelectContent className="bg-background border-border z-50">
-            <SelectItem value="all">Todas as funções</SelectItem>
-            {allRoles.map((role) => (
+            <SelectItem value="all">Todos os cargos</SelectItem>
+            {roleOptions.map((role) => (
               <SelectItem key={role} value={role}>
                 {role}
               </SelectItem>
             ))}
-          </SelectContent>
-        </Select>
-        <Select value={permissionFilter} onValueChange={setPermissionFilter}>
-          <SelectTrigger className="w-full sm:w-[150px] bg-background">
-            <SelectValue placeholder="Permissão" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border-border z-50">
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="operational">Operacional</SelectItem>
           </SelectContent>
         </Select>
         <Select value={capacityFilter} onValueChange={setCapacityFilter}>
@@ -233,7 +257,7 @@ export default function Team() {
                 status === "critical" && "border-destructive/30",
                 status === "attention" && "border-warning/30"
               )}
-              onClick={() => handleEdit(member)}
+              onClick={() => handleViewTasks(member)}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -245,15 +269,34 @@ export default function Team() {
                   </Avatar>
                   <div>
                     <h3 className="font-medium text-foreground">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground">{member.role}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(member.role || "")
+                        .split(",")
+                        .map((r) => r.trim())
+                        .filter(Boolean)
+                        .filter((r) => !["membro", "operacional", "admin", "administrador"].includes(r.toLowerCase()))
+                        .join(", ") || "—"}
+                    </p>
                   </div>
                 </div>
-                <button 
-                  className="rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                  onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                    onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
+                    title="Editar membro"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
+                    title="Remover membro"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -306,7 +349,7 @@ export default function Team() {
         {filteredTeam.length === 0 && (
           <div className="col-span-full glass rounded-xl p-12 text-center">
             <p className="text-muted-foreground">
-              {teamMembers.length === 0 ? "Adicione seu primeiro membro da equipe" : "Nenhum membro encontrado"}
+              {teamMembers.length === 0 ? "Adicione seu primeiro integrante da equipe" : "Nenhum integrante encontrado"}
             </p>
           </div>
         )}
@@ -319,12 +362,19 @@ export default function Team() {
         onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingMember(null); }}
       />
 
+      <TeamMemberTasksDialog
+        member={tasksDialogMember}
+        open={!!tasksDialogMember}
+        onOpenChange={(open) => { if (!open) setTasksDialogMember(null); }}
+      />
+
       <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover membro?</AlertDialogTitle>
+            <AlertDialogTitle>Remover integrante da equipe?</AlertDialogTitle>
             <AlertDialogDescription>
-              Isso removerá {deletingMember?.name} da equipe. As tarefas atribuídas a este membro não serão excluídas.
+              {deletingMember?.name} será movido para "Sem acesso" e não aparecerá mais na equipe. 
+              As tarefas atribuídas não serão excluídas. Você pode restaurar o acesso nas Configurações.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

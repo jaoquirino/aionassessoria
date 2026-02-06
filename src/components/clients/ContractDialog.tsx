@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,6 +11,8 @@ import { useCreateContract, useUpdateContract, type Contract } from "@/hooks/use
 import { useAllModules } from "@/hooks/useModules";
 import { useGenerateModuleOnboarding } from "@/hooks/useClientModuleOnboarding";
 import { format, addMonths } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
@@ -22,12 +26,16 @@ interface ContractDialogProps {
 }
 
 export function ContractDialog({ clientId, contract, open, onOpenChange }: ContractDialogProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [monthlyValue, setMonthlyValue] = useState(0);
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [minDuration, setMinDuration] = useState(6);
   const [renewalDate, setRenewalDate] = useState("");
+  const [paymentDueDay, setPaymentDueDay] = useState(10);
   const [notes, setNotes] = useState("");
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [moduleDeliverableLimits, setModuleDeliverableLimits] = useState<Record<string, number | null>>({});
   const [requiresOnboarding, setRequiresOnboarding] = useState(true);
 
   const { data: modules = [] } = useAllModules();
@@ -48,9 +56,11 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
       setMonthlyValue(0);
       setStartDate(format(new Date(), "yyyy-MM-dd"));
       setMinDuration(6);
-      setRenewalDate(format(addMonths(new Date(), 6), "yyyy-MM-dd"));
+      setRenewalDate(format(addMonths(new Date(), 5), "yyyy-MM-dd"));
+      setPaymentDueDay(10);
       setNotes("");
       setSelectedModules([]);
+      setModuleDeliverableLimits({});
       setRequiresOnboarding(true);
     }
   }, [contract, open]);
@@ -58,7 +68,12 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   // Auto-calculate renewal date when start date or duration changes
   useEffect(() => {
     if (!isEditing && startDate) {
-      setRenewalDate(format(addMonths(new Date(startDate), minDuration), "yyyy-MM-dd"));
+      const start = parseLocalDate(startDate);
+      const renewal = addMonths(start, minDuration - 1);
+      const yyyy = renewal.getFullYear();
+      const mm = String(renewal.getMonth() + 1).padStart(2, "0");
+      const dd = String(renewal.getDate()).padStart(2, "0");
+      setRenewalDate(`${yyyy}-${mm}-${dd}`);
     }
   }, [startDate, minDuration, isEditing]);
 
@@ -68,6 +83,17 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
         ? prev.filter(id => id !== moduleId)
         : [...prev, moduleId]
     );
+  };
+
+  const handleDeliverableLimitChange = (moduleId: string, value: string) => {
+    const limit = value === "" ? null : parseInt(value);
+    setModuleDeliverableLimits(prev => ({ ...prev, [moduleId]: limit }));
+  };
+
+  const moduleNeedsDeliverableLimit = (moduleName: string, defaultLimit: number | null) => {
+    if (defaultLimit !== null) return true;
+    const designKeywords = ["design", "arte", "visual", "gráfico", "video", "vídeo"];
+    return designKeywords.some(k => moduleName.toLowerCase().includes(k));
   };
 
   const handleSave = async () => {
@@ -118,6 +144,16 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
               .from("clients")
               .update({ status: "onboarding" })
               .eq("id", clientId);
+
+            // Refresh UI instantly (no need to leave and come back)
+            queryClient.invalidateQueries({ queryKey: ["clients"] });
+            queryClient.invalidateQueries({ queryKey: ["client_contracts_full", clientId] });
+            queryClient.invalidateQueries({ queryKey: ["client_module_onboarding", clientId] });
+            queryClient.invalidateQueries({ queryKey: ["client_onboarding_progress", clientId] });
+            queryClient.invalidateQueries({ queryKey: ["onboarding_tasks", clientId] });
+
+            // Go straight to onboarding flow
+            navigate(`/clientes/${clientId}/onboarding`);
           }
         }
       }
@@ -146,19 +182,19 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate">Data de Início *</Label>
-              <Input
+              <Label htmlFor="startDate">Data de Entrada *</Label>
+              <DatePicker
                 id="startDate"
-                type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
+                placeholder="Selecionar data"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration">Duração Mínima</Label>
+              <Label htmlFor="duration">Duração Total</Label>
               <Select value={String(minDuration)} onValueChange={(v) => setMinDuration(Number(v))}>
                 <SelectTrigger>
                   <SelectValue />
@@ -176,33 +212,50 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="renewalDate">Data de Renovação</Label>
-            <Input
-              id="renewalDate"
-              type="date"
-              value={renewalDate}
-              onChange={(e) => setRenewalDate(e.target.value)}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="renewalDate">Vencimento</Label>
+              <DatePicker
+                id="renewalDate"
+                value={renewalDate}
+                onChange={setRenewalDate}
+                placeholder="Selecionar data"
+                disabled
+              />
+            </div>
           </div>
 
           {!isEditing && modules.filter(m => m.is_active).length > 0 && (
             <div className="space-y-2">
               <Label>Módulos Contratados</Label>
-              <div className="border rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+              <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
                 {modules.filter(m => m.is_active).map((module) => (
-                  <label key={module.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded">
+                  <div key={module.id} className="flex items-center gap-3 p-1.5 rounded hover:bg-muted/50 transition-colors">
                     <Checkbox
+                      id={`create-module-${module.id}`}
                       checked={selectedModules.includes(module.id)}
                       onCheckedChange={() => toggleModule(module.id)}
                     />
-                    <span className="text-sm">{module.name}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      Peso: {module.default_weight}
-                    </span>
-                  </label>
+                    <div className="flex-1 min-w-0">
+                      <label htmlFor={`create-module-${module.id}`} className="text-sm font-medium cursor-pointer">
+                        {module.name}
+                      </label>
+                      <p className="text-xs text-muted-foreground">Peso: {module.default_weight}</p>
+                    </div>
+                    {selectedModules.includes(module.id) && (
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={moduleDeliverableLimits[module.id] ?? module.deliverable_limit ?? ""}
+                          onChange={(e) => handleDeliverableLimitChange(module.id, e.target.value)}
+                          placeholder="∞"
+                          className="w-16 h-8 text-center text-sm"
+                        />
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">entregas</span>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

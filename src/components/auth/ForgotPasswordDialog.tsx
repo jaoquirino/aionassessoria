@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Mail, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,8 @@ interface ForgotPasswordDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialogProps) {
+export const ForgotPasswordDialog = forwardRef<HTMLDivElement, ForgotPasswordDialogProps>(
+  function ForgotPasswordDialog({ open, onOpenChange }, ref) {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -70,7 +71,7 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
       <DialogContent className="sm:max-w-md">
         {isSuccess ? (
           <div className="text-center py-6">
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
             <DialogHeader>
               <DialogTitle className="text-center">Email enviado!</DialogTitle>
               <DialogDescription className="text-center">
@@ -137,4 +138,6 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+ForgotPasswordDialog.displayName = "ForgotPasswordDialog";

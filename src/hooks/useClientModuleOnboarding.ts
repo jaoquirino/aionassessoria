@@ -48,6 +48,9 @@ export interface ClientOnboardingProgress {
     totalTasks: number;
     completedTasks: number;
     progressPercent: number;
+    contractModuleId: string;
+    templateId: string | null;
+    onboardingId: string;
   }>;
 }
 
@@ -96,6 +99,8 @@ export function useClientOnboardingProgress(clientId: string | null) {
         .select(`
           id,
           status,
+          template_id,
+          contract_module_id,
           contract_module:contract_modules(
             id,
             module_id,
@@ -127,6 +132,9 @@ export function useClientOnboardingProgress(clientId: string | null) {
           totalTasks: moduleTasks.length,
           completedTasks,
           progressPercent: moduleTasks.length > 0 ? Math.round((completedTasks / moduleTasks.length) * 100) : 0,
+          contractModuleId: onboarding.contract_module_id,
+          templateId: onboarding.template_id,
+          onboardingId: onboarding.id,
         };
       });
 

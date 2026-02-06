@@ -126,25 +126,112 @@ export type Database = {
           },
         ]
       }
-      clients: {
+      client_onboarding_responses: {
         Row: {
+          client_id: string
+          completed_at: string | null
+          completed_by: string | null
+          contract_module_id: string
           created_at: string
           id: string
+          is_completed: boolean
+          response_value: string | null
+          template_step_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          contract_module_id: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          response_value?: string | null
+          template_step_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          contract_module_id?: string
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          response_value?: string | null
+          template_step_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_onboarding_responses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_onboarding_responses_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_onboarding_responses_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_onboarding_responses_contract_module_id_fkey"
+            columns: ["contract_module_id"]
+            isOneToOne: false
+            referencedRelation: "contract_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_onboarding_responses_template_step_id_fkey"
+            columns: ["template_step_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_template_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_internal: boolean
           name: string
+          phone: string | null
           status: Database["public"]["Enums"]["client_status"]
           updated_at: string
         }
         Insert: {
+          cnpj?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          is_internal?: boolean
           name: string
+          phone?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           updated_at?: string
         }
         Update: {
+          cnpj?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          is_internal?: boolean
           name?: string
+          phone?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           updated_at?: string
         }
@@ -206,6 +293,7 @@ export type Database = {
           minimum_duration_months: number
           monthly_value: number
           notes: string | null
+          payment_due_day: number | null
           renewal_date: string | null
           requires_onboarding: boolean
           start_date: string
@@ -219,6 +307,7 @@ export type Database = {
           minimum_duration_months?: number
           monthly_value: number
           notes?: string | null
+          payment_due_day?: number | null
           renewal_date?: string | null
           requires_onboarding?: boolean
           start_date: string
@@ -232,6 +321,7 @@ export type Database = {
           minimum_duration_months?: number
           monthly_value?: number
           notes?: string | null
+          payment_due_day?: number | null
           renewal_date?: string | null
           requires_onboarding?: boolean
           start_date?: string
@@ -248,12 +338,50 @@ export type Database = {
           },
         ]
       }
+      kanban_columns: {
+        Row: {
+          color_class: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_protected: boolean
+          key: string
+          label: string
+          order_index: number
+          updated_at: string
+        }
+        Insert: {
+          color_class?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_protected?: boolean
+          key: string
+          label: string
+          order_index?: number
+          updated_at?: string
+        }
+        Update: {
+          color_class?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_protected?: boolean
+          key?: string
+          label?: string
+          order_index?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       onboarding_template_steps: {
         Row: {
           created_at: string
           description: string | null
           id: string
           order_index: number
+          response_required: boolean | null
+          response_type: string | null
           responsible_role: string
           template_id: string
           title: string
@@ -264,6 +392,8 @@ export type Database = {
           description?: string | null
           id?: string
           order_index?: number
+          response_required?: boolean | null
+          response_type?: string | null
           responsible_role: string
           template_id: string
           title: string
@@ -274,6 +404,8 @@ export type Database = {
           description?: string | null
           id?: string
           order_index?: number
+          response_required?: boolean | null
+          response_type?: string | null
           responsible_role?: string
           template_id?: string
           title?: string
@@ -335,6 +467,7 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -343,6 +476,7 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -351,6 +485,7 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -392,6 +527,49 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      task_assignees: {
+        Row: {
+          created_at: string
+          id: string
+          task_id: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          task_id: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          task_id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignees_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignees_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignees_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_attachments: {
         Row: {

@@ -6,14 +6,18 @@ import { EditDialog } from "@/components/ui/edit-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList } from "lucide-react";
+import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList, Eye, Play } from "lucide-react";
 import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
 import { useClientContractsWithModules, useDeleteContract, type ContractWithModules } from "@/hooks/useContracts";
 import { ContractDialog } from "./ContractDialog";
 import { EditContractDialog } from "./EditContractDialog";
-import { ClientOnboardingProgress } from "@/components/onboarding/ClientOnboardingProgress";
+import { ClientContactInfo } from "./ClientContactInfo";
+
+import { OnboardingStepsDialog } from "./OnboardingStepsDialog";
+import { useClientOnboardingProgress } from "@/hooks/useClientModuleOnboarding";
 import { format, differenceInDays } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,22 +61,35 @@ export function EditClientDialog({
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ClientStatus>("active");
   const [startDate, setStartDate] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [contractDialogOpen, setContractDialogOpen] = useState(false);
   const [editingContract, setEditingContract] = useState<ContractWithModules | null>(null);
   const [deleteClientOpen, setDeleteClientOpen] = useState(false);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+  const [onboardingDialogOpen, setOnboardingDialogOpen] = useState(false);
+  const [selectedOnboardingModule, setSelectedOnboardingModule] = useState<{
+    contractModuleId: string;
+    moduleName: string;
+    isCompleted: boolean;
+  } | null>(null);
 
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const deleteContract = useDeleteContract();
   const { data: contracts = [] } = useClientContractsWithModules(client?.id || null);
+  const { data: onboardingProgress } = useClientOnboardingProgress(client?.id || "");
 
   // Sync form state when client changes
   useEffect(() => {
     if (client) {
       setName(client.name);
       setStatus(client.status);
-      setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
+      setStartDate(client.created_at.split("T")[0]);
+      setCnpj(client.cnpj || "");
+      setPhone(client.phone || "");
+      setEmail(client.email || "");
     }
   }, [client]);
 
@@ -92,7 +109,10 @@ export function EditClientDialog({
         id: client.id,
         name: name.trim(),
         status,
-        created_at: new Date(startDate).toISOString(),
+        created_at: parseLocalDate(startDate).toISOString(),
+        cnpj: cnpj || undefined,
+        phone: phone || undefined,
+        email: email || undefined,
       });
       onClientUpdated?.();
     } catch (error) {
@@ -123,8 +143,16 @@ export function EditClientDialog({
     if (client) {
       setName(client.name);
       setStatus(client.status);
-      setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
+      setStartDate(client.created_at.split("T")[0]);
+      setCnpj(client.cnpj || "");
+      setPhone(client.phone || "");
+      setEmail(client.email || "");
     }
+  };
+
+  const handleOpenOnboarding = (module: typeof selectedOnboardingModule) => {
+    setSelectedOnboardingModule(module);
+    setOnboardingDialogOpen(true);
   };
 
   const formatCurrency = (value: number) => {
@@ -136,7 +164,7 @@ export function EditClientDialog({
 
   const getContractStatus = (contract: typeof contracts[0]) => {
     if (contract.status === "ended") return "ended";
-    const renewalDate = contract.renewal_date ? new Date(contract.renewal_date) : null;
+    const renewalDate = contract.renewal_date ? parseLocalDate(contract.renewal_date) : null;
     const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : 999;
     if (daysUntilRenewal <= 7) return "renewing";
     if (daysUntilRenewal <= 30) return "expiring_soon";
@@ -171,14 +199,14 @@ export function EditClientDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="client-status">Status</Label>
                 <Select value={status} onValueChange={(v) => setStatus(v as ClientStatus)}>
                   <SelectTrigger id="client-status">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[200]">
                     {statusOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -190,11 +218,11 @@ export function EditClientDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="start-date">Cliente desde</Label>
-                <Input
+                <DatePicker
                   id="start-date"
-                  type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={setStartDate}
+                  placeholder="Selecionar data"
                 />
               </div>
             </div>
@@ -202,14 +230,29 @@ export function EditClientDialog({
 
           <Separator />
 
+          {/* Contact Info */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-foreground text-sm">Informações de Contato</h3>
+            <ClientContactInfo
+              cnpj={cnpj}
+              phone={phone}
+              email={email}
+              onCnpjChange={setCnpj}
+              onPhoneChange={setPhone}
+              onEmailChange={setEmail}
+            />
+          </div>
+
+          <Separator />
+
           {/* Contracts Section */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Contratos
               </h3>
-              <Button size="sm" variant="outline" onClick={() => setContractDialogOpen(true)}>
+              <Button size="sm" variant="outline" onClick={() => setContractDialogOpen(true)} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-1" />
                 Novo Contrato
               </Button>
@@ -220,11 +263,11 @@ export function EditClientDialog({
                 Nenhum contrato cadastrado
               </p>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              <div className="space-y-2 max-h-48 sm:max-h-60 overflow-y-auto">
                 {contracts.map((contract) => {
                   const contractStatus = getContractStatus(contract);
-                  const daysUntilRenewal = contract.renewal_date 
-                    ? differenceInDays(new Date(contract.renewal_date), new Date())
+                   const daysUntilRenewal = contract.renewal_date 
+                    ? differenceInDays(parseLocalDate(contract.renewal_date), new Date())
                     : null;
 
                   return (
@@ -237,10 +280,10 @@ export function EditClientDialog({
                       )}
                       onClick={() => setEditingContract(contract)}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-foreground">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="font-medium text-foreground text-sm sm:text-base">
                               {formatCurrency(contract.monthly_value)}/mês
                             </span>
                             <Badge 
@@ -250,14 +293,14 @@ export function EditClientDialog({
                               {statusConfig[contractStatus].label}
                             </Badge>
                           </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-x-4 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              Início: {format(new Date(contract.start_date), "dd/MM/yyyy")}
+                              Início: {parseLocalDate(contract.start_date).toLocaleDateString("pt-BR")}
                             </span>
                             {contract.renewal_date && (
                               <span className="flex items-center gap-1">
-                                Renova: {format(new Date(contract.renewal_date), "dd/MM/yyyy")}
+                                Renova: {parseLocalDate(contract.renewal_date).toLocaleDateString("pt-BR")}
                                 {daysUntilRenewal !== null && daysUntilRenewal > 0 && daysUntilRenewal <= 30 && (
                                   <span className={cn(
                                     "font-medium",
@@ -279,7 +322,7 @@ export function EditClientDialog({
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 self-end sm:self-start">
                           <Button
                             size="icon"
                             variant="ghost"
@@ -314,13 +357,92 @@ export function EditClientDialog({
           <Separator />
 
           {/* Onboarding Progress Section */}
-          {client && (
+          {client && onboardingProgress && onboardingProgress.totalModules > 0 && (
             <div className="space-y-3">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <ClipboardList className="h-4 w-4" />
-                Progresso do Onboarding
-              </h3>
-              <ClientOnboardingProgress clientId={client.id} showDetail={true} />
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Progresso do Onboarding
+                </h3>
+                {onboardingProgress.progressPercent === 100 && (
+                  <Badge className="bg-success/20 text-success border-success/30">
+                    Concluído
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Module Cards with Actions */}
+              <div className="space-y-2">
+                {onboardingProgress.modules.map((module) => {
+                  const isCompleted = module.status === "completed";
+                  
+                  return (
+                    <div 
+                      key={module.moduleId}
+                      className={cn(
+                        "p-3 rounded-lg border cursor-pointer transition-colors",
+                        isCompleted 
+                          ? "bg-success/5 border-success/20 hover:bg-success/10" 
+                          : "bg-muted/30 hover:bg-muted/50"
+                      )}
+                      onClick={() => handleOpenOnboarding({
+                        contractModuleId: module.contractModuleId,
+                        moduleName: module.moduleName,
+                        isCompleted,
+                      })}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{module.moduleName}</span>
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "text-xs",
+                                isCompleted 
+                                  ? "bg-success/20 text-success border-success/30" 
+                                  : "bg-muted text-muted-foreground"
+                              )}
+                            >
+                              {isCompleted ? "Concluído" : `${module.progressPercent}%`}
+                            </Badge>
+                          </div>
+                          {!isCompleted && module.totalTasks > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {module.completedTasks}/{module.totalTasks} etapas
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={isCompleted ? "outline" : "default"}
+                          className="gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenOnboarding({
+                              contractModuleId: module.contractModuleId,
+                              moduleName: module.moduleName,
+                              isCompleted,
+                            });
+                          }}
+                        >
+                          {isCompleted ? (
+                            <>
+                              <Eye className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Ver</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Continuar</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -395,6 +517,18 @@ export function EditClientDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Onboarding Steps Dialog */}
+      {client && selectedOnboardingModule && (
+        <OnboardingStepsDialog
+          open={onboardingDialogOpen}
+          onOpenChange={setOnboardingDialogOpen}
+          clientId={client.id}
+          contractModuleId={selectedOnboardingModule.contractModuleId}
+          moduleName={selectedOnboardingModule.moduleName}
+          isCompleted={selectedOnboardingModule.isCompleted}
+        />
+      )}
     </>
   );
 }

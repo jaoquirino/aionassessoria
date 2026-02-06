@@ -1,59 +1,42 @@
 import { useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
   CheckSquare,
   UserCircle,
-  Settings,
   Puzzle,
   ChevronLeft,
   Sun,
   Moon,
-  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useUserRoles";
-import { toast } from "sonner";
+import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { NotificationBell } from "@/components/notifications/NotificationCenter";
+import { UserProfileDropdown } from "./UserProfileDropdown";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 
-interface SidebarProps {
-  isDarkMode: boolean;
-  onToggleTheme: () => void;
-}
-
-const adminNavigation = [
+const allNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Clientes", href: "/clientes", icon: Users, adminOnly: true },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
-  { name: "Equipe", href: "/equipe", icon: UserCircle },
-  { name: "Módulos", href: "/modulos", icon: Puzzle },
-  { name: "Configurações", href: "/configuracoes", icon: Settings },
+  { name: "Equipe", href: "/equipe", icon: UserCircle, adminOnly: true },
+  { name: "Módulos", href: "/modulos", icon: Puzzle, adminOnly: true },
 ];
 
-export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
+export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const { data: isAdmin } = useIsAdmin();
+  const { data: currentMember } = useCurrentTeamMember();
+  const { isDark, toggleTheme } = useUserPreferences();
 
-  const handleLogout = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast.error("Erro ao sair");
-    } else {
-      toast.success("Até logo!");
-      navigate("/auth", { replace: true });
-    }
-  };
-
-  // Filter nav items based on role
-  const navigation = adminNavigation.filter(item => !item.adminOnly || isAdmin);
+  // Filter nav items based on permission
+  const isAdmin = currentMember?.permission === "admin";
+  const navigation = allNavigation.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <motion.aside
@@ -74,25 +57,28 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
               className="flex items-center"
             >
               <img 
-                src={isDarkMode ? logoDark : logoLight} 
+                src={isDark ? logoLight : logoDark} 
                 alt="AION Assessoria" 
                 className="h-8 w-auto"
               />
             </motion.div>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
-          >
-            <ChevronLeft
-              className={cn(
-                "h-4 w-4 transition-transform",
-                isCollapsed && "rotate-180"
-              )}
-            />
-          </Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
+            >
+              <ChevronLeft
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  isCollapsed && "rotate-180"
+                )}
+              />
+            </Button>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -135,33 +121,24 @@ export function Sidebar({ isDarkMode, onToggleTheme }: SidebarProps) {
           <Button
             variant="ghost"
             size={isCollapsed ? "icon" : "default"}
-            onClick={onToggleTheme}
+            onClick={toggleTheme}
             className={cn(
               "w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
               isCollapsed && "justify-center"
             )}
           >
-            {isDarkMode ? (
+            {isDark ? (
               <Sun className="h-5 w-5" />
             ) : (
               <Moon className="h-5 w-5" />
             )}
             {!isCollapsed && (
-              <span>{isDarkMode ? "Modo Claro" : "Modo Escuro"}</span>
+              <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>
             )}
           </Button>
-          <Button
-            variant="ghost"
-            size={isCollapsed ? "icon" : "default"}
-            onClick={handleLogout}
-            className={cn(
-              "w-full justify-start gap-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive",
-              isCollapsed && "justify-center"
-            )}
-          >
-            <LogOut className="h-5 w-5" />
-            {!isCollapsed && <span>Sair</span>}
-          </Button>
+          
+          {/* User Profile Dropdown */}
+          <UserProfileDropdown isCollapsed={isCollapsed} />
         </div>
       </div>
     </motion.aside>

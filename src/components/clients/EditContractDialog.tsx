@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useUpdateContract, type ContractWithModules } from "@/hooks/useContracts";
 import { useAllModules } from "@/hooks/useModules";
 import { useUpdateContractModules } from "@/hooks/useContractModules";
@@ -39,6 +41,7 @@ export function EditContractDialog({
   const [monthlyValue, setMonthlyValue] = useState(0);
   const [startDate, setStartDate] = useState("");
   const [renewalDate, setRenewalDate] = useState("");
+  const [paymentDueDay, setPaymentDueDay] = useState(10);
   const [minimumDuration, setMinimumDuration] = useState(12);
   const [status, setStatus] = useState("active");
   const [notes, setNotes] = useState("");
@@ -51,8 +54,9 @@ export function EditContractDialog({
   useEffect(() => {
     if (contract && allModules) {
       setMonthlyValue(contract.monthly_value);
-      setStartDate(format(new Date(contract.start_date), "yyyy-MM-dd"));
-      setRenewalDate(contract.renewal_date ? format(new Date(contract.renewal_date), "yyyy-MM-dd") : "");
+      setStartDate(contract.start_date);
+      setRenewalDate(contract.renewal_date || "");
+      setPaymentDueDay((contract as any).payment_due_day || 10);
       setMinimumDuration(contract.minimum_duration_months);
       setStatus(contract.status);
       setNotes(contract.notes || "");
@@ -95,6 +99,7 @@ export function EditContractDialog({
       monthly_value: monthlyValue,
       start_date: startDate,
       renewal_date: renewalDate || null,
+      payment_due_day: paymentDueDay,
       minimum_duration_months: minimumDuration,
       status,
       notes: notes || null,
@@ -116,8 +121,10 @@ export function EditContractDialog({
     onOpenChange(false);
   };
 
-  const isDesignModule = (moduleName: string) => {
-    const designKeywords = ["design", "arte", "visual", "gráfico"];
+  // Check if module needs deliverable tracking (has default limit or is design-related)
+  const moduleNeedsDeliverableLimit = (moduleName: string, defaultLimit: number | null) => {
+    if (defaultLimit !== null) return true;
+    const designKeywords = ["design", "arte", "visual", "gráfico", "video", "vídeo"];
     return designKeywords.some(k => moduleName.toLowerCase().includes(k));
   };
 
@@ -140,31 +147,47 @@ export function EditContractDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="start-date">Data de Início</Label>
-              <Input
+              <DatePicker
                 id="start-date"
-                type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
+                placeholder="Selecionar data"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="renewal-date">Data de Renovação</Label>
-              <Input
+              <Label htmlFor="renewal-date">Vencimento</Label>
+              <DatePicker
                 id="renewal-date"
-                type="date"
                 value={renewalDate}
-                onChange={(e) => setRenewalDate(e.target.value)}
+                onChange={setRenewalDate}
+                placeholder="Selecionar data"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-due-day">Mensalidade</Label>
+              <Input
+                id="payment-due-day"
+                type="number"
+                min={1}
+                max={31}
+                value={paymentDueDay}
+                onChange={(e) => {
+                  const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
+                  setPaymentDueDay(val);
+                }}
+                placeholder="1-31"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="min-duration">Duração Mínima (meses)</Label>
+              <Label htmlFor="min-duration">Duração Total (meses)</Label>
               <Input
                 id="min-duration"
                 type="number"
@@ -203,7 +226,7 @@ export function EditContractDialog({
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {allModules?.filter(m => m.is_active).map((module) => {
                 const config = moduleConfigs.find(c => c.moduleId === module.id);
-                const isDesign = isDesignModule(module.name);
+                const needsLimit = moduleNeedsDeliverableLimit(module.name, module.deliverable_limit);
                 
                 return (
                   <div 
@@ -227,8 +250,8 @@ export function EditContractDialog({
                       </p>
                     </div>
                     
-                    {/* Deliverable limit - shown for design modules or if already has a limit */}
-                    {(isDesign || module.deliverable_limit !== null) && config?.selected && (
+                    {/* Deliverable limit - shown for all selected modules */}
+                    {config?.selected && (
                       <div className="flex items-center gap-1.5">
                         <Input
                           type="number"
@@ -238,7 +261,7 @@ export function EditContractDialog({
                           placeholder="∞"
                           className="w-16 h-8 text-center text-sm"
                         />
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">entregáveis</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">entregas</span>
                       </div>
                     )}
                   </div>
