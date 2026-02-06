@@ -539,7 +539,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         value={clientId} 
                         onValueChange={(val) => {
                           setClientId(val);
-                          setContractModuleId(""); // Reset module when client changes
+                          setContractModuleId("");
+                          markDirty();
                         }}
                       >
                         <SelectTrigger>
