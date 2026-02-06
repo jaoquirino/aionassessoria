@@ -246,6 +246,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     if (task) {
       setTitle(task.title);
       setStatus(task.status);
+      setPriority(task.priority || "medium");
        setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
       setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
       setDescriptionNotes(task.description_notes || "");
