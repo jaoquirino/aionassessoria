@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
@@ -92,6 +92,7 @@ export function Sidebar({ isCollapsed, onCollapsedChange }: SidebarProps) {
         {!collapsed && <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>}
       </Button>
       <UserProfileDropdown isCollapsed={collapsed} />
+      {!collapsed && <NotificationBell />}
     </div>
   );
 
@@ -134,37 +135,63 @@ export function Sidebar({ isCollapsed, onCollapsedChange }: SidebarProps) {
       )}
     >
       <div className="flex h-full flex-col">
-        {/* Header */}
+        {/* Header with logo */}
         <div className={cn(
           "flex h-16 items-center border-b border-sidebar-border",
           isCollapsed ? "justify-center px-2" : "justify-between px-4"
         )}>
-          {isCollapsed ? (
-            <button
-              onClick={() => onCollapsedChange(false)}
-              className="flex items-center justify-center rounded-lg hover:bg-sidebar-accent p-1.5 transition-colors"
+          <div className="relative h-8 flex items-center">
+            <AnimatePresence mode="wait">
+              {isCollapsed ? (
+                <motion.img
+                  key="icon"
+                  src={logoIcon}
+                  alt="AION"
+                  className="h-8 w-8"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                />
+              ) : (
+                <motion.img
+                  key="full"
+                  src={isDark ? logoLight : logoDark}
+                  alt="AION Assessoria"
+                  className="h-8 w-auto"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                />
+              )}
+            </AnimatePresence>
+          </div>
+          {!isCollapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onCollapsedChange(true)}
+              className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent shrink-0"
             >
-              <img src={logoIcon} alt="AION" className="h-6 w-6" />
-            </button>
-          ) : (
-            <>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <img src={isDark ? logoLight : logoDark} alt="AION Assessoria" className="h-8 w-auto" />
-              </motion.div>
-              <div className="flex items-center gap-1">
-                <NotificationBell />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onCollapsedChange(true)}
-                  className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </div>
-            </>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
           )}
         </div>
+
+        {/* Expand button when collapsed */}
+        {isCollapsed && (
+          <div className="flex justify-center py-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onCollapsedChange(false)}
+              className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
+            >
+              <ChevronLeft className="h-4 w-4 rotate-180" />
+            </Button>
+          </div>
+        )}
 
         {/* Nav */}
         <nav className="flex-1 space-y-1 p-3">{navItems(isCollapsed)}</nav>
