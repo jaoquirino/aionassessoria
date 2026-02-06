@@ -177,8 +177,8 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                              <div className="flex items-center gap-1">
                                <Calendar className="h-3.5 w-3.5" />
                                <span>
-                                 {format(new Date(task.due_date), "dd 'de' MMM", { locale: ptBR })}
-                               </span>
+                                  {format(parseLocalDate(task.due_date), "dd 'de' MMM", { locale: ptBR })}
+                                </span>
                              </div>
                              {isOverdue && (
                                <div className="flex items-center gap-1 text-destructive">
