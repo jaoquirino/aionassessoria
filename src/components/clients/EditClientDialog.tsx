@@ -218,12 +218,11 @@ export function EditClientDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="start-date">Cliente desde</Label>
-                <Input
+                <DatePicker
                   id="start-date"
-                  type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full"
+                  onChange={setStartDate}
+                  placeholder="Selecionar data"
                 />
               </div>
             </div>
