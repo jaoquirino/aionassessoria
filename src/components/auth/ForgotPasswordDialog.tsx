@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Mail, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,8 @@ interface ForgotPasswordDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialogProps) {
+export const ForgotPasswordDialog = forwardRef<HTMLDivElement, ForgotPasswordDialogProps>(
+  function ForgotPasswordDialog({ open, onOpenChange }, ref) {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
