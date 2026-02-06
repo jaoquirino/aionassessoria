@@ -169,7 +169,7 @@ export function Sidebar({ isCollapsed, onCollapsedChange }: SidebarProps) {
                   key="full"
                   src={isDark ? logoLight : logoDark}
                   alt="AION Assessoria"
-                  className="h-8 w-auto"
+                  className="h-9 w-auto"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
