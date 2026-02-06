@@ -1,8 +1,11 @@
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { cn } from "@/lib/utils";
+import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
 
 export function MainLayout() {
+  useGlobalRealtime();
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />

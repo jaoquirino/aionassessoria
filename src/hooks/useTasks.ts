@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { 
@@ -20,38 +19,6 @@ import { toast } from "sonner";
 // Fetch all tasks with related data (uses public view for team_members to avoid RLS issues)
 // Excludes archived tasks by default
 export function useTasks() {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("realtime:tasks")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tasks" },
-        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "task_assignees" },
-        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "task_checklist" },
-        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "team_members" },
-        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
   return useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {

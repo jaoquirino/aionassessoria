@@ -1,40 +1,17 @@
-import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TeamMember } from "@/types/tasks";
  
- export interface TaskAssignee {
-   id: string;
-   task_id: string;
-   team_member_id: string;
-   created_at: string;
-   team_member?: TeamMember;
- }
- 
+export interface TaskAssignee {
+  id: string;
+  task_id: string;
+  team_member_id: string;
+  created_at: string;
+  team_member?: TeamMember;
+}
+
 // Fetch all assignees for tasks (bulk fetch for task list)
 export function useTasksAssignees(taskIds: string[]) {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("realtime:task_assignees")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "task_assignees" },
-        () => queryClient.invalidateQueries({ queryKey: ["task_assignees"] })
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "team_members" },
-        () => queryClient.invalidateQueries({ queryKey: ["task_assignees"] })
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
   return useQuery({
     queryKey: ["task_assignees", taskIds],
     queryFn: async () => {
