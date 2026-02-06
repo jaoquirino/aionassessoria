@@ -140,7 +140,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                      </p>
                    ) : (
                      memberTasks.active.map((task: Task, index: number) => {
-                       const isOverdue = new Date(task.due_date) < now;
+                       const isOverdue = parseLocalDate(task.due_date) < now;
                        return (
                          <motion.div
                            key={task.id}
