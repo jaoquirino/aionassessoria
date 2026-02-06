@@ -72,7 +72,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
       
       if (!isAssignedLegacy && !isAssignedNew) return false;
       
-      const taskDate = new Date(task.due_date);
+      const taskDate = parseLocalDate(task.due_date);
       return taskDate >= start && taskDate <= end;
     });
 
