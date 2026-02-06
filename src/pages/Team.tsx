@@ -254,7 +254,14 @@ export default function Team() {
                   </Avatar>
                   <div>
                     <h3 className="font-medium text-foreground">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground">{member.role}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(member.role || "")
+                        .split(",")
+                        .map((r) => r.trim())
+                        .filter(Boolean)
+                        .filter((r) => !["membro", "operacional", "admin", "administrador"].includes(r.toLowerCase()))
+                        .join(", ") || "—"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
