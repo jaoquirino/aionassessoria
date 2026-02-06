@@ -54,7 +54,7 @@ import { cn, parseLocalDate } from "@/lib/utils";
    useArchiveTask,
  } from "@/hooks/useTasks";
  import { useTaskAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
-import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
+import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType, type TaskPriority } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { supabase } from "@/integrations/supabase/client";
@@ -153,6 +153,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const [contractModuleId, setContractModuleId] = useState<string>("");
   const [taskType, setTaskType] = useState<TaskType>("recurring");
   const [weight, setWeight] = useState<number>(2);
+  const [priority, setPriority] = useState<TaskPriority>("medium");
 
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [newAttachmentName, setNewAttachmentName] = useState("");
@@ -168,6 +169,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     if (task) {
       setTitle(task.title);
       setStatus(task.status);
+      setPriority(task.priority || "medium");
       setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
       setDescriptionNotes(task.description_notes || "");
       setClientId(task.client_id || "");
@@ -221,6 +223,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         id: task.id,
         title,
         status,
+        priority,
         client_id: clientId,
          assigned_to: selectedAssignees[0] || null, // Keep for backwards compatibility
         due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : task.due_date,
@@ -230,7 +233,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         type: taskType,
         weight,
       });
- 
+
        // Save multiple assignees
        await setTaskAssignees.mutateAsync({ taskId: task.id, memberIds: selectedAssignees });
     } finally {
@@ -243,6 +246,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     if (task) {
       setTitle(task.title);
       setStatus(task.status);
+      setPriority(task.priority || "medium");
        setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
       setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
       setDescriptionNotes(task.description_notes || "");
@@ -565,8 +569,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <div className="space-y-2">
                     <Label>Prioridade</Label>
                     <Select 
-                      value={task.priority || "medium"} 
-                      onValueChange={(val) => updateTask.mutate({ id: task.id, priority: val as any })}
+                      value={priority} 
+                      onValueChange={(val) => setPriority(val as TaskPriority)}
                     >
                       <SelectTrigger>
                         <SelectValue />
