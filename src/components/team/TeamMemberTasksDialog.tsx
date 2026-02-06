@@ -17,7 +17,7 @@ import { useAllClients } from "@/hooks/useClients";
 import { useTasksAssignees } from "@/hooks/useTaskAssignees";
 import type { Task } from "@/types/tasks";
 import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
 
 interface TeamMemberTasksDialogProps {
   member: {
@@ -55,7 +55,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
   
   // Get all task IDs to fetch assignees
   const taskIds = useMemo(() => allTasks.map((t: Task) => t.id), [allTasks]);
-  const { data: assigneesMap = {} } = useTasksAssignees(taskIds);
+  const { data: assigneesMap = {}, isLoading: assigneesLoading } = useTasksAssignees(taskIds);
 
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
 
@@ -72,7 +72,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
       
       if (!isAssignedLegacy && !isAssignedNew) return false;
       
-      const taskDate = new Date(task.due_date);
+      const taskDate = parseLocalDate(task.due_date);
       return taskDate >= start && taskDate <= end;
     });
 
@@ -126,11 +126,11 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
          </div>
  
          <div className="flex-1 overflow-y-auto min-h-0">
-           {tasksLoading ? (
-             <div className="flex items-center justify-center py-12">
-               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-             </div>
-           ) : (
+            {tasksLoading || assigneesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
              <>
                {activeTab === "active" && (
                  <div className="space-y-3">
@@ -140,7 +140,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                      </p>
                    ) : (
                      memberTasks.active.map((task: Task, index: number) => {
-                       const isOverdue = new Date(task.due_date) < now;
+                       const isOverdue = parseLocalDate(task.due_date) < now;
                        return (
                          <motion.div
                            key={task.id}
@@ -177,8 +177,8 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                              <div className="flex items-center gap-1">
                                <Calendar className="h-3.5 w-3.5" />
                                <span>
-                                 {format(new Date(task.due_date), "dd 'de' MMM", { locale: ptBR })}
-                               </span>
+                                  {format(parseLocalDate(task.due_date), "dd 'de' MMM", { locale: ptBR })}
+                                </span>
                              </div>
                              {isOverdue && (
                                <div className="flex items-center gap-1 text-destructive">
