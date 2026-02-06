@@ -17,7 +17,7 @@ import { useAllClients } from "@/hooks/useClients";
 import { useTasksAssignees } from "@/hooks/useTaskAssignees";
 import type { Task } from "@/types/tasks";
 import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
 
 interface TeamMemberTasksDialogProps {
   member: {
