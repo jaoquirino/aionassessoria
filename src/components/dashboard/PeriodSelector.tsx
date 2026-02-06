@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -22,13 +22,12 @@ interface PeriodSelectorProps {
   className?: string;
 }
 
-const periodLabels: Record<PeriodOption, string> = {
+const periodLabels: Record<Exclude<PeriodOption, "custom">, string> = {
   "7d": "Últimos 7 dias",
   "30d": "Últimos 30 dias",
   "90d": "Últimos 90 dias",
   "year": "Este ano",
   "all": "Todo período",
-  "custom": "Personalizado",
 };
 
 export function PeriodSelector({ value, onChange, customRange, onCustomRangeChange, className }: PeriodSelectorProps) {
@@ -38,12 +37,6 @@ export function PeriodSelector({ value, onChange, customRange, onCustomRangeChan
   });
   const [calendarOpen, setCalendarOpen] = useState(false);
 
-  useEffect(() => {
-    if (value === "custom") {
-      setCalendarOpen(true);
-    }
-  }, [value]);
-
   const handleSelectChange = (newValue: string) => {
     onChange(newValue as PeriodOption);
   };
@@ -51,6 +44,7 @@ export function PeriodSelector({ value, onChange, customRange, onCustomRangeChan
   const handleApplyCustomRange = () => {
     if (tempRange.from && tempRange.to && onCustomRangeChange) {
       onCustomRangeChange({ start: tempRange.from, end: tempRange.to });
+      onChange("custom");
       setCalendarOpen(false);
     }
   };
@@ -58,15 +52,17 @@ export function PeriodSelector({ value, onChange, customRange, onCustomRangeChan
   const displayText =
     value === "custom" && customRange
       ? `${format(customRange.start, "dd/MM/yy")} - ${format(customRange.end, "dd/MM/yy")}`
+      : value === "custom"
+      ? "Personalizado"
       : periodLabels[value];
 
   return (
     <div className={className}>
       <div className="flex items-center gap-2">
-        <Select value={value} onValueChange={handleSelectChange}>
-          <SelectTrigger className="w-48 bg-background">
+        <Select value={value === "custom" ? "" : value} onValueChange={handleSelectChange}>
+          <SelectTrigger className="w-44 bg-background">
             <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="truncate">{displayText}</span>
             </div>
           </SelectTrigger>
@@ -79,41 +75,44 @@ export function PeriodSelector({ value, onChange, customRange, onCustomRangeChan
           </SelectContent>
         </Select>
 
-        {value === "custom" && (
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0" aria-label="Selecionar período personalizado">
-                <CalendarDays className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <div className="p-4 space-y-4">
-                <p className="text-sm font-medium">Selecione o período</p>
-                <Calendar
-                  mode="range"
-                  selected={{ from: tempRange.from, to: tempRange.to }}
-                  onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
-                  locale={ptBR}
-                  numberOfMonths={2}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setCalendarOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleApplyCustomRange}
-                    disabled={!tempRange.from || !tempRange.to}
-                  >
-                    Aplicar
-                  </Button>
-                </div>
+        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0"
+              aria-label="Selecionar período personalizado"
+            >
+              <CalendarDays className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <div className="p-4 space-y-4">
+              <p className="text-sm font-medium">Selecione o período</p>
+              <Calendar
+                mode="range"
+                selected={{ from: tempRange.from, to: tempRange.to }}
+                onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
+                locale={ptBR}
+                numberOfMonths={2}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setCalendarOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleApplyCustomRange}
+                  disabled={!tempRange.from || !tempRange.to}
+                >
+                  Aplicar
+                </Button>
               </div>
-            </PopoverContent>
-          </Popover>
-        )}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
