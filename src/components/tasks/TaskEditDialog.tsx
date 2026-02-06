@@ -413,7 +413,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   {/* Status with colors */}
                   <div className="space-y-2">
                     <Label>Status</Label>
-                    <Select value={status} onValueChange={(v) => setStatus(v as TaskStatusDB)}>
+                    <Select value={status} onValueChange={(v) => { setStatus(v as TaskStatusDB); markDirty(); }}>
                       <SelectTrigger>
                         <SelectValue>
                           <Badge className={getStatusColor(status)}>
