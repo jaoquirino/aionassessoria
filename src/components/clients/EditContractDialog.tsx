@@ -54,8 +54,8 @@ export function EditContractDialog({
   useEffect(() => {
     if (contract && allModules) {
       setMonthlyValue(contract.monthly_value);
-      setStartDate(format(new Date(contract.start_date), "yyyy-MM-dd"));
-      setRenewalDate(contract.renewal_date ? format(new Date(contract.renewal_date), "yyyy-MM-dd") : "");
+      setStartDate(contract.start_date);
+      setRenewalDate(contract.renewal_date || "");
       setPaymentDueDay((contract as any).payment_due_day || 10);
       setMinimumDuration(contract.minimum_duration_months);
       setStatus(contract.status);
