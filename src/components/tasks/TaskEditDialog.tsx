@@ -362,7 +362,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
               </div>
               <Input 
                 value={title} 
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => { setTitle(e.target.value); markDirty(); }}
                 className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Título da tarefa"
               />
