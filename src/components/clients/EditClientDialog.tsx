@@ -164,7 +164,7 @@ export function EditClientDialog({
 
   const getContractStatus = (contract: typeof contracts[0]) => {
     if (contract.status === "ended") return "ended";
-    const renewalDate = contract.renewal_date ? new Date(contract.renewal_date) : null;
+    const renewalDate = contract.renewal_date ? parseLocalDate(contract.renewal_date) : null;
     const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : 999;
     if (daysUntilRenewal <= 7) return "renewing";
     if (daysUntilRenewal <= 30) return "expiring_soon";
