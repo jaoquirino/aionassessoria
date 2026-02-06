@@ -66,7 +66,12 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   // Auto-calculate renewal date when start date or duration changes
   useEffect(() => {
     if (!isEditing && startDate) {
-      setRenewalDate(format(addMonths(new Date(startDate), minDuration), "yyyy-MM-dd"));
+      const start = parseLocalDate(startDate);
+      const renewal = addMonths(start, minDuration);
+      const yyyy = renewal.getFullYear();
+      const mm = String(renewal.getMonth() + 1).padStart(2, "0");
+      const dd = String(renewal.getDate()).padStart(2, "0");
+      setRenewalDate(`${yyyy}-${mm}-${dd}`);
     }
   }, [startDate, minDuration, isEditing]);
 
