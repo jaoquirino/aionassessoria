@@ -126,11 +126,11 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
          </div>
  
          <div className="flex-1 overflow-y-auto min-h-0">
-            {tasksLoading ? (
-             <div className="flex items-center justify-center py-12">
-               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-             </div>
-           ) : (
+            {tasksLoading || assigneesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
              <>
                {activeTab === "active" && (
                  <div className="space-y-3">
