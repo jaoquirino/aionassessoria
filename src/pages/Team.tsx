@@ -54,7 +54,16 @@ export default function Team() {
   const deleteMember = useDeleteTeamMember();
 
   const allRoles = useMemo(() => {
-    const roles = new Set(teamMembers.map((m) => m.role));
+    const roles = new Set<string>();
+    teamMembers.forEach((m) => {
+      // role pode vir legado como "Administrador"/"Membro" — ignorar esses valores no filtro de cargos
+      const raw = (m.role || "").split(",").map((r) => r.trim()).filter(Boolean);
+      raw.forEach((r) => {
+        const normalized = r.toLowerCase();
+        if (["membro", "operacional", "admin", "administrador"].includes(normalized)) return;
+        roles.add(r);
+      });
+    });
     return Array.from(roles).sort();
   }, [teamMembers]);
 
