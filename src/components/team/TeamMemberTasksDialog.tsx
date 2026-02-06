@@ -1,75 +1,86 @@
- import { useState, useMemo } from "react";
- import { motion } from "framer-motion";
- import { format } from "date-fns";
- import { ptBR } from "date-fns/locale";
- import {
-   Dialog,
-   DialogContent,
-   DialogHeader,
-   DialogTitle,
- } from "@/components/ui/dialog";
- import { Badge } from "@/components/ui/badge";
- import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
- import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
- import { PeriodSelector, type PeriodOption, getPeriodDates } from "@/components/dashboard/PeriodSelector";
- import { useTasks } from "@/hooks/useTasks";
- import { useAllClients } from "@/hooks/useClients";
- import type { Task } from "@/types/tasks";
- import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
- import { cn } from "@/lib/utils";
- 
- interface TeamMemberTasksDialogProps {
-   member: {
-     id: string;
-     name: string;
-     role: string;
-     avatar_url: string | null;
-   } | null;
-   open: boolean;
-   onOpenChange: (open: boolean) => void;
- }
- 
- const statusConfig: Record<string, { label: string; color: string }> = {
-   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
-   in_progress: { label: "Em produção", color: "bg-primary/20 text-primary" },
-   review: { label: "Revisão", color: "bg-warning/20 text-warning" },
-   waiting_client: { label: "Aguardando", color: "bg-info/20 text-info" },
-   done: { label: "Entregue", color: "bg-success/20 text-success" },
- };
- 
- const typeConfig: Record<string, { label: string; color: string }> = {
-   recurring: { label: "Recorrente", color: "bg-primary/10 text-primary" },
-   planning: { label: "Planejamento", color: "bg-info/10 text-info" },
-   project: { label: "Projeto", color: "bg-warning/10 text-warning" },
-   extra: { label: "Extra", color: "bg-muted text-muted-foreground" },
- };
- 
- export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMemberTasksDialogProps) {
-   const [period, setPeriod] = useState<PeriodOption>("30d");
-   const [activeTab, setActiveTab] = useState("active");
- 
-   const { data: allTasks = [], isLoading: tasksLoading } = useTasks();
-   const { data: clients = [] } = useAllClients();
- 
-   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
- 
-   const memberTasks = useMemo(() => {
-     if (!member) return { active: [] as Task[], completed: [] as Task[] };
- 
-     const { start, end } = getPeriodDates(period);
-     
-     const filteredTasks = allTasks.filter((task: Task) => {
-       if (task.assigned_to !== member.id) return false;
-       
-       const taskDate = new Date(task.due_date);
-       return taskDate >= start && taskDate <= end;
-     });
- 
-     return {
-       active: filteredTasks.filter((t: Task) => t.status !== "done"),
-       completed: filteredTasks.filter((t: Task) => t.status === "done"),
-     };
-   }, [allTasks, member, period]);
+import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PeriodSelector, type PeriodOption, type CustomDateRange, getPeriodDates } from "@/components/dashboard/PeriodSelector";
+import { useTasks } from "@/hooks/useTasks";
+import { useAllClients } from "@/hooks/useClients";
+import { useTasksAssignees } from "@/hooks/useTaskAssignees";
+import type { Task } from "@/types/tasks";
+import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface TeamMemberTasksDialogProps {
+  member: {
+    id: string;
+    name: string;
+    role: string;
+    avatar_url: string | null;
+  } | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const statusConfig: Record<string, { label: string; color: string }> = {
+  todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
+  in_progress: { label: "Em produção", color: "bg-primary/20 text-primary" },
+  review: { label: "Revisão", color: "bg-warning/20 text-warning" },
+  waiting_client: { label: "Aguardando", color: "bg-info/20 text-info" },
+  done: { label: "Entregue", color: "bg-success/20 text-success" },
+};
+
+const typeConfig: Record<string, { label: string; color: string }> = {
+  recurring: { label: "Recorrente", color: "bg-primary/10 text-primary" },
+  planning: { label: "Planejamento", color: "bg-info/10 text-info" },
+  project: { label: "Projeto", color: "bg-warning/10 text-warning" },
+  extra: { label: "Extra", color: "bg-muted text-muted-foreground" },
+};
+
+export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMemberTasksDialogProps) {
+  const [period, setPeriod] = useState<PeriodOption>("30d");
+  const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
+  const [activeTab, setActiveTab] = useState("active");
+
+  const { data: allTasks = [], isLoading: tasksLoading } = useTasks();
+  const { data: clients = [] } = useAllClients();
+  
+  // Get all task IDs to fetch assignees
+  const taskIds = useMemo(() => allTasks.map((t: Task) => t.id), [allTasks]);
+  const { data: assigneesMap = {} } = useTasksAssignees(taskIds);
+
+  const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
+
+  const memberTasks = useMemo(() => {
+    if (!member) return { active: [] as Task[], completed: [] as Task[] };
+
+    const { start, end } = getPeriodDates(period, customRange);
+    
+    const filteredTasks = allTasks.filter((task: Task) => {
+      // Check if member is assigned via legacy field OR via task_assignees table
+      const isAssignedLegacy = task.assigned_to === member.id;
+      const taskAssignees = assigneesMap[task.id] || [];
+      const isAssignedNew = taskAssignees.some(a => a.team_member_id === member.id);
+      
+      if (!isAssignedLegacy && !isAssignedNew) return false;
+      
+      const taskDate = new Date(task.due_date);
+      return taskDate >= start && taskDate <= end;
+    });
+
+    return {
+      active: filteredTasks.filter((t: Task) => t.status !== "done"),
+      completed: filteredTasks.filter((t: Task) => t.status === "done"),
+    };
+  }, [allTasks, member, period, customRange, assigneesMap]);
  
    const now = new Date();
  
@@ -106,7 +117,12 @@
                </TabsTrigger>
              </TabsList>
            </Tabs>
-           <PeriodSelector value={period} onChange={setPeriod} />
+            <PeriodSelector 
+              value={period} 
+              onChange={setPeriod} 
+              customRange={customRange}
+              onCustomRangeChange={setCustomRange}
+            />
          </div>
  
          <div className="flex-1 overflow-y-auto min-h-0">
