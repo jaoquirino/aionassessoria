@@ -116,7 +116,7 @@ export default function Team() {
         </div>
         <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4" />
-          Novo Membro
+          Novo Integrante
         </Button>
       </motion.div>
 
