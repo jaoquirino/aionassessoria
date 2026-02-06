@@ -69,6 +69,12 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
     });
   }, [deliveries, period, useCustomDates, dateRange]);
 
+  // Group deliveries by status
+  const groupedDeliveries = {
+    done: filteredDeliveries.filter(d => d.status === "done"),
+    pending: filteredDeliveries.filter(d => d.status !== "done"),
+  };
+
   const handleClearCustomDates = () => {
     setDateRange({});
     setUseCustomDates(false);
