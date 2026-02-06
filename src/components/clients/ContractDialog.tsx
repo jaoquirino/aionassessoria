@@ -85,6 +85,17 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
     );
   };
 
+  const handleDeliverableLimitChange = (moduleId: string, value: string) => {
+    const limit = value === "" ? null : parseInt(value);
+    setModuleDeliverableLimits(prev => ({ ...prev, [moduleId]: limit }));
+  };
+
+  const moduleNeedsDeliverableLimit = (moduleName: string, defaultLimit: number | null) => {
+    if (defaultLimit !== null) return true;
+    const designKeywords = ["design", "arte", "visual", "gráfico", "video", "vídeo"];
+    return designKeywords.some(k => moduleName.toLowerCase().includes(k));
+  };
+
   const handleSave = async () => {
     if (monthlyValue <= 0 || !startDate) return;
 
