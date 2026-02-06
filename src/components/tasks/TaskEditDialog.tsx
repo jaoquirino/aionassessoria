@@ -466,12 +466,13 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                                <Checkbox
                                  id={`assignee-${member.id}`}
                                  checked={isSelected}
-                                 onCheckedChange={(checked) => {
-                                   if (checked) {
-                                     setSelectedAssignees([...selectedAssignees, member.id]);
-                                   } else {
-                                     setSelectedAssignees(selectedAssignees.filter(id => id !== member.id));
-                                   }
+                                  onCheckedChange={(checked) => {
+                                    markDirty();
+                                    if (checked) {
+                                      setSelectedAssignees([...selectedAssignees, member.id]);
+                                    } else {
+                                      setSelectedAssignees(selectedAssignees.filter(id => id !== member.id));
+                                    }
                                  }}
                                />
                                <label
