@@ -109,7 +109,7 @@ export function EditClientDialog({
         id: client.id,
         name: name.trim(),
         status,
-        created_at: new Date(startDate).toISOString(),
+        created_at: parseLocalDate(startDate).toISOString(),
         cnpj: cnpj || undefined,
         phone: phone || undefined,
         email: email || undefined,
