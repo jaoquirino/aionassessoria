@@ -1040,7 +1040,7 @@ export default function Settings() {
                   <div className="flex items-start gap-3">
                     <Badge variant="secondary" className="shrink-0">
                       <Shield className="h-3 w-3 mr-1" />
-                      Membro
+                      Operacional
                     </Badge>
                     <p className="text-sm text-muted-foreground">
                       Acesso operacional: pode visualizar e editar dados, criar tarefas. Não pode excluir ou gerenciar equipe.
