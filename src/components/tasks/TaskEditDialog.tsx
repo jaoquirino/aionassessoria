@@ -520,7 +520,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           <Calendar
                             mode="single"
                             selected={dueDate}
-                            onSelect={setDueDate}
+                            onSelect={(d) => { setDueDate(d); markDirty(); }}
                             initialFocus
                             className="pointer-events-auto"
                           />
