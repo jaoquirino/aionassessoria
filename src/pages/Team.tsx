@@ -53,18 +53,33 @@ export default function Team() {
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
   const deleteMember = useDeleteTeamMember();
 
+  // Lista fixa de cargos/funções disponíveis (mesma do TeamMemberDialog)
+  const roleOptions = [
+    "Designer",
+    "Gestor de Tráfego",
+    "Copywriter",
+    "Comercial",
+    "Atendimento",
+    "Desenvolvedor",
+    "Social Media",
+    "Estrategista",
+    "Diretor de Arte",
+    "Produtor de Conteúdo",
+  ];
+
   const allRoles = useMemo(() => {
-    const roles = new Set<string>();
+    // Coleta cargos reais atribuídos aos membros
+    const assignedRoles = new Set<string>();
     teamMembers.forEach((m) => {
-      // role pode vir legado como "Administrador"/"Membro" — ignorar esses valores no filtro de cargos
       const raw = (m.role || "").split(",").map((r) => r.trim()).filter(Boolean);
       raw.forEach((r) => {
-        const normalized = r.toLowerCase();
-        if (["membro", "operacional", "admin", "administrador"].includes(normalized)) return;
-        roles.add(r);
+        // Só inclui se for um dos cargos válidos
+        if (roleOptions.some(opt => opt.toLowerCase() === r.toLowerCase())) {
+          assignedRoles.add(r);
+        }
       });
     });
-    return Array.from(roles).sort();
+    return Array.from(assignedRoles).sort();
   }, [teamMembers]);
 
   const filteredTeam = useMemo(() => {
