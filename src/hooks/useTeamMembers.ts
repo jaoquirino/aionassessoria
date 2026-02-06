@@ -68,19 +68,12 @@ export function useAllTeamMembers() {
       const { data: membersRaw, error: membersError } = await supabase
         .from("team_members")
         .select("*")
+        .eq("is_active", true)
         .order("name");
 
       if (membersError) throw membersError;
 
-      const { data: userRoles } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
-
-      const members = (membersRaw || []).filter((member) => {
-        if (!member.user_id) return true;
-        const hasRole = userRoles?.some((ur) => ur.user_id === member.user_id);
-        return hasRole;
-      });
+      const members = membersRaw || [];
 
       if (!members || members.length === 0) return [];
 
