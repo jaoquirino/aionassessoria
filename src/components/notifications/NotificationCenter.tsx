@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, X, CheckCircle2, AlertCircle, Info, Clock, User, ExternalLink } from "lucide-react";
+import { Bell, X, CheckCircle2, AlertCircle, Info, Clock, User, ExternalLink, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,7 +30,6 @@ interface Notification {
 const NOTIFICATIONS_STORAGE_KEY = "lovable_notifications_read";
 const NOTIFICATIONS_CLEARED_KEY = "lovable_notifications_cleared";
 
-// Helper to get read notification IDs from localStorage
 function getReadNotificationIds(): Set<string> {
   try {
     const stored = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
@@ -40,17 +39,14 @@ function getReadNotificationIds(): Set<string> {
   }
 }
 
-// Helper to save read notification IDs to localStorage
 function saveReadNotificationIds(ids: Set<string>) {
   localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify([...ids]));
 }
 
-// Helper to get cleared timestamp
 function getClearedTimestamp(): string | null {
   return localStorage.getItem(NOTIFICATIONS_CLEARED_KEY);
 }
 
-// Helper to set cleared timestamp
 function setClearedTimestamp() {
   localStorage.setItem(NOTIFICATIONS_CLEARED_KEY, new Date().toISOString());
 }
@@ -144,7 +140,6 @@ function useNotifications() {
     queryFn: async () => {
       if (!user) return [];
 
-      // Get the team member id for current user
       const { data: teamMember } = await supabase
         .from("team_members")
         .select("id")
@@ -153,7 +148,6 @@ function useNotifications() {
 
       if (!teamMember) return [];
 
-      // Get recent tasks assigned to this user
       const { data: assignedTasks } = await supabase
         .from("tasks")
         .select("id, title, assigned_to, created_at")
@@ -161,7 +155,6 @@ function useNotifications() {
         .order("created_at", { ascending: false })
         .limit(20);
 
-      // Convert to notifications format
       const notifications: Notification[] = (assignedTasks || []).map((task) => ({
         id: task.id,
         type: "task_assigned" as const,
@@ -188,7 +181,6 @@ export function NotificationBell() {
   const [readIds, setReadIds] = useState<Set<string>>(() => getReadNotificationIds());
   const [clearedAt, setClearedAt] = useState<string | null>(() => getClearedTimestamp());
 
-  // Filter notifications based on cleared timestamp
   const visibleNotifications = notifications.filter((n) => {
     if (!clearedAt) return true;
     return new Date(n.created_at) > new Date(clearedAt);
@@ -237,45 +229,43 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <button
+          className={cn(
+            "flex items-center gap-3 w-full rounded-lg px-3 py-2.5 transition-all duration-200",
+            "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring relative"
+          )}
+        >
+          <Bell className="h-5 w-5 shrink-0 text-muted-foreground" />
+          <span className="flex-1 text-left text-sm font-medium">Notificações</span>
           {unreadCount > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
+              className="h-5 min-w-[20px] px-1.5 flex items-center justify-center text-xs"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>
           )}
-        </Button>
+        </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent side="top" align="start" className="w-80 p-0">
+        {/* Header - fixed */}
         <div className="flex items-center justify-between p-3 border-b">
           <h4 className="font-medium text-sm">Notificações</h4>
-          <div className="flex items-center gap-2">
-            {visibleNotifications.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs h-7 text-muted-foreground hover:text-destructive"
-                onClick={clearAllNotifications}
-              >
-                Limpar
-              </Button>
-            )}
-            {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs h-7"
-                onClick={markAllAsRead}
-              >
-                Marcar lidas
-              </Button>
-            )}
-          </div>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7"
+              onClick={markAllAsRead}
+            >
+              Marcar lidas
+            </Button>
+          )}
         </div>
-        <ScrollArea className="h-80">
+
+        {/* Scrollable list */}
+        <ScrollArea className="max-h-72">
           {visibleNotifications.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">
               Nenhuma notificação
@@ -297,23 +287,14 @@ export function NotificationBell() {
                       {getIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p
-                        className={cn(
-                          "text-sm truncate",
-                          !isRead && "font-medium"
-                        )}
-                      >
+                      <p className={cn("text-sm truncate", !isRead && "font-medium")}>
                         {notification.title}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {format(
-                          new Date(notification.created_at),
-                          "dd/MM 'às' HH:mm",
-                          { locale: ptBR }
-                        )}
+                        {format(new Date(notification.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
                       </p>
                     </div>
                     {!isRead && (
@@ -325,6 +306,21 @@ export function NotificationBell() {
             </div>
           )}
         </ScrollArea>
+
+        {/* Footer - fixed, red clear button */}
+        {visibleNotifications.length > 0 && (
+          <div className="border-t p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs h-8 text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+              onClick={clearAllNotifications}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Limpar todas as notificações
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
@@ -340,7 +336,6 @@ export function NotificationToastContainer() {
   useEffect(() => {
     if (!user) return;
 
-    // Get team member id for current user
     let teamMemberId: string | null = null;
 
     const getTeamMemberId = async () => {
@@ -354,27 +349,16 @@ export function NotificationToastContainer() {
 
     getTeamMemberId();
 
-    // Subscribe to realtime task changes
     const channel = supabase
       .channel("task_assignments")
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "tasks",
-        },
+        { event: "UPDATE", schema: "public", table: "tasks" },
         (payload) => {
           if (!teamMemberId) return;
-          
           const newData = payload.new as any;
           const oldData = payload.old as any;
-
-          // If assigned_to changed and now points to current user
-          if (
-            newData.assigned_to === teamMemberId &&
-            oldData.assigned_to !== teamMemberId
-          ) {
+          if (newData.assigned_to === teamMemberId && oldData.assigned_to !== teamMemberId) {
             const notification: Notification = {
               id: `toast-${Date.now()}`,
               type: "task_assigned",
@@ -385,24 +369,16 @@ export function NotificationToastContainer() {
               created_at: new Date().toISOString(),
             };
             setToasts((prev) => [...prev, notification]);
-            // Invalidate notifications query to update bell
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
           }
         }
       )
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "tasks",
-        },
+        { event: "INSERT", schema: "public", table: "tasks" },
         (payload) => {
           if (!teamMemberId) return;
-          
           const newData = payload.new as any;
-
-          // If new task is assigned to current user
           if (newData.assigned_to === teamMemberId) {
             const notification: Notification = {
               id: `toast-${Date.now()}`,
@@ -414,7 +390,6 @@ export function NotificationToastContainer() {
               created_at: new Date().toISOString(),
             };
             setToasts((prev) => [...prev, notification]);
-            // Invalidate notifications query to update bell
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
           }
         }
