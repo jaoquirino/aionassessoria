@@ -172,16 +172,16 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Data de Início *</Label>
-              <Input
+              <DatePicker
                 id="startDate"
-                type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
+                placeholder="Selecionar data"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration">Duração Mínima</Label>
+              <Label htmlFor="duration">Duração Total</Label>
               <Select value={String(minDuration)} onValueChange={(v) => setMinDuration(Number(v))}>
                 <SelectTrigger>
                   <SelectValue />
