@@ -73,7 +73,14 @@ export default function Team() {
         search === "" ||
         member.name.toLowerCase().includes(search.toLowerCase());
 
-      const matchesRole = roleFilter === "all" || member.role === roleFilter;
+      const memberRoles = (member.role || "")
+        .split(",")
+        .map((r) => r.trim())
+        .filter(Boolean);
+
+      const matchesRole =
+        roleFilter === "all" ||
+        memberRoles.some((r) => r.toLowerCase() === roleFilter.toLowerCase());
 
       const status = getCapacityStatus(member.currentWeight, member.capacity_limit);
       const matchesCapacity = capacityFilter === "all" || status === capacityFilter;
