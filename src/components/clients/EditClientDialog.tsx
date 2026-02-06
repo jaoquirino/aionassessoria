@@ -266,8 +266,8 @@ export function EditClientDialog({
               <div className="space-y-2 max-h-48 sm:max-h-60 overflow-y-auto">
                 {contracts.map((contract) => {
                   const contractStatus = getContractStatus(contract);
-                  const daysUntilRenewal = contract.renewal_date 
-                    ? differenceInDays(new Date(contract.renewal_date), new Date())
+                   const daysUntilRenewal = contract.renewal_date 
+                    ? differenceInDays(parseLocalDate(contract.renewal_date), new Date())
                     : null;
 
                   return (
