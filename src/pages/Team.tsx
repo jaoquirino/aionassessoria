@@ -349,7 +349,7 @@ export default function Team() {
         {filteredTeam.length === 0 && (
           <div className="col-span-full glass rounded-xl p-12 text-center">
             <p className="text-muted-foreground">
-              {teamMembers.length === 0 ? "Adicione seu primeiro membro da equipe" : "Nenhum membro encontrado"}
+              {teamMembers.length === 0 ? "Adicione seu primeiro integrante da equipe" : "Nenhum integrante encontrado"}
             </p>
           </div>
         )}
