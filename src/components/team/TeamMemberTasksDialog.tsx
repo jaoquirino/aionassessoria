@@ -55,7 +55,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
   
   // Get all task IDs to fetch assignees
   const taskIds = useMemo(() => allTasks.map((t: Task) => t.id), [allTasks]);
-  const { data: assigneesMap = {} } = useTasksAssignees(taskIds);
+  const { data: assigneesMap = {}, isLoading: assigneesLoading } = useTasksAssignees(taskIds);
 
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
 
