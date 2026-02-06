@@ -226,10 +226,10 @@ export function useDeleteTeamMember() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
-      toast.success("Membro removido");
+      toast.success("Integrante removido");
     },
     onError: (error) => {
-      toast.error("Erro ao remover membro: " + error.message);
+      toast.error("Erro ao remover integrante: " + error.message);
     },
   });
 }
