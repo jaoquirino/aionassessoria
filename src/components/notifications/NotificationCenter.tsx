@@ -173,7 +173,7 @@ function useNotifications() {
 }
 
 // Main notification bell component
-export function NotificationBell() {
+export function NotificationBell({ compact = false }: { compact?: boolean }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: notifications = [] } = useNotifications();
@@ -229,24 +229,37 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          className={cn(
-            "flex items-center gap-3 w-full rounded-lg px-3 py-2.5 transition-all duration-200",
-            "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring relative"
-          )}
-        >
-          <Bell className="h-5 w-5 shrink-0 text-muted-foreground" />
-          <span className="flex-1 text-left text-sm font-medium">Notificações</span>
-          {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="h-5 min-w-[20px] px-1.5 flex items-center justify-center text-xs"
-            >
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </Badge>
-          )}
-        </button>
+        {compact ? (
+          <button
+            className="relative flex items-center justify-center h-9 w-9 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors shrink-0 focus:outline-none"
+          >
+            <Bell className="h-4 w-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-medium">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+        ) : (
+          <button
+            className={cn(
+              "flex items-center gap-3 w-full rounded-lg px-3 py-2.5 transition-all duration-200",
+              "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring relative"
+            )}
+          >
+            <Bell className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <span className="flex-1 text-left text-sm font-medium">Notificações</span>
+            {unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="h-5 min-w-[20px] px-1.5 flex items-center justify-center text-xs"
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Badge>
+            )}
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent side="top" align="start" className="w-80 p-0">
         {/* Header - fixed */}
