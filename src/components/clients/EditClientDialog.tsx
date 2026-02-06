@@ -300,7 +300,7 @@ export function EditClientDialog({
                             </span>
                             {contract.renewal_date && (
                               <span className="flex items-center gap-1">
-                                Renova: {format(new Date(contract.renewal_date), "dd/MM/yyyy")}
+                                Renova: {parseLocalDate(contract.renewal_date).toLocaleDateString("pt-BR")}
                                 {daysUntilRenewal !== null && daysUntilRenewal > 0 && daysUntilRenewal <= 30 && (
                                   <span className={cn(
                                     "font-medium",
