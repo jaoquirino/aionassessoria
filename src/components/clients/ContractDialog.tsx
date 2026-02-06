@@ -203,12 +203,12 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="renewalDate">Data de Renovação</Label>
-              <Input
+              <Label htmlFor="renewalDate">Vencimento do Contrato</Label>
+              <DatePicker
                 id="renewalDate"
-                type="date"
                 value={renewalDate}
-                onChange={(e) => setRenewalDate(e.target.value)}
+                onChange={setRenewalDate}
+                placeholder="Selecionar data"
               />
             </div>
 
