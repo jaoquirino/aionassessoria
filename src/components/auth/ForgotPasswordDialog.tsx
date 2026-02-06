@@ -71,7 +71,7 @@ export const ForgotPasswordDialog = forwardRef<HTMLDivElement, ForgotPasswordDia
       <DialogContent className="sm:max-w-md">
         {isSuccess ? (
           <div className="text-center py-6">
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
             <DialogHeader>
               <DialogTitle className="text-center">Email enviado!</DialogTitle>
               <DialogDescription className="text-center">
