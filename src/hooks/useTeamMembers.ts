@@ -202,10 +202,10 @@ export function useUpdateTeamMember() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
-      toast.success("Membro atualizado");
+      toast.success("Integrante atualizado");
     },
     onError: (error) => {
-      toast.error("Erro ao atualizar membro: " + error.message);
+      toast.error("Erro ao atualizar integrante: " + error.message);
     },
   });
 }
