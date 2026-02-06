@@ -203,23 +203,40 @@ export function useUpdateTeamMember() {
   });
 }
 
-// Delete team member
+// Deactivate team member (set to "no access" mode)
 export function useDeleteTeamMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (memberId: string) => {
-      const { error } = await supabase
+      // Get the team member to find user_id
+      const { data: member } = await supabase
         .from("team_members")
-        .delete()
+        .select("user_id")
+        .eq("id", memberId)
+        .single();
+
+      // Set team member as inactive
+      const { error: updateError } = await supabase
+        .from("team_members")
+        .update({ is_active: false })
         .eq("id", memberId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // If has user_id, remove from user_roles (set to "no access")
+      if (member?.user_id) {
+        await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", member.user_id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
-      toast.success("Integrante removido");
+      queryClient.invalidateQueries({ queryKey: ["users_with_roles"] });
+      toast.success("Integrante movido para 'Sem acesso'");
     },
     onError: (error) => {
       toast.error("Erro ao remover integrante: " + error.message);

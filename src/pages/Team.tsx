@@ -371,9 +371,10 @@ export default function Team() {
       <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover membro?</AlertDialogTitle>
+            <AlertDialogTitle>Remover integrante da equipe?</AlertDialogTitle>
             <AlertDialogDescription>
-              Isso removerá {deletingMember?.name} da equipe. As tarefas atribuídas a este membro não serão excluídas.
+              {deletingMember?.name} será movido para "Sem acesso" e não aparecerá mais na equipe. 
+              As tarefas atribuídas não serão excluídas. Você pode restaurar o acesso nas Configurações.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
