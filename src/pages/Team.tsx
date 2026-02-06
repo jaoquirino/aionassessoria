@@ -154,10 +154,10 @@ export default function Team() {
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="w-full sm:w-[180px] bg-background">
-            <SelectValue placeholder="Função" />
+            <SelectValue placeholder="Cargos" />
           </SelectTrigger>
           <SelectContent className="bg-background border-border z-50">
-            <SelectItem value="all">Todas as funções</SelectItem>
+            <SelectItem value="all">Todos os cargos</SelectItem>
             {allRoles.map((role) => (
               <SelectItem key={role} value={role}>
                 {role}
