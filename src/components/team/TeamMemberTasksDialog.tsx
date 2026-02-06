@@ -213,13 +213,14 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                      </p>
                    ) : (
                      memberTasks.completed.map((task: Task, index: number) => (
-                       <motion.div
-                         key={task.id}
-                         initial={{ opacity: 0, y: 10 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         transition={{ delay: 0.03 * index }}
-                         className="rounded-lg border border-border p-4"
-                       >
+                        <motion.div
+                          key={task.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.03 * index }}
+                          onClick={() => handleTaskClick(task.id)}
+                          className="rounded-lg border border-border p-4 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
+                        >
                          <div className="flex items-start justify-between gap-4">
                            <div className="flex-1 min-w-0">
                              <div className="flex items-center gap-2">
