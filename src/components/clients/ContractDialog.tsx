@@ -69,7 +69,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   useEffect(() => {
     if (!isEditing && startDate) {
       const start = parseLocalDate(startDate);
-      const renewal = addMonths(start, minDuration);
+      const renewal = addMonths(start, minDuration - 1);
       const yyyy = renewal.getFullYear();
       const mm = String(renewal.getMonth() + 1).padStart(2, "0");
       const dd = String(renewal.getDate()).padStart(2, "0");
