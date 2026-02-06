@@ -138,4 +138,6 @@ export const ForgotPasswordDialog = forwardRef<HTMLDivElement, ForgotPasswordDia
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+ForgotPasswordDialog.displayName = "ForgotPasswordDialog";
