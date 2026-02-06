@@ -16,7 +16,8 @@ import { ClientContactInfo } from "./ClientContactInfo";
 import { OnboardingStepsDialog } from "./OnboardingStepsDialog";
 import { useClientOnboardingProgress } from "@/hooks/useClientModuleOnboarding";
 import { format, differenceInDays } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, parseLocalDate } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,7 +86,7 @@ export function EditClientDialog({
     if (client) {
       setName(client.name);
       setStatus(client.status);
-      setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
+      setStartDate(client.created_at.split("T")[0]);
       setCnpj(client.cnpj || "");
       setPhone(client.phone || "");
       setEmail(client.email || "");
@@ -108,7 +109,7 @@ export function EditClientDialog({
         id: client.id,
         name: name.trim(),
         status,
-        created_at: new Date(startDate).toISOString(),
+        created_at: parseLocalDate(startDate).toISOString(),
         cnpj: cnpj || undefined,
         phone: phone || undefined,
         email: email || undefined,
@@ -142,7 +143,7 @@ export function EditClientDialog({
     if (client) {
       setName(client.name);
       setStatus(client.status);
-      setStartDate(format(new Date(client.created_at), "yyyy-MM-dd"));
+      setStartDate(client.created_at.split("T")[0]);
       setCnpj(client.cnpj || "");
       setPhone(client.phone || "");
       setEmail(client.email || "");
@@ -163,7 +164,7 @@ export function EditClientDialog({
 
   const getContractStatus = (contract: typeof contracts[0]) => {
     if (contract.status === "ended") return "ended";
-    const renewalDate = contract.renewal_date ? new Date(contract.renewal_date) : null;
+    const renewalDate = contract.renewal_date ? parseLocalDate(contract.renewal_date) : null;
     const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : 999;
     if (daysUntilRenewal <= 7) return "renewing";
     if (daysUntilRenewal <= 30) return "expiring_soon";
@@ -217,12 +218,11 @@ export function EditClientDialog({
 
               <div className="space-y-2">
                 <Label htmlFor="start-date">Cliente desde</Label>
-                <Input
+                <DatePicker
                   id="start-date"
-                  type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full"
+                  onChange={setStartDate}
+                  placeholder="Selecionar data"
                 />
               </div>
             </div>
@@ -266,8 +266,8 @@ export function EditClientDialog({
               <div className="space-y-2 max-h-48 sm:max-h-60 overflow-y-auto">
                 {contracts.map((contract) => {
                   const contractStatus = getContractStatus(contract);
-                  const daysUntilRenewal = contract.renewal_date 
-                    ? differenceInDays(new Date(contract.renewal_date), new Date())
+                   const daysUntilRenewal = contract.renewal_date 
+                    ? differenceInDays(parseLocalDate(contract.renewal_date), new Date())
                     : null;
 
                   return (
@@ -296,11 +296,11 @@ export function EditClientDialog({
                           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-x-4 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              Início: {format(new Date(contract.start_date), "dd/MM/yyyy")}
+                              Início: {parseLocalDate(contract.start_date).toLocaleDateString("pt-BR")}
                             </span>
                             {contract.renewal_date && (
                               <span className="flex items-center gap-1">
-                                Renova: {format(new Date(contract.renewal_date), "dd/MM/yyyy")}
+                                Renova: {parseLocalDate(contract.renewal_date).toLocaleDateString("pt-BR")}
                                 {daysUntilRenewal !== null && daysUntilRenewal > 0 && daysUntilRenewal <= 30 && (
                                   <span className={cn(
                                     "font-medium",

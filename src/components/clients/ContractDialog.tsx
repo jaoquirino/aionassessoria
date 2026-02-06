@@ -11,6 +11,8 @@ import { useCreateContract, useUpdateContract, type Contract } from "@/hooks/use
 import { useAllModules } from "@/hooks/useModules";
 import { useGenerateModuleOnboarding } from "@/hooks/useClientModuleOnboarding";
 import { format, addMonths } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
@@ -64,7 +66,12 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   // Auto-calculate renewal date when start date or duration changes
   useEffect(() => {
     if (!isEditing && startDate) {
-      setRenewalDate(format(addMonths(new Date(startDate), minDuration), "yyyy-MM-dd"));
+      const start = parseLocalDate(startDate);
+      const renewal = addMonths(start, minDuration);
+      const yyyy = renewal.getFullYear();
+      const mm = String(renewal.getMonth() + 1).padStart(2, "0");
+      const dd = String(renewal.getDate()).padStart(2, "0");
+      setRenewalDate(`${yyyy}-${mm}-${dd}`);
     }
   }, [startDate, minDuration, isEditing]);
 
@@ -165,16 +172,16 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Data de Início *</Label>
-              <Input
+              <DatePicker
                 id="startDate"
-                type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
+                placeholder="Selecionar data"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration">Duração Mínima</Label>
+              <Label htmlFor="duration">Duração Total</Label>
               <Select value={String(minDuration)} onValueChange={(v) => setMinDuration(Number(v))}>
                 <SelectTrigger>
                   <SelectValue />
@@ -196,12 +203,12 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="renewalDate">Data de Renovação</Label>
-              <Input
+              <Label htmlFor="renewalDate">Vencimento do Contrato</Label>
+              <DatePicker
                 id="renewalDate"
-                type="date"
                 value={renewalDate}
-                onChange={(e) => setRenewalDate(e.target.value)}
+                onChange={setRenewalDate}
+                placeholder="Selecionar data"
               />
             </div>
 

@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
+import { parseLocalDate } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useUpdateContract, type ContractWithModules } from "@/hooks/useContracts";
 import { useAllModules } from "@/hooks/useModules";
 import { useUpdateContractModules } from "@/hooks/useContractModules";
@@ -52,8 +54,8 @@ export function EditContractDialog({
   useEffect(() => {
     if (contract && allModules) {
       setMonthlyValue(contract.monthly_value);
-      setStartDate(format(new Date(contract.start_date), "yyyy-MM-dd"));
-      setRenewalDate(contract.renewal_date ? format(new Date(contract.renewal_date), "yyyy-MM-dd") : "");
+      setStartDate(contract.start_date);
+      setRenewalDate(contract.renewal_date || "");
       setPaymentDueDay((contract as any).payment_due_day || 10);
       setMinimumDuration(contract.minimum_duration_months);
       setStatus(contract.status);
@@ -148,26 +150,26 @@ export function EditContractDialog({
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="start-date">Data de Início</Label>
-              <Input
+              <DatePicker
                 id="start-date"
-                type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
+                placeholder="Selecionar data"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="renewal-date">Renovação</Label>
-              <Input
+              <Label htmlFor="renewal-date">Vencimento</Label>
+              <DatePicker
                 id="renewal-date"
-                type="date"
                 value={renewalDate}
-                onChange={(e) => setRenewalDate(e.target.value)}
+                onChange={setRenewalDate}
+                placeholder="Selecionar data"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="payment-due-day">Vencimento</Label>
+              <Label htmlFor="payment-due-day">Mensalidade</Label>
               <Input
                 id="payment-due-day"
                 type="number"
@@ -185,7 +187,7 @@ export function EditContractDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="min-duration">Duração Mínima (meses)</Label>
+              <Label htmlFor="min-duration">Duração Total (meses)</Label>
               <Input
                 id="min-duration"
                 type="number"
