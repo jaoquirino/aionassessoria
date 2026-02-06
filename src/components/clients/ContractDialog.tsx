@@ -228,18 +228,34 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           {!isEditing && modules.filter(m => m.is_active).length > 0 && (
             <div className="space-y-2">
               <Label>Módulos Contratados</Label>
-              <div className="border rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+              <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
                 {modules.filter(m => m.is_active).map((module) => (
-                  <label key={module.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded">
+                  <div key={module.id} className="flex items-center gap-3 p-1.5 rounded hover:bg-muted/50 transition-colors">
                     <Checkbox
+                      id={`create-module-${module.id}`}
                       checked={selectedModules.includes(module.id)}
                       onCheckedChange={() => toggleModule(module.id)}
                     />
-                    <span className="text-sm">{module.name}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      Peso: {module.default_weight}
-                    </span>
-                  </label>
+                    <div className="flex-1 min-w-0">
+                      <label htmlFor={`create-module-${module.id}`} className="text-sm font-medium cursor-pointer">
+                        {module.name}
+                      </label>
+                      <p className="text-xs text-muted-foreground">Peso: {module.default_weight}</p>
+                    </div>
+                    {selectedModules.includes(module.id) && (
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={moduleDeliverableLimits[module.id] ?? module.deliverable_limit ?? ""}
+                          onChange={(e) => handleDeliverableLimitChange(module.id, e.target.value)}
+                          placeholder="∞"
+                          className="w-16 h-8 text-center text-sm"
+                        />
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">entregas</span>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
