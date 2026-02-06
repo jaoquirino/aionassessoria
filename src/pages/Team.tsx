@@ -149,16 +149,6 @@ export default function Team() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={permissionFilter} onValueChange={setPermissionFilter}>
-          <SelectTrigger className="w-full sm:w-[150px] bg-background">
-            <SelectValue placeholder="Permissão" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border-border z-50">
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="operational">Operacional</SelectItem>
-          </SelectContent>
-        </Select>
         <Select value={capacityFilter} onValueChange={setCapacityFilter}>
           <SelectTrigger className="w-full sm:w-[150px] bg-background">
             <SelectValue placeholder="Capacidade" />
