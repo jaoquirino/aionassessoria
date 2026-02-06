@@ -48,6 +48,7 @@ const typeConfig: Record<string, { label: string; color: string }> = {
 };
 
 export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMemberTasksDialogProps) {
+  const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodOption>("30d");
   const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
   const [activeTab, setActiveTab] = useState("active");
@@ -58,6 +59,11 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
   // Get all task IDs to fetch assignees
   const taskIds = useMemo(() => allTasks.map((t: Task) => t.id), [allTasks]);
   const { data: assigneesMap = {}, isLoading: assigneesLoading } = useTasksAssignees(taskIds);
+
+  const handleTaskClick = (taskId: string) => {
+    onOpenChange(false);
+    navigate(`/tarefas?task=${taskId}`);
+  };
 
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
 
