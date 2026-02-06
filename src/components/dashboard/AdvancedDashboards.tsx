@@ -54,9 +54,9 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
     
     let start: Date, end: Date;
     
-    if (useCustomDates && customStartDate && customEndDate) {
-      start = customStartDate;
-      end = customEndDate;
+    if (useCustomDates && dateRange.from && dateRange.to) {
+      start = dateRange.from;
+      end = dateRange.to;
     } else {
       const periodDates = getPeriodDates(period);
       start = periodDates.start;
@@ -67,18 +67,18 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
       const dueDate = new Date(d.dueDate);
       return dueDate >= start && dueDate <= end;
     });
-  }, [deliveries, period, useCustomDates, customStartDate, customEndDate]);
-
-  // Group deliveries by status
-  const groupedDeliveries = {
-    done: filteredDeliveries.filter(d => d.status === "done"),
-    pending: filteredDeliveries.filter(d => d.status !== "done"),
-  };
+  }, [deliveries, period, useCustomDates, dateRange]);
 
   const handleClearCustomDates = () => {
-    setCustomStartDate(undefined);
-    setCustomEndDate(undefined);
+    setDateRange({});
     setUseCustomDates(false);
+  };
+
+  const handleApplyRange = () => {
+    if (dateRange.from && dateRange.to) {
+      setUseCustomDates(true);
+      setRangePickerOpen(false);
+    }
   };
 
   if (isLoading) {
@@ -108,59 +108,52 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
-          {/* Custom Date Range */}
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn(
-                  "gap-2",
-                  useCustomDates && customStartDate && "border-primary"
-                )}>
-                  <CalendarIcon className="h-4 w-4" />
-                  {customStartDate ? format(customStartDate, "dd/MM/yy", { locale: ptBR }) : "Início"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={customStartDate}
-                  onSelect={(date) => {
-                    setCustomStartDate(date);
-                    if (date) setUseCustomDates(true);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <span className="text-muted-foreground">—</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn(
-                  "gap-2",
-                  useCustomDates && customEndDate && "border-primary"
-                )}>
-                  <CalendarIcon className="h-4 w-4" />
-                  {customEndDate ? format(customEndDate, "dd/MM/yy", { locale: ptBR }) : "Fim"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={customEndDate}
-                  onSelect={(date) => {
-                    setCustomEndDate(date);
-                    if (date) setUseCustomDates(true);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {useCustomDates && (
-              <Button variant="ghost" size="sm" onClick={handleClearCustomDates}>
-                Limpar
+          {/* Custom Date Range - single popover with range calendar */}
+          <Popover open={rangePickerOpen} onOpenChange={setRangePickerOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn(
+                "gap-2",
+                useCustomDates && dateRange.from && "border-primary"
+              )}>
+                <CalendarIcon className="h-4 w-4" />
+                {useCustomDates && dateRange.from && dateRange.to
+                  ? `${format(dateRange.from, "dd/MM/yy", { locale: ptBR })} — ${format(dateRange.to, "dd/MM/yy", { locale: ptBR })}`
+                  : "Período personalizado"
+                }
               </Button>
-            )}
-          </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <div className="p-4 space-y-4">
+                <p className="text-sm font-medium">Selecione o período</p>
+                <Calendar
+                  mode="range"
+                  selected={{ from: dateRange.from, to: dateRange.to }}
+                  onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                  locale={ptBR}
+                  numberOfMonths={2}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+                <div className="flex justify-end gap-2">
+                  {useCustomDates && (
+                    <Button variant="ghost" size="sm" onClick={handleClearCustomDates}>
+                      Limpar
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => setRangePickerOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleApplyRange}
+                    disabled={!dateRange.from || !dateRange.to}
+                  >
+                    Aplicar
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           
           {/* Client Filter */}
           <div className="flex items-center gap-2">
@@ -180,6 +173,7 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
             </Select>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Stats Cards */}
