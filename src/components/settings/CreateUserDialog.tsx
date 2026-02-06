@@ -128,7 +128,7 @@
  
    return (
      <Dialog open={open} onOpenChange={handleClose}>
-       <DialogContent className="sm:max-w-[500px]">
+       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
          <DialogHeader>
            <DialogTitle>
              {step === 1 ? "Criar Usuário" : "Definir Cargos"}
