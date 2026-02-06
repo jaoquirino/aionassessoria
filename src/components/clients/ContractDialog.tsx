@@ -60,6 +60,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
       setPaymentDueDay(10);
       setNotes("");
       setSelectedModules([]);
+      setModuleDeliverableLimits({});
       setRequiresOnboarding(true);
     }
   }, [contract, open]);
