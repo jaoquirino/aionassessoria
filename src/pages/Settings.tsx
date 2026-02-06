@@ -1009,7 +1009,7 @@ export default function Settings() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="member">Membro</SelectItem>
+                                  <SelectItem value="member">Operacional</SelectItem>
                                   <SelectItem value="none">Sem acesso</SelectItem>
                                 </SelectContent>
                               </Select>
