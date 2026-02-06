@@ -566,8 +566,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <div className="space-y-2">
                     <Label>Prioridade</Label>
                     <Select 
-                      value={task.priority || "medium"} 
-                      onValueChange={(val) => updateTask.mutate({ id: task.id, priority: val as any })}
+                      value={priority} 
+                      onValueChange={setPriority}
                     >
                       <SelectTrigger>
                         <SelectValue />
