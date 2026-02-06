@@ -88,7 +88,7 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Módulo" : "Novo Módulo"}</DialogTitle>
         </DialogHeader>
