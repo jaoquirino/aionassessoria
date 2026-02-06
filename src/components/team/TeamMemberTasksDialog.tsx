@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -47,6 +48,7 @@ const typeConfig: Record<string, { label: string; color: string }> = {
 };
 
 export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMemberTasksDialogProps) {
+  const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodOption>("30d");
   const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
   const [activeTab, setActiveTab] = useState("active");
@@ -57,6 +59,11 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
   // Get all task IDs to fetch assignees
   const taskIds = useMemo(() => allTasks.map((t: Task) => t.id), [allTasks]);
   const { data: assigneesMap = {}, isLoading: assigneesLoading } = useTasksAssignees(taskIds);
+
+  const handleTaskClick = (taskId: string) => {
+    onOpenChange(false);
+    navigate(`/tarefas?task=${taskId}`);
+  };
 
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
 
@@ -145,16 +152,17 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                      memberTasks.active.map((task: Task, index: number) => {
                        const isOverdue = parseLocalDate(task.due_date) < now;
                        return (
-                         <motion.div
-                           key={task.id}
-                           initial={{ opacity: 0, y: 10 }}
-                           animate={{ opacity: 1, y: 0 }}
-                           transition={{ delay: 0.03 * index }}
-                           className={cn(
-                             "rounded-lg border p-4 transition-all",
-                             isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border"
-                           )}
-                         >
+                          <motion.div
+                            key={task.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.03 * index }}
+                            onClick={() => handleTaskClick(task.id)}
+                            className={cn(
+                              "rounded-lg border p-4 transition-all cursor-pointer hover:shadow-md",
+                              isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border hover:border-primary/30"
+                            )}
+                          >
                            <div className="flex items-start justify-between gap-4">
                              <div className="flex-1 min-w-0">
                                <div className="flex items-center gap-2">
@@ -205,13 +213,14 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                      </p>
                    ) : (
                      memberTasks.completed.map((task: Task, index: number) => (
-                       <motion.div
-                         key={task.id}
-                         initial={{ opacity: 0, y: 10 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         transition={{ delay: 0.03 * index }}
-                         className="rounded-lg border border-border p-4"
-                       >
+                        <motion.div
+                          key={task.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.03 * index }}
+                          onClick={() => handleTaskClick(task.id)}
+                          className="rounded-lg border border-border p-4 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
+                        >
                          <div className="flex items-start justify-between gap-4">
                            <div className="flex-1 min-w-0">
                              <div className="flex items-center gap-2">
