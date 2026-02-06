@@ -173,7 +173,7 @@ export default function Team() {
           </SelectTrigger>
           <SelectContent className="bg-background border-border z-50">
             <SelectItem value="all">Todos os cargos</SelectItem>
-            {allRoles.map((role) => (
+            {roleOptions.map((role) => (
               <SelectItem key={role} value={role}>
                 {role}
               </SelectItem>
