@@ -24,6 +24,7 @@ interface TeamMemberTasksDialogProps {
     id: string;
     name: string;
     role: string;
+    permission?: string;
     avatar_url: string | null;
   } | null;
   open: boolean;
