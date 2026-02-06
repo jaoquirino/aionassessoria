@@ -328,21 +328,25 @@ export default function Clients() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {otherClients.map((client, index) => {
+                {otherClients.map((client, index) => {
                 const activeContracts = client.contracts?.filter(c => c.status === "active") || [];
                 const mrr = activeContracts.reduce((sum, c) => sum + c.monthly_value, 0);
                 
+                // Get payment due day from first active contract
+                const paymentDueDay = activeContracts.length > 0 
+                  ? (activeContracts[0] as any).payment_due_day 
+                  : null;
+
                 // Get nearest renewal date
                 const renewalDates = activeContracts
                   .filter(c => c.renewal_date)
-                  .map(c => new Date(c.renewal_date!));
+                  .map(c => parseLocalDate(c.renewal_date!));
                 const nearestRenewal = renewalDates.length > 0 
                   ? renewalDates.reduce((a, b) => a < b ? a : b) 
                   : null;
                 const daysUntilRenewal = nearestRenewal 
                   ? differenceInDays(nearestRenewal, new Date()) 
                   : null;
-                const isNearRenewal = daysUntilRenewal !== null && daysUntilRenewal <= 30 && daysUntilRenewal > 0;
 
                 return (
                   <motion.tr
@@ -372,17 +376,29 @@ export default function Clients() {
                     <td className="px-6 py-4 text-sm font-medium text-foreground">
                       {formatCurrency(mrr)}
                     </td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
+                      {paymentDueDay ? `Dia ${paymentDueDay}` : "—"}
+                    </td>
                     <td className="px-6 py-4">
                       {nearestRenewal ? (
                         <div className="flex items-center gap-2">
                           <span className={cn(
                             "text-sm",
-                            isNearRenewal ? "text-warning font-medium" : "text-muted-foreground"
+                            daysUntilRenewal !== null && daysUntilRenewal <= 30 
+                              ? "text-destructive font-medium" 
+                              : daysUntilRenewal !== null && daysUntilRenewal <= 60 
+                                ? "text-warning font-medium" 
+                                : "text-muted-foreground"
                           )}>
                             {nearestRenewal.toLocaleDateString("pt-BR")}
                           </span>
-                          {isNearRenewal && (
-                            <Badge variant="outline" className="bg-warning/20 text-warning border-warning/30 text-xs">
+                          {daysUntilRenewal !== null && daysUntilRenewal <= 60 && daysUntilRenewal > 0 && (
+                            <Badge variant="outline" className={cn(
+                              "text-xs",
+                              daysUntilRenewal <= 30 
+                                ? "bg-destructive/20 text-destructive border-destructive/30" 
+                                : "bg-warning/20 text-warning border-warning/30"
+                            )}>
                               {daysUntilRenewal}d
                             </Badge>
                           )}
@@ -392,7 +408,7 @@ export default function Clients() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {new Date(client.created_at).toLocaleDateString("pt-BR")}
+                      {parseLocalDate(client.created_at.split("T")[0]).toLocaleDateString("pt-BR")}
                     </td>
                     <td className="px-6 py-4">
                       <Button
