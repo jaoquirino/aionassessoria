@@ -588,7 +588,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     <Label>Prioridade</Label>
                     <Select 
                       value={priority} 
-                      onValueChange={(val) => setPriority(val as TaskPriority)}
+                      onValueChange={(val) => { setPriority(val as TaskPriority); markDirty(); }}
                     >
                       <SelectTrigger>
                         <SelectValue />
