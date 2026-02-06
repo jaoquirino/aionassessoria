@@ -54,7 +54,7 @@ import { cn, parseLocalDate } from "@/lib/utils";
    useArchiveTask,
  } from "@/hooks/useTasks";
  import { useTaskAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
-import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType } from "@/types/tasks";
+import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType, type TaskPriority } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { supabase } from "@/integrations/supabase/client";
