@@ -221,6 +221,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         id: task.id,
         title,
         status,
+        priority,
         client_id: clientId,
          assigned_to: selectedAssignees[0] || null, // Keep for backwards compatibility
         due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : task.due_date,
@@ -230,7 +231,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         type: taskType,
         weight,
       });
- 
+
        // Save multiple assignees
        await setTaskAssignees.mutateAsync({ taskId: task.id, memberIds: selectedAssignees });
     } finally {
