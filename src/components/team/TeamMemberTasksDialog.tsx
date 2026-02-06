@@ -117,7 +117,12 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                </TabsTrigger>
              </TabsList>
            </Tabs>
-           <PeriodSelector value={period} onChange={setPeriod} />
+            <PeriodSelector 
+              value={period} 
+              onChange={setPeriod} 
+              customRange={customRange}
+              onCustomRangeChange={setCustomRange}
+            />
          </div>
  
          <div className="flex-1 overflow-y-auto min-h-0">
