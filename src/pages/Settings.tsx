@@ -404,7 +404,7 @@ export default function Settings() {
     return (
       <Badge variant="secondary">
         <Shield className="h-3 w-3 mr-1" />
-        Membro
+        Operacional
       </Badge>
     );
   };
@@ -871,7 +871,7 @@ export default function Settings() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <Shield className="h-4 w-4 text-info" />
-                      Membros
+                      Operacionais
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1009,7 +1009,7 @@ export default function Settings() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="member">Membro</SelectItem>
+                                  <SelectItem value="member">Operacional</SelectItem>
                                   <SelectItem value="none">Sem acesso</SelectItem>
                                 </SelectContent>
                               </Select>

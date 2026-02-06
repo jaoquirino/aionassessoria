@@ -44,7 +44,6 @@ function getCapacityStatus(current: number, max: number) {
 export default function Team() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [permissionFilter, setPermissionFilter] = useState("all");
   const [capacityFilter, setCapacityFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMemberWithStats | null>(null);
@@ -66,14 +65,13 @@ export default function Team() {
         member.name.toLowerCase().includes(search.toLowerCase());
 
       const matchesRole = roleFilter === "all" || member.role === roleFilter;
-      const matchesPermission = permissionFilter === "all" || member.permission === permissionFilter;
 
       const status = getCapacityStatus(member.currentWeight, member.capacity_limit);
       const matchesCapacity = capacityFilter === "all" || status === capacityFilter;
 
-      return matchesSearch && matchesRole && matchesPermission && matchesCapacity;
+      return matchesSearch && matchesRole && matchesCapacity;
     });
-  }, [teamMembers, search, roleFilter, permissionFilter, capacityFilter]);
+  }, [teamMembers, search, roleFilter, capacityFilter]);
 
   const totalCapacity = teamMembers.reduce((acc, m) => acc + m.capacity_limit, 0);
   const usedCapacity = teamMembers.reduce((acc, m) => acc + m.currentWeight, 0);
@@ -118,7 +116,7 @@ export default function Team() {
         </div>
         <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4" />
-          Novo Membro
+          Novo Integrante
         </Button>
       </motion.div>
 
@@ -149,16 +147,6 @@ export default function Team() {
                 {role}
               </SelectItem>
             ))}
-          </SelectContent>
-        </Select>
-        <Select value={permissionFilter} onValueChange={setPermissionFilter}>
-          <SelectTrigger className="w-full sm:w-[150px] bg-background">
-            <SelectValue placeholder="Permissão" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border-border z-50">
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="operational">Operacional</SelectItem>
           </SelectContent>
         </Select>
         <Select value={capacityFilter} onValueChange={setCapacityFilter}>
