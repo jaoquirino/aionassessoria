@@ -620,7 +620,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     </Label>
                     <MentionTextarea 
                       value={descriptionNotes}
-                      onValueChange={(val) => setDescriptionNotes(val)}
+                      onValueChange={(val) => { setDescriptionNotes(val); markDirty(); }}
                       placeholder="Notas adicionais, referências, objetivos e entregáveis. Use @ para mencionar alguém."
                       className="resize-none min-h-[120px]"
                     />
