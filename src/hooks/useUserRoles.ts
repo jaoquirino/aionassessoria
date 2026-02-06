@@ -99,7 +99,7 @@ export function useUsersWithRoles() {
   });
 }
 
-// Set user role
+// Set user role and sync with team_members
 export function useSetUserRole() {
   const queryClient = useQueryClient();
 
@@ -112,6 +112,7 @@ export function useSetUserRole() {
         .eq("user_id", userId)
         .maybeSingle();
 
+      let roleData;
       if (existing) {
         // Update existing role
         const { data, error } = await supabase
@@ -122,7 +123,7 @@ export function useSetUserRole() {
           .single();
 
         if (error) throw error;
-        return data;
+        roleData = data;
       } else {
         // Insert new role
         const { data, error } = await supabase
@@ -132,13 +133,55 @@ export function useSetUserRole() {
           .single();
 
         if (error) throw error;
-        return data;
+        roleData = data;
       }
+
+      // Sync with team_members: reactivate or create team member
+      const { data: existingTeamMember } = await supabase
+        .from("team_members")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existingTeamMember) {
+        // Reactivate the team member and update permission
+        await supabase
+          .from("team_members")
+          .update({ 
+            is_active: true,
+            permission: role === "admin" ? "admin" : "operational"
+          })
+          .eq("id", existingTeamMember.id);
+      } else {
+        // Get profile info to create team member
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (profile) {
+          await supabase
+            .from("team_members")
+            .insert({
+              user_id: userId,
+              name: profile.full_name || "Novo Integrante",
+              role: "A definir",
+              permission: role === "admin" ? "admin" : "operational",
+              avatar_url: profile.avatar_url,
+              is_active: true,
+            });
+        }
+      }
+
+      return roleData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users_with_roles"] });
       queryClient.invalidateQueries({ queryKey: ["is_admin"] });
       queryClient.invalidateQueries({ queryKey: ["is_team_member"] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
+      queryClient.invalidateQueries({ queryKey: ["team_members"] });
       toast.success("Permissão atualizada");
     },
     onError: (error) => {
@@ -147,24 +190,33 @@ export function useSetUserRole() {
   });
 }
 
-// Remove user role
+// Remove user role (set to "no access") and deactivate team member
 export function useRemoveUserRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (userId: string) => {
+      // Remove from user_roles
       const { error } = await supabase
         .from("user_roles")
         .delete()
         .eq("user_id", userId);
 
       if (error) throw error;
+
+      // Deactivate team member (instead of deleting)
+      await supabase
+        .from("team_members")
+        .update({ is_active: false })
+        .eq("user_id", userId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users_with_roles"] });
       queryClient.invalidateQueries({ queryKey: ["is_admin"] });
       queryClient.invalidateQueries({ queryKey: ["is_team_member"] });
-      toast.success("Permissão removida");
+      queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
+      queryClient.invalidateQueries({ queryKey: ["team_members"] });
+      toast.success("Acesso removido");
     },
     onError: (error) => {
       toast.error("Erro ao remover permissão: " + error.message);
