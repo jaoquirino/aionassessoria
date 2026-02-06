@@ -174,10 +174,10 @@ export function useCreateTeamMember() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
       queryClient.invalidateQueries({ queryKey: ["team_members"] });
-      toast.success("Membro adicionado com sucesso");
+      toast.success("Integrante adicionado com sucesso");
     },
     onError: (error) => {
-      toast.error("Erro ao adicionar membro: " + error.message);
+      toast.error("Erro ao adicionar integrante: " + error.message);
     },
   });
 }
