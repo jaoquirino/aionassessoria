@@ -404,7 +404,7 @@ export default function Settings() {
     return (
       <Badge variant="secondary">
         <Shield className="h-3 w-3 mr-1" />
-        Membro
+        Operacional
       </Badge>
     );
   };
