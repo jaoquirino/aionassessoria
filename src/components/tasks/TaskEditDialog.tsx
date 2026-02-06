@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -160,13 +160,27 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [newComment, setNewComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const isDirtyRef = useRef(false);
+  const loadedTaskIdRef = useRef<string | null>(null);
 
   // Fetch modules for the selected client
   const { data: clientModules = [] } = useClientModules(clientId);
 
-  // Sync form state when task changes
+  // Reset dirty flag when dialog opens with a new task
   useEffect(() => {
-    if (task) {
+    if (open && taskId && taskId !== loadedTaskIdRef.current) {
+      isDirtyRef.current = false;
+      loadedTaskIdRef.current = taskId;
+    }
+    if (!open) {
+      isDirtyRef.current = false;
+      loadedTaskIdRef.current = null;
+    }
+  }, [open, taskId]);
+
+  // Sync form state when task loads initially (skip if user has local changes)
+  useEffect(() => {
+    if (task && !isDirtyRef.current) {
       setTitle(task.title);
       setStatus(task.status);
       setPriority(task.priority || "medium");
@@ -178,20 +192,24 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       setWeight(task.weight);
     }
   }, [task]);
+
+  // Mark form as dirty when any field changes
+  const markDirty = () => { isDirtyRef.current = true; };
  
    // Sync assignees when data loads
    useEffect(() => {
-     setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
+     if (!isDirtyRef.current) {
+       setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
+     }
    }, [taskAssigneesData]);
 
   // Handler para mudar módulo e atualizar tipo/peso automaticamente
   const handleModuleChange = (newModuleId: string) => {
+    markDirty();
     setContractModuleId(newModuleId);
     const selectedModule = clientModules.find(m => m.contractModuleId === newModuleId);
     if (selectedModule) {
-      // Atualizar peso com o default_weight do módulo
       setWeight(selectedModule.defaultWeight);
-      // Atualizar tipo: recorrente → recurring, senão project
       setTaskType(selectedModule.isRecurring ? "recurring" : "project");
     }
   };
@@ -236,6 +254,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
        // Save multiple assignees
        await setTaskAssignees.mutateAsync({ taskId: task.id, memberIds: selectedAssignees });
+      isDirtyRef.current = false;
     } finally {
       setIsSaving(false);
     }
@@ -345,7 +364,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
               </div>
               <Input 
                 value={title} 
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => { setTitle(e.target.value); markDirty(); }}
                 className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Título da tarefa"
               />
@@ -396,7 +415,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   {/* Status with colors */}
                   <div className="space-y-2">
                     <Label>Status</Label>
-                    <Select value={status} onValueChange={(v) => setStatus(v as TaskStatusDB)}>
+                    <Select value={status} onValueChange={(v) => { setStatus(v as TaskStatusDB); markDirty(); }}>
                       <SelectTrigger>
                         <SelectValue>
                           <Badge className={getStatusColor(status)}>
@@ -449,12 +468,13 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                                <Checkbox
                                  id={`assignee-${member.id}`}
                                  checked={isSelected}
-                                 onCheckedChange={(checked) => {
-                                   if (checked) {
-                                     setSelectedAssignees([...selectedAssignees, member.id]);
-                                   } else {
-                                     setSelectedAssignees(selectedAssignees.filter(id => id !== member.id));
-                                   }
+                                  onCheckedChange={(checked) => {
+                                    markDirty();
+                                    if (checked) {
+                                      setSelectedAssignees([...selectedAssignees, member.id]);
+                                    } else {
+                                      setSelectedAssignees(selectedAssignees.filter(id => id !== member.id));
+                                    }
                                  }}
                                />
                                <label
@@ -503,7 +523,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           <Calendar
                             mode="single"
                             selected={dueDate}
-                            onSelect={setDueDate}
+                            onSelect={(d) => { setDueDate(d); markDirty(); }}
                             initialFocus
                             className="pointer-events-auto"
                           />
@@ -522,7 +542,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         value={clientId} 
                         onValueChange={(val) => {
                           setClientId(val);
-                          setContractModuleId(""); // Reset module when client changes
+                          setContractModuleId("");
+                          markDirty();
                         }}
                       >
                         <SelectTrigger>
@@ -570,7 +591,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     <Label>Prioridade</Label>
                     <Select 
                       value={priority} 
-                      onValueChange={(val) => setPriority(val as TaskPriority)}
+                      onValueChange={(val) => { setPriority(val as TaskPriority); markDirty(); }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -602,7 +623,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     </Label>
                     <MentionTextarea 
                       value={descriptionNotes}
-                      onValueChange={(val) => setDescriptionNotes(val)}
+                      onValueChange={(val) => { setDescriptionNotes(val); markDirty(); }}
                       placeholder="Notas adicionais, referências, objetivos e entregáveis. Use @ para mencionar alguém."
                       className="resize-none min-h-[120px]"
                     />
