@@ -23,6 +23,11 @@ export function useTasksAssignees(taskIds: string[]) {
         { event: "*", schema: "public", table: "task_assignees" },
         () => queryClient.invalidateQueries({ queryKey: ["task_assignees"] })
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "team_members" },
+        () => queryClient.invalidateQueries({ queryKey: ["task_assignees"] })
+      )
       .subscribe();
 
     return () => {

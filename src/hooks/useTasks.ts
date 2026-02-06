@@ -40,6 +40,11 @@ export function useTasks() {
         { event: "*", schema: "public", table: "task_checklist" },
         () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "team_members" },
+        () => queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      )
       .subscribe();
 
     return () => {
