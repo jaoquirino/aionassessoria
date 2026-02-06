@@ -73,7 +73,7 @@ export default function Clients() {
     clients.forEach(client => {
       client.contracts?.forEach(contract => {
         if (contract.renewal_date && contract.status !== "ended") {
-          const daysUntilRenewal = differenceInDays(new Date(contract.renewal_date), new Date());
+          const daysUntilRenewal = differenceInDays(parseLocalDate(contract.renewal_date), new Date());
           if (daysUntilRenewal <= 30 && daysUntilRenewal > 0) {
             count++;
           }
