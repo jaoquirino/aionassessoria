@@ -56,7 +56,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
       setMonthlyValue(0);
       setStartDate(format(new Date(), "yyyy-MM-dd"));
       setMinDuration(6);
-      setRenewalDate(format(addMonths(new Date(), 6), "yyyy-MM-dd"));
+      setRenewalDate(format(addMonths(new Date(), 5), "yyyy-MM-dd"));
       setPaymentDueDay(10);
       setNotes("");
       setSelectedModules([]);
