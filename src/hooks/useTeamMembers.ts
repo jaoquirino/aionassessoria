@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -35,33 +34,6 @@ export interface UpdateTeamMemberInput {
 
 // Fetch all team members with their task weights
 export function useAllTeamMembers() {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("realtime:team")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "team_members" },
-        () => queryClient.invalidateQueries({ queryKey: ["all_team_members"] })
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tasks" },
-        () => queryClient.invalidateQueries({ queryKey: ["all_team_members"] })
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "task_assignees" },
-        () => queryClient.invalidateQueries({ queryKey: ["all_team_members"] })
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
   return useQuery({
     queryKey: ["all_team_members"],
     queryFn: async () => {
