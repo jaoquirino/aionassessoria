@@ -35,6 +35,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   const [paymentDueDay, setPaymentDueDay] = useState(10);
   const [notes, setNotes] = useState("");
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [moduleDeliverableLimits, setModuleDeliverableLimits] = useState<Record<string, number | null>>({});
   const [requiresOnboarding, setRequiresOnboarding] = useState(true);
 
   const { data: modules = [] } = useAllModules();
