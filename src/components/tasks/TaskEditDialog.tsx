@@ -244,7 +244,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         priority,
         client_id: clientId,
          assigned_to: selectedAssignees[0] || null, // Keep for backwards compatibility
-        due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : task.due_date,
+        due_date: dueDate ? `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-${String(dueDate.getDate()).padStart(2, "0")}` : task.due_date,
         description_notes: descriptionNotes || null,
         contract_module_id: contractModuleId || null,
         contract_id: contractId,
