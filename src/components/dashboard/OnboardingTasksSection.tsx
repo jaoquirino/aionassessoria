@@ -5,8 +5,7 @@
  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
  import { useQuery } from "@tanstack/react-query";
  import { supabase } from "@/integrations/supabase/client";
- import { cn } from "@/lib/utils";
- import { parseLocalDate } from "@/lib/utils";
+ import { cn, parseLocalDate } from "@/lib/utils";
  
  interface OnboardingTask {
    id: string;
