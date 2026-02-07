@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { parseLocalDate } from "@/lib/utils";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 
 export interface DashboardStats {
