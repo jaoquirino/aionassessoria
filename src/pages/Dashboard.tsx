@@ -59,6 +59,7 @@ export default function Dashboard() {
   const { data, isLoading } = useDashboardData();
   const [activeTab, setActiveTab] = useState("overview");
   const [period, setPeriod] = useState<PeriodOption>("30d");
+  const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
 
   if (isLoading || !data) {
     return (
