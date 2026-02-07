@@ -235,7 +235,7 @@ export function ArchivedTasksTab() {
                 <div>
                   <span className="text-muted-foreground">Prazo:</span>{" "}
                   <span className="font-medium">
-                    {format(new Date(previewTask.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                    {format(parseLocalDate(previewTask.due_date), "dd/MM/yyyy", { locale: ptBR })}
                   </span>
                 </div>
                 {previewTask.archived_at && (

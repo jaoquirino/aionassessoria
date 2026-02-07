@@ -63,7 +63,7 @@
          assigneeAvatar: task.assigned_to ? (membersMap.get(task.assigned_to)?.avatar_url || null) : null,
          dueDate: task.due_date,
          status: task.status,
-         isOverdue: new Date(task.due_date) < now && task.status !== "done",
+         isOverdue: parseLocalDate(task.due_date) < now && task.status !== "done",
          weight: task.weight,
        })) as OnboardingTask[];
      },
