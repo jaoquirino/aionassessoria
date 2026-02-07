@@ -23,7 +23,7 @@ import { useDashboardData } from "@/hooks/useDashboard";
 import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
-import { PeriodSelector, type PeriodOption } from "@/components/dashboard/PeriodSelector";
+import { PeriodSelector, type PeriodOption, type CustomDateRange } from "@/components/dashboard/PeriodSelector";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
