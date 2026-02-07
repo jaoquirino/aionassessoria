@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { parseLocalDate } from "@/lib/utils";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 
 export interface DashboardStats {
@@ -97,13 +98,13 @@ export function useDashboardData() {
       const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
 
       // Calculate stats (excluding onboarding tasks)
-      const overdueTasks = operationalTasks.filter(t => new Date(t.due_date) < now && t.status !== "done").length;
+      const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < now && t.status !== "done").length;
       const todayDeliveries = operationalTasks.filter(t => {
-        const due = new Date(t.due_date);
+        const due = parseLocalDate(t.due_date);
         return due.toDateString() === today.toDateString();
       }).length;
       const weekTasks = operationalTasks.filter(t => {
-        const due = new Date(t.due_date);
+        const due = parseLocalDate(t.due_date);
         return due >= startOfWeek && due <= endOfWeek;
       });
       const weekDeliveries = weekTasks.length;
@@ -137,7 +138,7 @@ export function useDashboardData() {
         assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
         status: t.status,
-        isOverdue: new Date(t.due_date) < now && t.status !== "done",
+        isOverdue: parseLocalDate(t.due_date) < now && t.status !== "done",
         weight: t.weight,
         type: t.type,
       }));
@@ -150,7 +151,7 @@ export function useDashboardData() {
           const curr = memberTaskStats.get(t.assigned_to) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
           curr.count += 1;
-          if (new Date(t.due_date) < now) curr.overdue += 1;
+          if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
           memberTaskStats.set(t.assigned_to, curr);
         }
       });

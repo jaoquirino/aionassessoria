@@ -310,7 +310,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     setNewComment("");
   };
 
-  const isOverdue = task && new Date(task.due_date) < new Date() && task.status !== "done";
+  const isOverdue = task && parseLocalDate(task.due_date) < new Date() && task.status !== "done";
   const checklistProgress = task?.checklist?.length 
     ? task.checklist.filter(item => item.is_completed).length / task.checklist.length 
     : 0;

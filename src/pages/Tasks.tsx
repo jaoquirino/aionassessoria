@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { parseLocalDate } from "@/lib/utils";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AlertTriangle, LayoutGrid, List, Clock, Plus } from "lucide-react";
@@ -130,7 +131,7 @@ export default function Tasks() {
   };
 
   // Use operationalTasks for stats (excludes project/onboarding tasks)
-  const overdueTasks = operationalTasks.filter((t) => new Date(t.due_date) < new Date() && t.status !== "done");
+  const overdueTasks = operationalTasks.filter((t) => parseLocalDate(t.due_date) < new Date() && t.status !== "done");
   const waitingClientTasks = operationalTasks.filter((t) => t.status === "waiting_client");
   const totalWeight = operationalTasks.filter((t) => t.status !== "done" && t.status !== "waiting_client").reduce((acc, t) => acc + t.weight, 0);
 

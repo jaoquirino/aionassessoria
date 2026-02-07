@@ -279,7 +279,7 @@ interface TaskCardProps {
   const checklistProgress = checklistTotal > 0 ? (checklistCompleted / checklistTotal) * 100 : 0;
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = parseLocalDate(dateStr);
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
   };
 

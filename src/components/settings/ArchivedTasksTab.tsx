@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { parseLocalDate } from "@/lib/utils";
 import { Archive, RotateCcw, Loader2, Search, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -234,7 +235,7 @@ export function ArchivedTasksTab() {
                 <div>
                   <span className="text-muted-foreground">Prazo:</span>{" "}
                   <span className="font-medium">
-                    {format(new Date(previewTask.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                    {format(parseLocalDate(previewTask.due_date), "dd/MM/yyyy", { locale: ptBR })}
                   </span>
                 </div>
                 {previewTask.archived_at && (
