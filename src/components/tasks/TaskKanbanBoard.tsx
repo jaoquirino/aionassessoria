@@ -409,7 +409,12 @@ interface TaskCardProps {
           {/* Data de entrega - Clicável */}
           <DatePopover
             currentDate={parseLocalDate(task.due_date)}
-            onSelect={(date) => onUpdateField?.(task.id, "due_date", format(date, "yyyy-MM-dd"))}
+            onSelect={(date) => {
+              const yyyy = date.getFullYear();
+              const mm = String(date.getMonth() + 1).padStart(2, "0");
+              const dd = String(date.getDate()).padStart(2, "0");
+              onUpdateField?.(task.id, "due_date", `${yyyy}-${mm}-${dd}`);
+            }}
           >
             <button 
               type="button"
