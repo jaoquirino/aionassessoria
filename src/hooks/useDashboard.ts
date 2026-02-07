@@ -138,7 +138,7 @@ export function useDashboardData() {
         assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
         status: t.status,
-        isOverdue: new Date(t.due_date) < now && t.status !== "done",
+        isOverdue: parseLocalDate(t.due_date) < now && t.status !== "done",
         weight: t.weight,
         type: t.type,
       }));
