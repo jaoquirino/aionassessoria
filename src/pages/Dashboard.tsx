@@ -23,7 +23,7 @@ import { useDashboardData } from "@/hooks/useDashboard";
 import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
-import { PeriodSelector, type PeriodOption } from "@/components/dashboard/PeriodSelector";
+import { PeriodSelector, type PeriodOption, type CustomDateRange } from "@/components/dashboard/PeriodSelector";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
@@ -59,6 +59,7 @@ export default function Dashboard() {
   const { data, isLoading } = useDashboardData();
   const [activeTab, setActiveTab] = useState("overview");
   const [period, setPeriod] = useState<PeriodOption>("30d");
+  const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
 
   if (isLoading || !data) {
     return (
@@ -522,7 +523,7 @@ export default function Dashboard() {
             </TabsList>
             
             {activeTab !== "financial" && (
-              <PeriodSelector value={period} onChange={setPeriod} />
+              <PeriodSelector value={period} onChange={setPeriod} customRange={customRange} onCustomRangeChange={setCustomRange} />
             )}
           </div>
 
