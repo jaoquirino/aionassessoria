@@ -98,13 +98,13 @@ export function useDashboardData() {
       const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
 
       // Calculate stats (excluding onboarding tasks)
-      const overdueTasks = operationalTasks.filter(t => new Date(t.due_date) < now && t.status !== "done").length;
+      const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < now && t.status !== "done").length;
       const todayDeliveries = operationalTasks.filter(t => {
-        const due = new Date(t.due_date);
+        const due = parseLocalDate(t.due_date);
         return due.toDateString() === today.toDateString();
       }).length;
       const weekTasks = operationalTasks.filter(t => {
-        const due = new Date(t.due_date);
+        const due = parseLocalDate(t.due_date);
         return due >= startOfWeek && due <= endOfWeek;
       });
       const weekDeliveries = weekTasks.length;
