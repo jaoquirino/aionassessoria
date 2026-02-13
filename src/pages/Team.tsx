@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
 import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
+import { useRoleNames } from "@/hooks/useAvailableRoles";
 
 interface TeamMemberWithStats extends TeamMember {
   currentWeight: number;
@@ -52,20 +53,7 @@ export default function Team() {
 
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
   const deleteMember = useDeleteTeamMember();
-
-  // Lista fixa de cargos/funções disponíveis (mesma do TeamMemberDialog)
-  const roleOptions = [
-    "Designer",
-    "Gestor de Tráfego",
-    "Copywriter",
-    "Comercial",
-    "Atendimento",
-    "Desenvolvedor",
-    "Social Media",
-    "Estrategista",
-    "Diretor de Arte",
-    "Produtor de Conteúdo",
-  ];
+  const roleOptions = useRoleNames();
 
   const allRoles = useMemo(() => {
     // Coleta cargos reais atribuídos aos membros

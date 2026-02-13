@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,7 @@ import { OnboardingTemplatesTab } from "@/components/settings/OnboardingTemplate
 import { ArchivedTasksTab } from "@/components/settings/ArchivedTasksTab";
 import { ClientDataExportTab } from "@/components/settings/ClientDataExportTab";
 import { CreateUserDialog } from "@/components/settings/CreateUserDialog";
+import { RolesManagementTab } from "@/components/settings/RolesManagementTab";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -474,6 +475,12 @@ export default function Settings() {
               </TabsTrigger>
             )}
             {isAdmin && (
+              <TabsTrigger value="roles" className="gap-2">
+                <Briefcase className="h-4 w-4" />
+                <span className="hidden sm:inline">Cargos</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
               <TabsTrigger value="permissions" className="gap-2">
                 <Shield className="h-4 w-4" />
                 <span className="hidden sm:inline">Permissões</span>
@@ -843,6 +850,12 @@ export default function Settings() {
           {isAdmin && (
             <TabsContent value="onboarding" className="space-y-6">
               <OnboardingTemplatesTab />
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="roles">
+              <RolesManagementTab />
             </TabsContent>
           )}
 

@@ -6,7 +6,8 @@ import { User, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ptBR } from "date-fns/locale";
 import type { TeamMember, TaskPriority, Client } from "@/types/tasks";
-import { priorityConfig, roleOptions } from "@/types/tasks";
+import { priorityConfig } from "@/types/tasks";
+import { useRoleNames } from "@/hooks/useAvailableRoles";
 
 interface InlineFieldPopoverProps {
   children: React.ReactNode;
@@ -157,6 +158,7 @@ export function RolePopover({
   isUpdating,
   disabled 
 }: RolePopoverProps) {
+  const roleOptions = useRoleNames();
   const [open, setOpen] = useState(false);
 
   const handleSelect = (role: string) => {
