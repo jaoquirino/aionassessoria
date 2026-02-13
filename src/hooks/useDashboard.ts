@@ -217,10 +217,14 @@ export function useDashboardData() {
         .map(c => {
           const stats = clientTaskStats.get(c.id) || { weight: 0, pending: 0, delivered: 0 };
           const revenue = clientRevenueMap.get(c.id) || 0;
-          const ratio = revenue > 0 && stats.weight > 0 ? revenue / stats.weight : 1;
           let healthStatus: "normal" | "attention" | "critical" = "normal";
-          if (ratio < 200) healthStatus = "critical";
-          else if (ratio < 400) healthStatus = "attention";
+          if (stats.weight === 0) {
+            healthStatus = "normal";
+          } else {
+            const ratio = revenue > 0 ? revenue / stats.weight : 0;
+            if (ratio < 200) healthStatus = "critical";
+            else if (ratio < 400) healthStatus = "attention";
+          }
           return {
             id: c.id,
             name: c.name,
