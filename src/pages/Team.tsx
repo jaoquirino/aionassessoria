@@ -247,89 +247,92 @@ export default function Team() {
               )}
               onClick={() => handleViewTasks(member)}
             >
-              <div className="flex items-start justify-between mb-4">
+              {/* Row 1: Avatar + Name + Actions */}
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={member.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                      {member.name.split(" ").map((n) => n[0]).join("")}
+                    <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
+                      {member.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <h3 className="font-medium text-foreground">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {(member.role || "")
-                        .split(",")
-                        .map((r) => r.trim())
-                        .filter(Boolean)
-                        .filter((r) => !["membro", "operacional", "admin", "administrador"].includes(r.toLowerCase()))
-                        .join(", ") || "—"}
-                    </p>
-                  </div>
+                  <h3 className="font-semibold text-foreground">{member.name}</h3>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
-                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
                     onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
-                    title="Editar membro"
+                    title="Editar"
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                   </button>
                   <button 
-                    className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                     onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
-                    title="Remover membro"
+                    title="Remover"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      member.permission === "admin"
-                        ? "border-primary/30 text-primary"
-                        : "border-muted text-muted-foreground"
-                    )}
-                  >
-                    {member.permission === "admin" ? "Admin" : "Operacional"}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Carga</span>
-                    <div className="flex items-center gap-2">
-                      <span className={cn("status-indicator", `status-${status}`)} />
-                      <span className="font-medium text-foreground">
-                        {member.currentWeight}/{member.capacity_limit}
-                      </span>
-                    </div>
-                  </div>
-                  <Progress
-                    value={percentage}
-                    className={cn(
-                      "h-2",
-                      status === "critical" && "[&>div]:bg-destructive",
-                      status === "attention" && "[&>div]:bg-warning",
-                      status === "normal" && "[&>div]:bg-success"
-                    )}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>{member.activeTasks} tarefas ativas</span>
-                  {member.overdueTasks > 0 && (
-                    <span className="text-destructive font-medium">
-                      {member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}
-                    </span>
+              {/* Row 2: Role badges */}
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {(member.role || "")
+                  .split(",")
+                  .map((r) => r.trim())
+                  .filter(Boolean)
+                  .filter((r) => !["membro", "operacional", "admin", "administrador"].includes(r.toLowerCase()))
+                  .map((role) => (
+                    <Badge key={role} variant="secondary" className="text-xs">
+                      {role}
+                    </Badge>
+                  ))}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-xs",
+                    member.permission === "admin"
+                      ? "border-primary/30 text-primary"
+                      : "border-muted text-muted-foreground"
                   )}
+                >
+                  {member.permission === "admin" ? "Admin" : "Operacional"}
+                </Badge>
+              </div>
+
+              {/* Row 3: Capacity */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Carga</span>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("status-indicator", `status-${status}`)} />
+                    <span className="font-medium text-foreground">
+                      {member.currentWeight}/{member.capacity_limit}
+                    </span>
+                  </div>
                 </div>
+                <Progress
+                  value={percentage}
+                  className={cn(
+                    "h-2",
+                    status === "critical" && "[&>div]:bg-destructive",
+                    status === "attention" && "[&>div]:bg-warning",
+                    status === "normal" && "[&>div]:bg-success"
+                  )}
+                />
+              </div>
+
+              {/* Row 4: Tasks summary */}
+              <div className="flex items-center justify-between text-sm text-muted-foreground mt-3">
+                <span>{member.activeTasks} tarefas ativas</span>
+                {member.overdueTasks > 0 && (
+                  <span className="text-destructive font-medium">
+                    {member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}
+                  </span>
+                )}
               </div>
             </motion.div>
           );
