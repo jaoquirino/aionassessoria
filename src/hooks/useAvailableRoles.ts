@@ -53,6 +53,33 @@ export function useCreateRole() {
   });
 }
 
+export function useUpdateRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { data, error } = await (supabase as any)
+        .from("available_roles")
+        .update({ name: name.trim() })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["available_roles"] });
+      toast.success("Cargo atualizado");
+    },
+    onError: (error: any) => {
+      if (error.message?.includes("duplicate")) {
+        toast.error("Este cargo já existe");
+      } else {
+        toast.error("Erro ao atualizar cargo: " + error.message);
+      }
+    },
+  });
+}
+
 export function useDeleteRole() {
   const queryClient = useQueryClient();
   return useMutation({

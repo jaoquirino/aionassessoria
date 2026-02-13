@@ -56,6 +56,8 @@ export interface DashboardClientHealth {
   deliveriesThisMonth: number;
   pendingTasks: number;
   healthStatus: "normal" | "attention" | "critical";
+  designDeliverables: number;
+  designLimit: number | null;
 }
 
 export function useDashboardData() {
@@ -73,17 +75,19 @@ export function useDashboardData() {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // Parallel fetch for all data - much faster
-      const [tasksRes, clientsRes, contractsRes, teamMembersRes] = await Promise.all([
+      const [tasksRes, clientsRes, contractsRes, teamMembersRes, contractModulesRes] = await Promise.all([
         supabase.from("tasks").select("*").order("due_date"),
         supabase.from("clients").select("*, is_internal"),
         supabase.from("contracts").select("*, client:clients(name)").eq("status", "active"),
         supabase.from("team_members_public").select("*").eq("is_active", true),
+        supabase.from("contract_modules").select("*, service_module:service_modules(name, primary_role), contract:contracts(client_id, status)"),
       ]);
 
       const tasks = tasksRes.data || [];
       const clients = clientsRes.data || [];
       const contracts = contractsRes.data || [];
       const teamMembers = teamMembersRes.data || [];
+      const contractModules = contractModulesRes.data || [];
 
       // Create internal client IDs set for filtering
       const internalClientIds = new Set(
@@ -192,15 +196,27 @@ export function useDashboardData() {
         .slice(0, 4);
 
       // Client health (using operational tasks only)
-      const clientTaskStats = new Map<string, { weight: number; pending: number; delivered: number }>();
+      const clientTaskStats = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number }>();
       operationalTasksForWeight.forEach(t => {
-        const curr = clientTaskStats.get(t.client_id) || { weight: 0, pending: 0, delivered: 0 };
+        const curr = clientTaskStats.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0 };
         if (t.status !== "done") {
           curr.weight += t.weight;
           curr.pending += 1;
         } else {
           const doneDate = new Date(t.updated_at);
-          if (doneDate >= startOfMonth) curr.delivered += 1;
+          if (doneDate >= startOfMonth) {
+            curr.delivered += 1;
+            if ((t as any).deliverable_type === "arte" || (t as any).deliverable_type === "video") {
+              curr.designDeliverables += 1;
+            }
+          }
+        }
+        // Also count non-done design deliverables this month
+        if (t.status !== "done" && ((t as any).deliverable_type === "arte" || (t as any).deliverable_type === "video")) {
+          const taskDate = parseLocalDate(t.due_date);
+          if (taskDate >= startOfMonth) {
+            curr.designDeliverables += 1;
+          }
         }
         clientTaskStats.set(t.client_id, curr);
       });
@@ -215,7 +231,7 @@ export function useDashboardData() {
       const dashboardClients: DashboardClientHealth[] = clients
         .filter((c: { status: string; is_internal?: boolean }) => c.status === "active" && !c.is_internal)
         .map(c => {
-          const stats = clientTaskStats.get(c.id) || { weight: 0, pending: 0, delivered: 0 };
+          const stats = clientTaskStats.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0 };
           const revenue = clientRevenueMap.get(c.id) || 0;
           let healthStatus: "normal" | "attention" | "critical" = "normal";
           if (stats.weight === 0) {
@@ -225,6 +241,15 @@ export function useDashboardData() {
             if (ratio < 200) healthStatus = "critical";
             else if (ratio < 400) healthStatus = "attention";
           }
+          
+          // Find design deliverable limit for this client
+          const clientDesignModules = contractModules.filter((cm: any) => 
+            cm.contract?.client_id === c.id && 
+            cm.contract?.status === "active" &&
+            cm.service_module?.name?.toLowerCase().includes("design")
+          );
+          const designLimit = clientDesignModules.reduce((sum: number, cm: any) => sum + (cm.deliverable_limit || 0), 0) || null;
+          
           return {
             id: c.id,
             name: c.name,
@@ -233,6 +258,8 @@ export function useDashboardData() {
             deliveriesThisMonth: stats.delivered,
             pendingTasks: stats.pending,
             healthStatus,
+            designDeliverables: stats.designDeliverables,
+            designLimit,
           };
         })
         .sort((a, b) => {
