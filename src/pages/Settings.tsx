@@ -435,7 +435,7 @@ export default function Settings() {
         transition={{ delay: 0.1 }}
       >
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="glass flex-wrap h-auto gap-1 p-1">
+          <TabsList className="glass h-auto gap-1 p-1 flex flex-nowrap overflow-x-auto w-full justify-start">
             <TabsTrigger value="general" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Perfil</span>

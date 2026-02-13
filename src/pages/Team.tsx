@@ -241,24 +241,37 @@ export default function Team() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 * index }}
               className={cn(
-                "glass rounded-xl p-5 group transition-all hover:shadow-lg cursor-pointer",
+                "glass rounded-xl p-5 group transition-all hover:shadow-lg cursor-pointer flex flex-col h-full",
                 status === "critical" && "border-destructive/30",
                 status === "attention" && "border-warning/30"
               )}
               onClick={() => handleViewTasks(member)}
             >
-              {/* Row 1: Avatar + Name + Actions */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
+              {/* Row 1: Avatar + Name + Permission + Actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="h-10 w-10 shrink-0">
                     <AvatarImage src={member.avatar_url || undefined} />
                     <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
                       {member.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
-                  <h3 className="font-semibold text-foreground">{member.name}</h3>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">{member.name}</h3>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-xs mt-0.5",
+                        member.permission === "admin"
+                          ? "border-primary/30 text-primary"
+                          : "border-muted text-muted-foreground"
+                      )}
+                    >
+                      {member.permission === "admin" ? "Admin" : "Operacional"}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button 
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
                     onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
@@ -278,33 +291,18 @@ export default function Team() {
                 </div>
               </div>
 
-              {/* Row 2: Role badges */}
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {(member.role || "")
-                  .split(",")
-                  .map((r) => r.trim())
-                  .filter(Boolean)
-                  .filter((r) => !["membro", "operacional", "admin", "administrador"].includes(r.toLowerCase()))
-                  .map((role) => (
-                    <Badge key={role} variant="secondary" className="text-xs">
-                      {role}
-                    </Badge>
-                  ))}
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-xs",
-                    member.permission === "admin"
-                      ? "border-primary/30 text-primary"
-                      : "border-muted text-muted-foreground"
-                  )}
-                >
-                  {member.permission === "admin" ? "Admin" : "Operacional"}
-                </Badge>
+              {/* Tasks summary */}
+              <div className="flex items-center justify-between text-sm text-muted-foreground mt-3">
+                <span>{member.activeTasks} tarefas ativas</span>
+                {member.overdueTasks > 0 && (
+                  <span className="text-destructive font-medium">
+                    {member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}
+                  </span>
+                )}
               </div>
 
-              {/* Row 3: Capacity */}
-              <div className="space-y-2">
+              {/* Capacity - always at bottom */}
+              <div className="space-y-2 mt-auto pt-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Carga</span>
                   <div className="flex items-center gap-2">
@@ -323,16 +321,6 @@ export default function Team() {
                     status === "normal" && "[&>div]:bg-success"
                   )}
                 />
-              </div>
-
-              {/* Row 4: Tasks summary */}
-              <div className="flex items-center justify-between text-sm text-muted-foreground mt-3">
-                <span>{member.activeTasks} tarefas ativas</span>
-                {member.overdueTasks > 0 && (
-                  <span className="text-destructive font-medium">
-                    {member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}
-                  </span>
-                )}
               </div>
             </motion.div>
           );
