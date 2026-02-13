@@ -29,6 +29,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [monthlyValue, setMonthlyValue] = useState(0);
+  const [noValue, setNoValue] = useState(false);
   const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [minDuration, setMinDuration] = useState(6);
   const [renewalDate, setRenewalDate] = useState("");
@@ -48,12 +49,14 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   useEffect(() => {
     if (contract) {
       setMonthlyValue(contract.monthly_value);
+      setNoValue(contract.monthly_value === 0);
       setStartDate(contract.start_date);
       setMinDuration(contract.minimum_duration_months);
       setRenewalDate(contract.renewal_date || "");
       setNotes(contract.notes || "");
     } else {
       setMonthlyValue(0);
+      setNoValue(false);
       setStartDate(format(new Date(), "yyyy-MM-dd"));
       setMinDuration(6);
       setRenewalDate(format(addMonths(new Date(), 5), "yyyy-MM-dd"));
@@ -97,7 +100,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   };
 
   const handleSave = async () => {
-    if (monthlyValue <= 0 || !startDate) return;
+    if (!noValue && monthlyValue <= 0 || !startDate) return;
 
     try {
       if (isEditing && contract) {
@@ -179,7 +182,18 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
               id="value"
               value={monthlyValue}
               onChange={setMonthlyValue}
+              disabled={noValue}
             />
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground">
+              <Checkbox
+                checked={noValue}
+                onCheckedChange={(checked) => {
+                  setNoValue(!!checked);
+                  if (checked) setMonthlyValue(0);
+                }}
+              />
+              Sem valor (serviço gratuito ou interno)
+            </label>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -296,7 +310,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || monthlyValue <= 0}>
+          <Button onClick={handleSave} disabled={isSaving || (!noValue && monthlyValue <= 0)}>
             {isSaving ? "Salvando..." : isEditing ? "Salvar" : "Criar Contrato"}
           </Button>
         </div>
