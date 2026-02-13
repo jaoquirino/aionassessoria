@@ -36,14 +36,22 @@
        const now = new Date();
  
        // Fetch onboarding tasks (type = 'project')
-       const { data: tasksData, error } = await supabase
-         .from("tasks")
-         .select("*, client:clients(name)")
-         .eq("type", "project")
-         .is("archived_at", null)
-         .neq("status", "done")
-         .order("due_date", { ascending: true })
-         .limit(5);
+        // Only show project tasks for clients that are actually in onboarding status
+        const { data: tasksData, error } = await supabase
+          .from("tasks")
+          .select("*, client:clients(name, status)")
+          .eq("type", "project")
+          .is("archived_at", null)
+          .neq("status", "done")
+          .order("due_date", { ascending: true })
+          .limit(20);
+
+        if (error) throw error;
+
+        // Filter to only clients with onboarding status
+        const onboardingTasks = (tasksData || []).filter(
+          (task: any) => task.client?.status === "onboarding"
+        ).slice(0, 5);
  
        if (error) throw error;
  
@@ -54,17 +62,17 @@
  
        const membersMap = new Map(teamMembers?.map(m => [m.id, m]) || []);
  
-       return (tasksData || []).map(task => ({
-         id: task.id,
-         title: task.title,
-         clientName: task.client?.name || "—",
-         assigneeName: task.assigned_to ? (membersMap.get(task.assigned_to)?.name || "Não atribuído") : "Não atribuído",
-         assigneeAvatar: task.assigned_to ? (membersMap.get(task.assigned_to)?.avatar_url || null) : null,
-         dueDate: task.due_date,
-         status: task.status,
-         isOverdue: parseLocalDate(task.due_date) < now && task.status !== "done",
-         weight: task.weight,
-       })) as OnboardingTask[];
+        return (onboardingTasks).map(task => ({
+          id: task.id,
+          title: task.title,
+          clientName: task.client?.name || "—",
+          assigneeName: task.assigned_to ? (membersMap.get(task.assigned_to)?.name || "Não atribuído") : "Não atribuído",
+          assigneeAvatar: task.assigned_to ? (membersMap.get(task.assigned_to)?.avatar_url || null) : null,
+          dueDate: task.due_date,
+          status: task.status,
+          isOverdue: parseLocalDate(task.due_date) < now && task.status !== "done",
+          weight: task.weight,
+        })) as OnboardingTask[];
      },
      staleTime: 30000,
    });
