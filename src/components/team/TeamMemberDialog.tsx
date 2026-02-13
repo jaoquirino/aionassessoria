@@ -16,25 +16,13 @@ import { isPasswordStrong } from "@/lib/passwordValidation";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRoleNames } from "@/hooks/useAvailableRoles";
 
 interface TeamMemberDialogProps {
   member?: TeamMember | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const roleOptions = [
-  "Designer",
-  "Gestor de Tráfego",
-  "Copywriter",
-  "Comercial",
-  "Atendimento",
-  "Desenvolvedor",
-  "Social Media",
-  "Estrategista",
-  "Diretor de Arte",
-  "Produtor de Conteúdo",
-];
 
 export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialogProps) {
   const [name, setName] = useState("");
@@ -52,6 +40,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
   const queryClient = useQueryClient();
   const createMember = useCreateTeamMember();
   const updateMember = useUpdateTeamMember();
+  const roleOptions = useRoleNames();
   const linkToMember = useLinkToTeamMember();
   const unlinkMember = useUnlinkTeamMember();
 

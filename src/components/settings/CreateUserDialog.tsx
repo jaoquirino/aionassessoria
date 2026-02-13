@@ -12,27 +12,16 @@
  import { PasswordRequirements } from "./PasswordRequirements";
  import { isPasswordStrong } from "@/lib/passwordValidation";
  import { useQueryClient } from "@tanstack/react-query";
+ import { useRoleNames } from "@/hooks/useAvailableRoles";
  
  interface CreateUserDialogProps {
    open: boolean;
    onOpenChange: (open: boolean) => void;
  }
  
- const roleOptions = [
-   "Designer",
-   "Gestor de Tráfego",
-   "Copywriter",
-   "Comercial",
-   "Atendimento",
-   "Desenvolvedor",
-   "Social Media",
-   "Estrategista",
-   "Diretor de Arte",
-   "Produtor de Conteúdo",
- ];
- 
  export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
    const queryClient = useQueryClient();
+   const roleOptions = useRoleNames();
    
    // Step 1: Credentials
    const [step, setStep] = useState<1 | 2>(1);

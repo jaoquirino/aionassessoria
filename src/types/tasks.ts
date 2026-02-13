@@ -225,10 +225,4 @@ export const priorityConfig: Record<TaskPriority, { label: string; color: string
   urgent: { label: "Pra ontem", color: "bg-destructive/20 text-destructive", order: 1 },
 };
 
-export const roleOptions = [
-  "Designer",
-  "Gestor de Tráfego",
-  "Copywriter",
-  "Comercial",
-  "Desenvolvedor",
-];
+// roleOptions moved to useAvailableRoles hook (dynamic from database)

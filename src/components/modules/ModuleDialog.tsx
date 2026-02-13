@@ -7,21 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useCreateModule, useUpdateModule, type ServiceModule } from "@/hooks/useModules";
+import { useRoleNames } from "@/hooks/useAvailableRoles";
 
 interface ModuleDialogProps {
   module?: ServiceModule | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const roleOptions = [
-  "Designer",
-  "Gestor de Tráfego",
-  "Copywriter",
-  "Comercial",
-  "Atendimento",
-  "Desenvolvedor",
-];
 
 export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) {
   const [name, setName] = useState("");
@@ -33,6 +25,7 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
 
   const createModule = useCreateModule();
   const updateModule = useUpdateModule();
+  const roleOptions = useRoleNames();
 
   const isEditing = !!module;
 
