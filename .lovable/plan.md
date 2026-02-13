@@ -1,115 +1,46 @@
 
-# Plano: Melhorias de Funcionalidades em Tarefas
+# Plano de Correções: Cards da Equipe, Aba de Cargos e Saúde dos Clientes
 
-## Resumo das Melhorias
+## Problema 1: Layout dos cards da Equipe
+O card atual mostra todos os cargos diretamente, ficando visualmente poluído. O novo layout solicitado:
+- **Linha 1**: Foto + Nome + (Admin/Operacional) + botoes editar/deletar no final
+- **Cargos**: Nao mostrar no card, apenas ao abrir o funcionario
+- **Barra de carga**: Sempre alinhada ao final do card
 
-Este plano adiciona interatividade inline aos cards de tarefas, permitindo edição rápida sem abrir o modal completo, além de um botão geral para criar tarefas.
-
----
-
-## Funcionalidades a Implementar
-
-### 1. Botão Geral de Adicionar Tarefa
-Adicionar um botão "Nova Tarefa" no header da página de Tarefas (ao lado do toggle Kanban/Lista) que abre um modal de criação completo.
-
-### 2. Edição Inline nos Cards (Kanban e Lista)
-Cada elemento clicável no card abrirá um popover/dropdown para edição rápida:
-
-| Campo | Ação |
-|-------|------|
-| **Responsável** | Click abre dropdown com lista de membros da equipe (múltipla seleção para futuro) |
-| **Data** | Click abre calendário picker inline |
-| **Função (required_role)** | Click abre dropdown com opções: Designer, Gestor de Tráfego, Copywriter, Comercial, Desenvolvedor |
-
-### 3. Remoção do Badge "Média" (Prioridade)
-O badge exibindo "Média", "Alta", etc. será possível alterar a prioridade da tarefa.
+### Alteracao
+- **src/pages/Team.tsx**: Reestruturar o card para usar `flex flex-col h-full` com a barra de capacidade em `mt-auto`, remover os badges de cargo do card, e colocar o badge Admin/Operacional ao lado do nome na primeira linha.
 
 ---
 
-## Detalhes Técnicos
+## Problema 2: Aba de Cargos nao aparece nas Configuracoes
+A aba existe no codigo (linha 477-482 de Settings.tsx), mas com muitas abas na TabsList, ela pode estar sendo cortada visualmente em telas menores ou o scroll nao esta funcionando. 
 
-### Arquivos a Modificar
+### Alteracao
+- **src/pages/Settings.tsx**: Garantir que a TabsList tenha `overflow-x-auto` e `flex-nowrap` para que todas as abas fiquem visiveis com scroll horizontal. Tambem reorganizar a ordem das abas para que "Cargos" fique mais acessivel.
 
-**`src/pages/Tasks.tsx`**
-- Adicionar botão "Nova Tarefa" no header
-- Criar função `handleAddGeneralTask()` para criar tarefa via modal
+---
 
-**`src/components/tasks/TaskKanbanBoard.tsx`**
-- Modificar `TaskCard` para aceitar callbacks de edição inline
-- Adicionar popovers para cada campo editável
-- Passar props: `onAssigneeChange`, `onDueDateChange`, `onRoleChange`, `teamMembers`, `roleOptions`
-
-**`src/components/tasks/TaskListView.tsx`**
-- Aplicar mesma lógica de edição inline
-- Adicionar popovers para responsável, data e função
-
-**`src/hooks/useTasks.ts`**
-- Adicionar mutation `useUpdateTaskField` otimizada para atualizações parciais rápidas
-
-### Componentes de UI Utilizados
-- `Popover` + `PopoverContent` (já existe no projeto)
-- `Calendar` para seleção de data
-- `Select` ou `Command` para seleção de responsável/função
-- `Checkbox` para seleção múltipla de responsáveis (preparação futura)
-
-### Fluxo de Interação
+## Problema 3: Tabela "Saude dos Clientes" sempre mostra "Critico"
+O bug esta na logica de calculo do `healthStatus` em `src/hooks/useDashboard.ts` (linha 220):
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  Card da Tarefa                                              │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │ [Título da Tarefa]                                      │ │
-│  │ Cliente: Empresa XYZ                                    │ │
-│  │                                                         │ │
-│  │ [Click: Função] ───────► Popover com Select             │ │
-│  │   Designer ▼             ├── Designer                   │ │
-│  │                          ├── Gestor de Tráfego          │ │
-│  │                          ├── Copywriter                 │ │
-│  │                          └── ...                        │ │
-│  │                                                         │ │
-│  │ [Click: Responsável] ──► Popover com lista de membros   │ │
-│  │   👤 João Silva          ├── ☑ João Silva               │ │
-│  │                          ├── ☐ Maria Santos             │ │
-│  │                          └── ...                        │ │
-│  │                                                         │ │
-│  │ [Click: Data] ─────────► Popover com Calendário         │ │
-│  │   📅 04/02                ┌──────────────┐              │ │
-│  │                          │   Fev 2026   │              │ │
-│  │                          │ [Calendário] │              │ │
-│  │                          └──────────────┘              │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+const ratio = revenue > 0 && stats.weight > 0 ? revenue / stats.weight : 1;
+```
+
+Quando o peso operacional e 0 (sem tarefas ativas), o ratio cai para 1, que e menor que 200 e portanto "critico". O correto e: se nao ha peso operacional, o cliente esta saudavel (sem carga = sem problema).
+
+### Alteracao
+- **src/hooks/useDashboard.ts**: Corrigir a logica para que `stats.weight === 0` resulte em status "normal" em vez de "critico":
+
+```text
+if (stats.weight === 0) healthStatus = "normal"
+else if (ratio < 200) healthStatus = "critical"
+else if (ratio < 400) healthStatus = "attention"
 ```
 
 ---
 
-## Considerações
-
-### Performance
-- As atualizações usarão optimistic updates do React Query para feedback instantâneo
-- Cache será atualizado localmente antes da resposta do servidor
-
-### UX
-- Click fora do popover fecha e salva automaticamente
-- Indicador visual de "salvando" durante mutations
-- Campos clicáveis terão hover sutil para indicar interatividade
-
-### Banco de Dados
-- Não são necessárias alterações no esquema
-- A coluna `required_role` já existe e aceita strings
-- O campo `assigned_to` já é uma FK para `team_members`
-
-### Múltiplos Responsáveis (Preparação Futura)
-- A UI será preparada para múltipla seleção com checkboxes
-- Quando for implementado no backend, bastará adicionar uma tabela de junção `task_assignees`
-
----
-
-## Ordem de Implementação
-
-1. ~~Adicionar botão geral "Nova Tarefa" no header~~ ✅
-2. ~~Criar componente `InlineEditPopover` reutilizável~~ ✅
-3. ~~Modificar `TaskCard` com edição inline (Kanban)~~ ✅
-4. ~~Modificar `TaskListView` com edição inline~~ ✅
-5. ~~Tornar badge de prioridade editável~~ ✅
-6. Testar fluxo completo
+## Resumo dos arquivos a editar
+1. `src/pages/Team.tsx` - Redesign do card (foto+nome+permissao na linha 1, sem cargos, carga no final)
+2. `src/pages/Settings.tsx` - Corrigir visibilidade da aba Cargos com scroll horizontal
+3. `src/hooks/useDashboard.ts` - Corrigir logica de saude quando peso = 0
