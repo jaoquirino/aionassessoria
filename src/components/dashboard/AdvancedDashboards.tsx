@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, CalendarIcon } from "lucide-react";
+import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, CalendarIcon, Image, Video, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -209,6 +209,44 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
         </Card>
       </div>
 
+      {/* Design Deliverables Count */}
+      {(() => {
+        const arteCount = filteredDeliveries.filter(d => d.deliverableType === "arte").length;
+        const videoCount = filteredDeliveries.filter(d => d.deliverableType === "video").length;
+        const totalDesign = arteCount + videoCount;
+        if (totalDesign === 0) return null;
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Entregáveis de Design
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 rounded-lg bg-muted/50">
+                  <div className="text-2xl font-bold">{totalDesign}</div>
+                  <p className="text-xs text-muted-foreground">Total</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-purple/10">
+                  <div className="text-2xl font-bold text-purple flex items-center justify-center gap-1">
+                    <Image className="h-4 w-4" /> {arteCount}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Artes</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-info/10">
+                  <div className="text-2xl font-bold text-info flex items-center justify-center gap-1">
+                    <Video className="h-4 w-4" /> {videoCount}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Vídeos</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Deliveries List */}
       <Card>
         <CardHeader>
@@ -239,9 +277,19 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                         </p>
                       </div>
                     </div>
-                    <Badge className={cn("shrink-0", statusConfig[delivery.status]?.color)}>
-                      {statusConfig[delivery.status]?.label || delivery.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {delivery.deliverableType && (
+                        <Badge variant="outline" className={cn(
+                          "text-xs shrink-0",
+                          delivery.deliverableType === "arte" ? "border-purple/30 text-purple" : "border-info/30 text-info"
+                        )}>
+                          {delivery.deliverableType === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
+                        </Badge>
+                      )}
+                      <Badge className={cn("shrink-0", statusConfig[delivery.status]?.color)}>
+                        {statusConfig[delivery.status]?.label || delivery.status}
+                      </Badge>
+                    </div>
                   </div>
                 );
               })

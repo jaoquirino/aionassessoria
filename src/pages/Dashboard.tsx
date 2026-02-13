@@ -420,13 +420,14 @@ export default function Dashboard() {
                     <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Cliente</th>
                     <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Receita</th>
                     <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Peso</th>
+                    <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Design</th>
                     <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {clients.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-muted-foreground">Nenhum cliente ativo</td>
+                      <td colSpan={5} className="py-8 text-center text-muted-foreground">Nenhum cliente ativo</td>
                     </tr>
                   ) : (
                     clients.map((client, index) => (
@@ -464,6 +465,21 @@ export default function Dashboard() {
                           >
                             {client.operationalWeight}
                           </span>
+                        </td>
+                        <td className="py-4">
+                          {client.designDeliverables > 0 || client.designLimit ? (
+                            <span className={cn(
+                              "text-xs font-medium",
+                              client.designLimit && client.designDeliverables >= client.designLimit
+                                ? "text-destructive"
+                                : "text-muted-foreground"
+                            )}>
+                              {client.designDeliverables}{client.designLimit ? `/${client.designLimit}` : ""}
+                              {client.designLimit && client.designDeliverables >= client.designLimit && " ⚠️"}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td className="py-4">
                           <span

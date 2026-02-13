@@ -98,6 +98,7 @@ export interface Task {
   description_references: string | null;
   description_notes: string | null;
   is_deliverable: boolean;
+  deliverable_type: string | null;
   archived_at: string | null;
   created_at: string;
   updated_at: string;
@@ -197,6 +198,7 @@ export interface UpdateTaskInput {
   description_references?: string | null;
   description_notes?: string | null;
   is_deliverable?: boolean;
+  deliverable_type?: string | null;
 }
 
 // Status config for UI - incluindo "overdue" virtual

@@ -11,6 +11,7 @@ export interface DeliveryItem {
   completedAt: string | null;
   moduleName: string | null;
   weight: number;
+  deliverableType: string | null;
 }
 
 export interface FinancialComparison {
@@ -35,6 +36,7 @@ export function useDeliveriesByClient(clientId?: string) {
           due_date,
           weight,
           is_deliverable,
+          deliverable_type,
           client_id,
           archived_at,
           type,
@@ -66,6 +68,7 @@ export function useDeliveriesByClient(clientId?: string) {
         completedAt: task.status === "done" ? task.due_date : null,
         moduleName: task.contract_modules?.service_module?.name || null,
         weight: task.weight,
+        deliverableType: (task as any).deliverable_type || null,
       })) as DeliveryItem[];
     },
   });

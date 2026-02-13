@@ -795,6 +795,7 @@ export type Database = {
           contract_module_id: string | null
           created_at: string
           created_by: string | null
+          deliverable_type: string | null
           description_deliverable: string | null
           description_notes: string | null
           description_objective: string | null
@@ -818,6 +819,7 @@ export type Database = {
           contract_module_id?: string | null
           created_at?: string
           created_by?: string | null
+          deliverable_type?: string | null
           description_deliverable?: string | null
           description_notes?: string | null
           description_objective?: string | null
@@ -841,6 +843,7 @@ export type Database = {
           contract_module_id?: string | null
           created_at?: string
           created_by?: string | null
+          deliverable_type?: string | null
           description_deliverable?: string | null
           description_notes?: string | null
           description_objective?: string | null

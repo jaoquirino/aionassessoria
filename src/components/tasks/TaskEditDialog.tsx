@@ -154,6 +154,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const [taskType, setTaskType] = useState<TaskType>("recurring");
   const [weight, setWeight] = useState<number>(2);
   const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [deliverableType, setDeliverableType] = useState<string | null>(null);
 
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [newAttachmentName, setNewAttachmentName] = useState("");
@@ -190,6 +191,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       setContractModuleId(task.contract_module_id || "");
       setTaskType(task.type);
       setWeight(task.weight);
+      setDeliverableType(task.deliverable_type || null);
     }
   }, [task]);
 
@@ -250,7 +252,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         contract_id: contractId,
         type: taskType,
         weight,
-      });
+        deliverable_type: deliverableType,
+      } as any);
 
        // Save multiple assignees
        await setTaskAssignees.mutateAsync({ taskId: task.id, memberIds: selectedAssignees });
@@ -612,6 +615,32 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       </SelectContent>
                     </Select>
                   </div>
+
+                   {/* Deliverable Type - only for design modules */}
+                  {(() => {
+                    const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);
+                    const isDesignModule = selectedModule?.moduleName?.toLowerCase().includes("design");
+                    if (!isDesignModule) return null;
+                    return (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-1">
+                          <Package className="h-3 w-3" /> Tipo de Entregável
+                        </Label>
+                        <Select 
+                          value={deliverableType || ""} 
+                          onValueChange={(val) => { setDeliverableType(val || null); markDirty(); }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="arte">🎨 Arte</SelectItem>
+                            <SelectItem value="video">🎬 Vídeo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })()}
 
                   <Separator />
 

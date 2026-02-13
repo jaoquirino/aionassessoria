@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Plus, Trash2, Loader2, Briefcase } from "lucide-react";
+import { Plus, Trash2, Loader2, Briefcase, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
@@ -14,14 +13,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useAvailableRoles, useCreateRole, useDeleteRole, type AvailableRole } from "@/hooks/useAvailableRoles";
+import { useAvailableRoles, useCreateRole, useUpdateRole, useDeleteRole, type AvailableRole } from "@/hooks/useAvailableRoles";
 
 export function RolesManagementTab() {
   const [newRoleName, setNewRoleName] = useState("");
   const [deletingRole, setDeletingRole] = useState<AvailableRole | null>(null);
+  const [editingRole, setEditingRole] = useState<AvailableRole | null>(null);
+  const [editName, setEditName] = useState("");
 
   const { data: roles = [], isLoading } = useAvailableRoles();
   const createRole = useCreateRole();
+  const updateRole = useUpdateRole();
   const deleteRole = useDeleteRole();
 
   const handleAdd = async () => {
@@ -34,6 +36,23 @@ export function RolesManagementTab() {
     if (!deletingRole) return;
     await deleteRole.mutateAsync(deletingRole.id);
     setDeletingRole(null);
+  };
+
+  const handleStartEdit = (role: AvailableRole) => {
+    setEditingRole(role);
+    setEditName(role.name);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingRole || !editName.trim()) return;
+    await updateRole.mutateAsync({ id: editingRole.id, name: editName });
+    setEditingRole(null);
+    setEditName("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRole(null);
+    setEditName("");
   };
 
   if (isLoading) {
@@ -83,16 +102,55 @@ export function RolesManagementTab() {
             key={role.id}
             className="flex items-center justify-between rounded-lg border p-3 group"
           >
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-foreground">{role.name}</span>
-            </div>
-            <button
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-              onClick={() => setDeletingRole(role)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            {editingRole?.id === role.id ? (
+              <div className="flex items-center gap-2 flex-1 mr-2">
+                <Briefcase className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveEdit();
+                    if (e.key === "Escape") handleCancelEdit();
+                  }}
+                  className="h-8"
+                  autoFocus
+                />
+                <button
+                  className="rounded-lg p-1.5 text-success hover:bg-success/10 transition-colors"
+                  onClick={handleSaveEdit}
+                  disabled={updateRole.isPending}
+                >
+                  {updateRole.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                </button>
+                <button
+                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted transition-colors"
+                  onClick={handleCancelEdit}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-foreground">{role.name}</span>
+                </div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                    onClick={() => handleStartEdit(role)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    onClick={() => setDeletingRole(role)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))}
         {roles.length === 0 && (

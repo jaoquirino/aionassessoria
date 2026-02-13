@@ -1,6 +1,6 @@
  import { useState, useMemo, useEffect } from "react";
  import { motion, Reorder } from "framer-motion";
- import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare } from "lucide-react";
+ import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare, Image, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -371,7 +371,18 @@ interface TaskCardProps {
                 {priorityInfo.label}
               </Badge>
             </button>
-          </PriorityPopover>
+           </PriorityPopover>
+
+          {/* Deliverable Type Badge (Arte/Vídeo) */}
+          {task.deliverable_type && (
+            <Badge variant="outline" className={cn(
+              "text-xs gap-1",
+              task.deliverable_type === "arte" ? "border-purple/30 text-purple" : "border-info/30 text-info"
+            )}>
+              {task.deliverable_type === "arte" ? <Image className="h-3 w-3" /> : <Video className="h-3 w-3" />}
+              {task.deliverable_type === "arte" ? "Arte" : "Vídeo"}
+            </Badge>
+          )}
 
           {/* Responsável - Clicável */}
            <MultiAssigneePopover
