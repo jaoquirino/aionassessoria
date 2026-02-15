@@ -35,6 +35,7 @@ import { ClientDataExportTab } from "@/components/settings/ClientDataExportTab";
 import { CreateUserDialog } from "@/components/settings/CreateUserDialog";
 import { RolesManagementTab } from "@/components/settings/RolesManagementTab";
 import { PrioritiesManagementTab } from "@/components/settings/PrioritiesManagementTab";
+import { SavedColorsManagementTab } from "@/components/settings/SavedColorsManagementTab";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -850,6 +851,12 @@ export default function Settings() {
             {isAdmin && (
               <div className="glass rounded-xl p-6 space-y-6">
                 <PrioritiesManagementTab />
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="glass rounded-xl p-6 space-y-6">
+                <SavedColorsManagementTab />
               </div>
             )}
           </TabsContent>

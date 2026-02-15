@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
-import { Plus, Pencil, Trash2, Pipette } from "lucide-react";
-import { HexColorPicker as ReactColorfulPicker } from "react-colorful";
+import { useState } from "react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Dialog,
   DialogContent,
@@ -31,48 +31,7 @@ import {
   type Priority,
 } from "@/hooks/usePriorities";
 
-function ColorPickerField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const nativeRef = useRef<HTMLInputElement>(null);
-
-  const handleHexInput = (input: string) => {
-    onChange(input);
-  };
-
-  return (
-    <div className="space-y-3">
-      <ReactColorfulPicker color={value} onChange={onChange} style={{ width: "100%" }} />
-      <div className="flex items-center gap-2">
-        <div
-          className="w-8 h-8 rounded-lg border border-border shrink-0"
-          style={{ backgroundColor: value }}
-        />
-        <Input
-          value={value}
-          onChange={(e) => handleHexInput(e.target.value)}
-          placeholder="#3B82F6"
-          className="font-mono text-sm flex-1"
-          maxLength={7}
-        />
-        <button
-          type="button"
-          className="p-2 rounded hover:bg-muted transition-colors"
-          onClick={() => nativeRef.current?.click()}
-          title="Selecionar cor"
-        >
-          <Pipette className="h-4 w-4 text-muted-foreground" />
-        </button>
-        <input
-          ref={nativeRef}
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="sr-only"
-        />
-      </div>
-    </div>
-  );
-}
-
+// ColorPickerField removed - using shared ColorPicker from ui/color-picker
 export function PrioritiesManagementTab() {
   const { data: priorities = [], isLoading } = usePriorities();
   const createPriority = useCreatePriority();
@@ -229,7 +188,7 @@ export function PrioritiesManagementTab() {
             </div>
             <div className="space-y-2">
               <Label>Cor</Label>
-              <ColorPickerField value={formColor} onChange={setFormColor} />
+              <ColorPicker value={formColor} onChange={setFormColor} />
             </div>
             <div className="pt-2">
               <Label className="text-xs text-muted-foreground">Preview</Label>
