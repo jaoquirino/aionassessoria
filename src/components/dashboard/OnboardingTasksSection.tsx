@@ -35,7 +35,7 @@
      queryFn: async () => {
        const now = new Date();
  
-       // Fetch onboarding tasks (type = 'project')
+       // Fetch onboarding tasks (type = 'onboarding')
         // Only show onboarding-type tasks
         const { data: tasksData, error } = await supabase
           .from("tasks")

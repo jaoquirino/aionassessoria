@@ -43,7 +43,7 @@ export function OnboardingClientCard({
         .from("tasks")
         .select("id, status")
         .eq("client_id", client.id)
-        .eq("type", "project")
+        .eq("type", "onboarding")
         .is("archived_at", null);
 
       if (error) throw error;
