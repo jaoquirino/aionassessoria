@@ -507,6 +507,30 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_colors: {
+        Row: {
+          created_at: string
+          hex: string
+          id: string
+          label: string | null
+          order_index: number
+        }
+        Insert: {
+          created_at?: string
+          hex: string
+          id?: string
+          label?: string | null
+          order_index?: number
+        }
+        Update: {
+          created_at?: string
+          hex?: string
+          id?: string
+          label?: string | null
+          order_index?: number
+        }
+        Relationships: []
+      }
       service_modules: {
         Row: {
           created_at: string
