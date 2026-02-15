@@ -107,7 +107,7 @@ export default function ClientOnboarding() {
         .from("tasks")
         .select("*")
         .eq("client_id", clientId)
-        .eq("type", "project")
+        .eq("type", "onboarding")
         .is("archived_at", null)
         .order("created_at", { ascending: true });
       if (error) throw error;
