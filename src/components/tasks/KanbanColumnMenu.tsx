@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { MoreVertical, Pencil, Trash2, Plus, Pipette } from "lucide-react";
+import { HexColorPicker } from "react-colorful";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,26 +62,32 @@ function getHexFromColor(colorClass: string): string {
 }
 
 function ColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [mode, setMode] = useState<"preset" | "custom">(isCustomHex(value) ? "custom" : "preset");
   const [hex, setHex] = useState(getHexFromColor(value));
-  const inputRef = useRef<HTMLInputElement>(null);
+  const nativeInputRef = useRef<HTMLInputElement>(null);
+
+  const handleColorChange = useCallback((newHex: string) => {
+    setHex(newHex);
+    onChange(`custom:${newHex}`);
+  }, [onChange]);
+
+  const handleHexInput = (input: string) => {
+    setHex(input);
+    if (/^#[0-9A-Fa-f]{6}$/.test(input)) {
+      onChange(`custom:${input}`);
+    }
+  };
 
   const handlePresetClick = (preset: typeof presetColors[0]) => {
-    setMode("preset");
     setHex(preset.hex);
     onChange(preset.value);
   };
 
-  const handleHexChange = (newHex: string) => {
-    setHex(newHex);
-    if (/^#[0-9A-Fa-f]{6}$/.test(newHex)) {
-      setMode("custom");
-      onChange(`custom:${newHex}`);
-    }
-  };
-
   return (
     <div className="space-y-3">
+      {/* Gradient color picker */}
+      <HexColorPicker color={hex} onChange={handleColorChange} style={{ width: "100%" }} />
+
+      {/* Preset swatches */}
       <div className="grid grid-cols-5 gap-2">
         {presetColors.map((preset) => (
           <button
@@ -89,7 +96,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
             onClick={() => handlePresetClick(preset)}
             className={cn(
               "w-full aspect-square rounded-lg border-2 transition-all hover:scale-110",
-              mode === "preset" && value === preset.value
+              value === preset.value
                 ? "border-foreground ring-2 ring-foreground/20"
                 : "border-transparent"
             )}
@@ -99,7 +106,8 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
         ))}
       </div>
 
-      <div className="flex items-center gap-2 pt-1">
+      {/* HEX input + eyedropper */}
+      <div className="flex items-center gap-2">
         <div
           className="w-8 h-8 rounded-lg border border-border shrink-0"
           style={{ backgroundColor: hex }}
@@ -107,7 +115,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
         <div className="relative flex-1">
           <Input
             value={hex}
-            onChange={(e) => handleHexChange(e.target.value)}
+            onChange={(e) => handleHexInput(e.target.value)}
             placeholder="#FFFFFF"
             className="font-mono text-sm pl-3 pr-10"
             maxLength={7}
@@ -115,16 +123,16 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
           <button
             type="button"
             className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted transition-colors"
-            onClick={() => inputRef.current?.click()}
+            onClick={() => nativeInputRef.current?.click()}
             title="Selecionar cor"
           >
             <Pipette className="h-4 w-4 text-muted-foreground" />
           </button>
           <input
-            ref={inputRef}
+            ref={nativeInputRef}
             type="color"
             value={hex}
-            onChange={(e) => handleHexChange(e.target.value)}
+            onChange={(e) => handleColorChange(e.target.value)}
             className="sr-only"
           />
         </div>

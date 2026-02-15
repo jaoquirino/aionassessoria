@@ -532,15 +532,38 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       <Label>Prioridade</Label>
                       <Select value={priority} onValueChange={(v) => { setPriority(v as TaskPriority); markDirty(); }}>
                         <SelectTrigger>
-                          <SelectValue />
+                          {(() => {
+                            const current = dbPriorities.find(p => p.key === priority);
+                            if (current) {
+                              return (
+                                <Badge
+                                  className="text-xs"
+                                  style={{
+                                    backgroundColor: `${current.color}40`,
+                                    color: current.color,
+                                    borderColor: `${current.color}60`,
+                                  }}
+                                >
+                                  {current.label}
+                                </Badge>
+                              );
+                            }
+                            return <SelectValue />;
+                          })()}
                         </SelectTrigger>
                         <SelectContent>
                           {dbPriorities.length > 0 ? dbPriorities.map(p => (
                             <SelectItem key={p.key} value={p.key}>
-                              <span className="flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                              <Badge
+                                className="text-xs"
+                                style={{
+                                  backgroundColor: `${p.color}40`,
+                                  color: p.color,
+                                  borderColor: `${p.color}60`,
+                                }}
+                              >
                                 {p.label}
-                              </span>
+                              </Badge>
                             </SelectItem>
                           )) : (
                             <>
