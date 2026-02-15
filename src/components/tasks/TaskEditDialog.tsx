@@ -163,6 +163,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const [isSaving, setIsSaving] = useState(false);
   const isDirtyRef = useRef(false);
   const loadedTaskIdRef = useRef<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch modules for the selected client
   const { data: clientModules = [] } = useClientModules(clientId);
@@ -366,10 +367,12 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 )}
               </div>
               <Input 
+                ref={titleInputRef}
                 value={title} 
                 onChange={(e) => { setTitle(e.target.value); markDirty(); }}
-                className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="text-xl font-bold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                 placeholder="Título da tarefa"
+                autoFocus
               />
             </div>
 
@@ -415,36 +418,52 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                 {/* Details Tab */}
                 <TabsContent value="details" className="p-6 space-y-6 mt-0">
-                  {/* Status with colors */}
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select value={status} onValueChange={(v) => { setStatus(v as TaskStatusDB); markDirty(); }}>
-                      <SelectTrigger>
-                        <SelectValue>
-                          <Badge className={getStatusColor(status)}>
-                            {taskStatusConfig[status]?.label || status}
-                          </Badge>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(Object.entries(taskStatusConfig) as [string, typeof taskStatusConfig[keyof typeof taskStatusConfig]][])
-                          .filter(([key]) => key !== "overdue")
-                          .map(([key, config]) => (
-                          <SelectItem 
-                            key={key} 
-                            value={key}
-                            disabled={key === "done" && !canComplete}
-                          >
-                            <Badge className={getStatusColor(key)}>
-                              {config.label}
+                  {/* Status + Priority side by side */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select value={status} onValueChange={(v) => { setStatus(v as TaskStatusDB); markDirty(); }}>
+                        <SelectTrigger>
+                          <SelectValue>
+                            <Badge className={getStatusColor(status)}>
+                              {taskStatusConfig[status]?.label || status}
                             </Badge>
-                            {key === "done" && !canComplete && (
-                              <span className="text-xs text-muted-foreground ml-2">(complete o checklist)</span>
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(Object.entries(taskStatusConfig) as [string, typeof taskStatusConfig[keyof typeof taskStatusConfig]][])
+                            .filter(([key]) => key !== "overdue")
+                            .map(([key, config]) => (
+                            <SelectItem 
+                              key={key} 
+                              value={key}
+                              disabled={key === "done" && !canComplete}
+                            >
+                              <Badge className={getStatusColor(key)}>
+                                {config.label}
+                              </Badge>
+                              {key === "done" && !canComplete && (
+                                <span className="text-xs text-muted-foreground ml-2">(complete o checklist)</span>
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Prioridade</Label>
+                      <Select value={priority} onValueChange={(v) => { setPriority(v as TaskPriority); markDirty(); }}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="urgent">🔴 Urgente</SelectItem>
+                          <SelectItem value="high">🟠 Alta</SelectItem>
+                          <SelectItem value="medium">🟡 Média</SelectItem>
+                          <SelectItem value="low">🟢 Baixa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {/* Completion Warning - only show if checklist is incomplete */}
@@ -589,32 +608,6 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     </div>
                   </div>
 
-                  {/* Priority Display */}
-                  <div className="space-y-2">
-                    <Label>Prioridade</Label>
-                    <Select 
-                      value={priority} 
-                      onValueChange={(val) => { setPriority(val as TaskPriority); markDirty(); }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">
-                          <Badge className="bg-success/20 text-success">Baixa</Badge>
-                        </SelectItem>
-                        <SelectItem value="medium">
-                          <Badge className="bg-warning/20 text-warning">Média</Badge>
-                        </SelectItem>
-                        <SelectItem value="high">
-                          <Badge className="bg-primary/20 text-primary">Alta</Badge>
-                        </SelectItem>
-                        <SelectItem value="urgent">
-                          <Badge className="bg-destructive/20 text-destructive">Pra ontem</Badge>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
 
                    {/* Deliverable Type - only for design modules */}
                   {(() => {
