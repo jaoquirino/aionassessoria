@@ -201,6 +201,61 @@ export function useToggleSubtask() {
   });
 }
 
+export function useUpdateSubtask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      subtaskId,
+      parentTaskId,
+      updates,
+    }: {
+      subtaskId: string;
+      parentTaskId: string;
+      updates: Partial<Task>;
+    }) => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .update(updates as any)
+        .eq("id", subtaskId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async ({ subtaskId, parentTaskId, updates }) => {
+      const queryKey = ["subtasks", parentTaskId];
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+
+      queryClient.setQueryData(queryKey, (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.map((t) =>
+          t.id === subtaskId ? { ...t, ...updates } : t
+        );
+      });
+
+      return { previous };
+    },
+    onError: (_, variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(
+          ["subtasks", variables.parentTaskId],
+          context.previous
+        );
+      }
+      toast.error("Erro ao atualizar subtarefa");
+    },
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["subtasks", variables.parentTaskId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["subtask_counts"] });
+    },
+  });
+}
+
 export function useDeleteSubtask() {
   const queryClient = useQueryClient();
 
