@@ -17,7 +17,7 @@ import { taskStatusConfig, priorityConfig } from "@/types/tasks";
  import { DatePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
  import { MultiAssigneePopover } from "./MultiAssigneePopover";
  import { StackedAvatars } from "./StackedAvatars";
- import { KanbanColumnMenu, AddColumnDialog } from "./KanbanColumnMenu";
+ import { KanbanColumnMenu, AddColumnDialog, getColumnColorStyle, getColumnColorClass } from "./KanbanColumnMenu";
  import { useKanbanColumns, useUpdateKanbanColumn, useDeleteKanbanColumn, useCreateKanbanColumn, useReorderKanbanColumns, type KanbanColumn } from "@/hooks/useKanbanColumns";
  import { useTasksAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
  import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
@@ -173,9 +173,10 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
             animate={{ opacity: 1, y: 0 }}
             className={cn(
               "rounded-xl border-2 border-dashed p-3 min-h-[500px] min-w-[280px] w-[280px] flex-shrink-0 snap-start transition-colors",
-               column.color_class,
+               getColumnColorClass(column.color_class),
                dragOverColumn === column.key && column.key !== "overdue" && "border-primary bg-primary/5"
             )}
+            style={getColumnColorStyle(column.color_class)}
              onDragOver={(e) => handleDragOver(e, column.key)}
             onDragLeave={() => setDragOverColumn(null)}
              onDrop={(e) => handleDrop(e, column.key)}
