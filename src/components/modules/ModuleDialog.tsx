@@ -79,9 +79,19 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
 
   const isSaving = createModule.isPending || updateModule.isPending;
 
+  const handleDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      const target = e.target as HTMLElement;
+      const tagName = target.tagName.toLowerCase();
+      if (tagName === "textarea") return;
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto" onKeyDown={handleDialogKeyDown}>
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Módulo" : "Novo Módulo"}</DialogTitle>
         </DialogHeader>
