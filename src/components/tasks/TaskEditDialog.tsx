@@ -664,7 +664,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                   {/* Weight + Deliverable Type for subtasks */}
                   {isSubtask && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       <div className="space-y-2">
                         <Label>Peso</Label>
                         <Select value={String(weight)} onValueChange={(v) => { setWeight(Number(v)); markDirty(); }}>
@@ -678,22 +678,30 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Tipo de Entregável</Label>
-                        <Select 
-                          value={deliverableType || "none"} 
-                          onValueChange={(val) => { setDeliverableType(val === "none" ? null : val); markDirty(); }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Nenhum" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Nenhum</SelectItem>
-                            <SelectItem value="arte">🎨 Arte</SelectItem>
-                            <SelectItem value="video">🎬 Vídeo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      {/* Only show deliverable type if parent module is design */}
+                      {(() => {
+                        const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);
+                        const isDesignModule = selectedModule?.moduleName?.toLowerCase().includes("design");
+                        if (!isDesignModule) return null;
+                        return (
+                          <div className="space-y-2">
+                            <Label>Tipo de Entregável</Label>
+                            <Select 
+                              value={deliverableType || "none"} 
+                              onValueChange={(val) => { setDeliverableType(val === "none" ? null : val); markDirty(); }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Nenhum" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Nenhum</SelectItem>
+                                <SelectItem value="arte">🎨 Arte</SelectItem>
+                                <SelectItem value="video">🎬 Vídeo</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
@@ -800,7 +808,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           )}>
                             {sub.title}
                           </span>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                               Peso: {sub.weight}
                             </Badge>
@@ -809,9 +817,22 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                                 {sub.deliverable_type === "arte" ? "Arte" : "Vídeo"}
                               </Badge>
                             )}
-                            <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", taskStatusConfig[sub.status]?.color)}>
-                              {taskStatusConfig[sub.status]?.label || sub.status}
-                            </Badge>
+                            <span className="text-[10px] text-muted-foreground">
+                              {sub.due_date ? parseLocalDate(sub.due_date).toLocaleDateString("pt-BR") : "Sem prazo"}
+                            </span>
+                            {sub.contract_module?.service_module?.name && (
+                              <span className="text-[10px] text-muted-foreground">
+                                · {sub.contract_module.service_module.name}
+                              </span>
+                            )}
+                            {(() => {
+                              const assignee = teamMembers.find(m => m.id === sub.assigned_to);
+                              return assignee ? (
+                                <span className="text-[10px] text-muted-foreground">
+                                  · {assignee.name}
+                                </span>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                         <Button
