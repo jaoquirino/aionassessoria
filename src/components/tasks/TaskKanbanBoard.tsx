@@ -1,6 +1,6 @@
  import { useState, useMemo, useEffect } from "react";
  import { motion, Reorder } from "framer-motion";
- import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare, Image, Video } from "lucide-react";
+ import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare, Image, Video, CheckCircle2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -29,13 +29,14 @@ import { format } from "date-fns";
    onAddTask?: (status: TaskStatusDB) => void;
    onUpdateField?: (taskId: string, field: string, value: unknown) => void;
    onArchiveTask?: (taskId: string) => void;
+   onUpdateStatus?: (taskId: string, status: TaskStatusDB) => void;
    teamMembers?: TeamMember[];
    clients?: Client[];
  }
  
  type KanbanColumnKey = "overdue" | TaskStatusDB | string;
 
-export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onUpdateField, onArchiveTask, teamMembers = [], clients = [] }: TaskKanbanBoardProps) {
+export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onUpdateField, onArchiveTask, onUpdateStatus, teamMembers = [], clients = [] }: TaskKanbanBoardProps) {
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
    const [dragOverColumn, setDragOverColumn] = useState<KanbanColumnKey | null>(null);
    const [addColumnOpen, setAddColumnOpen] = useState(false);
@@ -214,11 +215,12 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
                   onDragEnd={handleDragEnd}
                   onClick={(tab) => onTaskClick?.(task.id, tab)}
                   onUpdateField={onUpdateField}
-                  onArchive={onArchiveTask}
-                  teamMembers={teamMembers}
-                  clients={clients}
-                   assignees={(assigneesByTask[task.id] || []).map(a => a.team_member).filter(Boolean) as TeamMember[]}
-                   onSetAssignees={(memberIds) => handleSetAssignees(task.id, memberIds)}
+                   onArchive={onArchiveTask}
+                   onUpdateStatus={onUpdateStatus}
+                   teamMembers={teamMembers}
+                   clients={clients}
+                    assignees={(assigneesByTask[task.id] || []).map(a => a.team_member).filter(Boolean) as TeamMember[]}
+                    onSetAssignees={(memberIds) => handleSetAssignees(task.id, memberIds)}
                 />
               ))}
 
@@ -263,13 +265,14 @@ interface TaskCardProps {
   onClick: (initialTab?: string) => void;
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
   onArchive?: (taskId: string) => void;
+  onUpdateStatus?: (taskId: string, status: TaskStatusDB) => void;
   teamMembers: TeamMember[];
   clients: Client[];
    assignees: TeamMember[];
    onSetAssignees: (memberIds: string[]) => void;
 }
 
- function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, onArchive, teamMembers, clients, assignees, onSetAssignees }: TaskCardProps) {
+ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, onArchive, onUpdateStatus, teamMembers, clients, assignees, onSetAssignees }: TaskCardProps) {
   const priority = task.priority as TaskPriority || "medium";
   const priorityInfo = priorityConfig[priority];
 
@@ -310,31 +313,49 @@ interface TaskCardProps {
             <p className="font-medium text-foreground text-sm line-clamp-2">
               {task.title}
             </p>
-            <div className="flex items-center gap-1 shrink-0">
-              {isOverdue && (
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={handleFieldClick}>
-                  <button className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-background border-border">
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onClick(); }}>
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={(e) => { e.stopPropagation(); onArchive?.(task.id); }}
-                    className="text-muted-foreground hover:!text-destructive hover:!bg-destructive/10"
-                  >
-                    <Archive className="h-4 w-4 mr-2" />
-                    Arquivar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+             <div className="flex items-center gap-1 shrink-0">
+               {isOverdue && (
+                 <AlertTriangle className="h-4 w-4 text-destructive" />
+               )}
+               {/* Quick status action button */}
+               {task.status === "done" ? (
+                 <button
+                   className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                   title="Voltar para Em produção"
+                   onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(task.id, "in_progress"); }}
+                 >
+                   <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                 </button>
+               ) : (
+                 <button
+                   className="h-6 w-6 flex items-center justify-center rounded hover:bg-success/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                   title="Concluir tarefa"
+                   onClick={(e) => { e.stopPropagation(); onUpdateStatus?.(task.id, "done"); }}
+                 >
+                   <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                 </button>
+               )}
+               <DropdownMenu>
+                 <DropdownMenuTrigger asChild onClick={handleFieldClick}>
+                   <button className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity">
+                     <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                   </button>
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="end" className="bg-background border-border">
+                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onClick(); }}>
+                     <Pencil className="h-4 w-4 mr-2" />
+                     Editar
+                   </DropdownMenuItem>
+                   <DropdownMenuSeparator />
+                   <DropdownMenuItem 
+                     onClick={(e) => { e.stopPropagation(); onArchive?.(task.id); }}
+                     className="text-muted-foreground hover:!text-destructive hover:!bg-destructive/10"
+                   >
+                     <Archive className="h-4 w-4 mr-2" />
+                     Arquivar
+                   </DropdownMenuItem>
+                 </DropdownMenuContent>
+               </DropdownMenu>
             </div>
           </div>
 

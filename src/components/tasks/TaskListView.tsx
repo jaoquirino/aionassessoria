@@ -1,10 +1,10 @@
  import { motion } from "framer-motion";
  import { useMemo } from "react";
- import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, Calendar, Building2, CheckSquare } from "lucide-react";
+ import { Clock, AlertTriangle, CheckCircle, MoreHorizontal, Calendar, Building2, CheckSquare, CheckCircle2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn, parseLocalDate } from "@/lib/utils";
-import type { Task, TeamMember, TaskPriority, Client } from "@/types/tasks";
+import type { Task, TeamMember, TaskPriority, TaskStatusDB, Client } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig, priorityConfig } from "@/types/tasks";
  import { DatePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
  import { MultiAssigneePopover } from "./MultiAssigneePopover";
@@ -16,11 +16,12 @@ interface TaskListViewProps {
   tasks: Task[];
   onTaskClick?: (taskId: string, initialTab?: string) => void;
   onUpdateField?: (taskId: string, field: string, value: unknown) => void;
+  onUpdateStatus?: (taskId: string, status: TaskStatusDB) => void;
   teamMembers?: TeamMember[];
   clients?: Client[];
 }
 
-export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = [], clients = [] }: TaskListViewProps) {
+export function TaskListView({ tasks, onTaskClick, onUpdateField, onUpdateStatus, teamMembers = [], clients = [] }: TaskListViewProps) {
    // Fetch all task assignees
    const taskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
    const { data: assigneesByTask = {} } = useTasksAssignees(taskIds);
@@ -61,28 +62,33 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, teamMembers = 
               "glass rounded-xl p-5 transition-all hover:shadow-lg group cursor-pointer",
               isOverdue(task) && "border-destructive/30 bg-destructive/5"
             )}
-          >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-start gap-4">
-                <div
-                  className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                    isOverdue(task)
-                      ? "bg-destructive/10 text-destructive"
-                      : task.status === "done"
-                      ? "bg-success/10 text-success"
-                      : "bg-primary/10 text-primary"
-                  )}
-                >
-                  {isOverdue(task) ? (
-                    <AlertTriangle className="h-5 w-5" />
-                  ) : task.status === "done" ? (
-                    <CheckCircle className="h-5 w-5" />
-                  ) : (
-                    <Clock className="h-5 w-5" />
-                  )}
-                </div>
-                <div className="flex-1">
+           >
+             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+               <div className="flex items-start gap-4">
+                 {/* Quick status button */}
+                 <button
+                   type="button"
+                   className="mt-2 shrink-0"
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     if (task.status === "done") {
+                       onUpdateStatus?.(task.id, "in_progress");
+                     } else {
+                       onUpdateStatus?.(task.id, "done");
+                     }
+                   }}
+                   title={task.status === "done" ? "Voltar para Em produção" : "Concluir tarefa"}
+                 >
+                   {task.status === "done" ? (
+                     <RotateCcw className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                   ) : (
+                     <CheckCircle2 className={cn(
+                       "h-5 w-5 transition-colors",
+                       isOverdue(task) ? "text-destructive/50 hover:text-success" : "text-muted-foreground/40 hover:text-success"
+                     )} />
+                   )}
+                 </button>
+                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h3 className="font-medium text-foreground">{task.title}</h3>
                     <Badge variant="outline" className={cn("text-xs", taskTypeConfig[task.type].color)}>
