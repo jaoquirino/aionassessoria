@@ -19,6 +19,7 @@ import {
   CalendarIcon,
   Archive,
   Copy,
+  Pencil,
 } from "lucide-react";
 import {
   Dialog,
@@ -56,6 +57,7 @@ import { cn, parseLocalDate } from "@/lib/utils";
  import { useSubtasks, useAddSubtask, useToggleSubtask, useDeleteSubtask } from "@/hooks/useSubtasks";
  import { useTaskAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType, type TaskPriority } from "@/types/tasks";
+import { DatePopover, AssigneePopover } from "./InlineFieldPopover";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -446,20 +448,22 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           </Badge>
                         ) : null}
                       </TabsTrigger>
-                      <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Comentários
-                        {comments.length > 0 ? (
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            {comments.length}
-                          </Badge>
-                        ) : null}
-                      </TabsTrigger>
-                      <TabsTrigger value="history" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                        <History className="h-4 w-4 mr-2" />
-                        Histórico
-                      </TabsTrigger>
                     </>
+                  )}
+                  <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Comentários
+                    {comments.length > 0 ? (
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        {comments.length}
+                      </Badge>
+                    ) : null}
+                  </TabsTrigger>
+                  {!isSubtask && (
+                    <TabsTrigger value="history" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+                      <History className="h-4 w-4 mr-2" />
+                      Histórico
+                    </TabsTrigger>
                   )}
                 </TabsList>
 
@@ -785,10 +789,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       <div 
                         key={sub.id} 
                         className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50",
+                          "flex items-center gap-3 p-3 rounded-lg border transition-colors",
                           sub.status === "done" && "bg-success/5 border-success/30"
                         )}
-                        onClick={() => setEditingSubtaskId(sub.id)}
                       >
                         <Checkbox
                           checked={sub.status === "done"}
@@ -799,16 +802,15 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                               isDone: !!checked,
                             })
                           }
-                          onClick={(e) => e.stopPropagation()}
                         />
                         <div className="flex-1 min-w-0">
                           <span className={cn(
-                            "text-sm",
+                            "text-sm font-medium",
                             sub.status === "done" && "line-through text-muted-foreground"
                           )}>
                             {sub.title}
                           </span>
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                               Peso: {sub.weight}
                             </Badge>
@@ -817,32 +819,87 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                                 {sub.deliverable_type === "arte" ? "Arte" : "Vídeo"}
                               </Badge>
                             )}
-                            <span className="text-[10px] text-muted-foreground">
-                              {sub.due_date ? parseLocalDate(sub.due_date).toLocaleDateString("pt-BR") : "Sem prazo"}
-                            </span>
-                            {sub.contract_module?.service_module?.name && (
-                              <span className="text-[10px] text-muted-foreground">
-                                · {sub.contract_module.service_module.name}
-                              </span>
-                            )}
-                            {(() => {
-                              const assignee = teamMembers.find(m => m.id === sub.assigned_to);
-                              return assignee ? (
-                                <span className="text-[10px] text-muted-foreground">
-                                  · {assignee.name}
-                                </span>
-                              ) : null;
-                            })()}
+                            {/* Inline editable date */}
+                            <DatePopover
+                              currentDate={sub.due_date ? parseLocalDate(sub.due_date) : new Date()}
+                              onSelect={(date) => {
+                                const yyyy = date.getFullYear();
+                                const mm = String(date.getMonth() + 1).padStart(2, "0");
+                                const dd = String(date.getDate()).padStart(2, "0");
+                                updateTask.mutate({ id: sub.id, due_date: `${yyyy}-${mm}-${dd}` } as any);
+                              }}
+                            >
+                              <button type="button" onClick={(e) => e.stopPropagation()} className="inline-flex">
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted">
+                                  <CalendarIcon className="h-2.5 w-2.5 mr-0.5" />
+                                  {sub.due_date ? parseLocalDate(sub.due_date).toLocaleDateString("pt-BR") : "Sem prazo"}
+                                </Badge>
+                              </button>
+                            </DatePopover>
+                            {/* Inline editable module */}
+                            <Select
+                              value={sub.contract_module_id || ""}
+                              onValueChange={(val) => {
+                                // Find contract_id from module
+                                const mod = clientModules.find(m => m.contractModuleId === val);
+                                if (mod) {
+                                  supabase.from("contract_modules").select("contract_id").eq("id", val).single().then(({ data }) => {
+                                    updateTask.mutate({ id: sub.id, contract_module_id: val, contract_id: data?.contract_id } as any);
+                                  });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-5 text-[10px] px-1.5 py-0 w-auto border-dashed gap-0.5 inline-flex">
+                                <SelectValue placeholder="Módulo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {clientModules.map((module) => (
+                                  <SelectItem key={module.contractModuleId} value={module.contractModuleId} className="text-xs">
+                                    {module.moduleName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {/* Inline editable assignee */}
+                            <AssigneePopover
+                              currentAssignee={teamMembers.find(m => m.id === sub.assigned_to) || null}
+                              teamMembers={teamMembers}
+                              onSelect={(memberId) => {
+                                updateTask.mutate({ id: sub.id, assigned_to: memberId } as any);
+                              }}
+                            >
+                              <button type="button" onClick={(e) => e.stopPropagation()} className="inline-flex">
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted">
+                                  <User className="h-2.5 w-2.5 mr-0.5" />
+                                  {(() => {
+                                    const a = teamMembers.find(m => m.id === sub.assigned_to);
+                                    return a ? a.name.split(" ")[0] : "Sem resp.";
+                                  })()}
+                                </Badge>
+                              </button>
+                            </AssigneePopover>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={(e) => { e.stopPropagation(); deleteSubtask.mutate({ subtaskId: sub.id, parentTaskId: displayTask.id }); }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            title="Editar subtarefa"
+                            onClick={() => setEditingSubtaskId(sub.id)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 hover:text-destructive hover:bg-destructive/10"
+                            title="Arquivar subtarefa"
+                            onClick={() => deleteSubtask.mutate({ subtaskId: sub.id, parentTaskId: displayTask.id })}
+                          >
+                            <Archive className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
 
