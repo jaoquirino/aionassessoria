@@ -74,23 +74,16 @@ export function SavedColorsManagementTab() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editingColor, setEditingColor] = useState<SavedColor | null>(null);
   const [formHex, setFormHex] = useState("#3B82F6");
-  const [formLabel, setFormLabel] = useState("");
   const [isNew, setIsNew] = useState(false);
-  const [userEditedLabel, setUserEditedLabel] = useState(false);
 
   const handleFormHexChange = (newHex: string) => {
     setFormHex(newHex);
-    if (!userEditedLabel) {
-      setFormLabel(getColorName(newHex));
-    }
   };
 
   const openNew = () => {
     setIsNew(true);
     setEditingColor(null);
     setFormHex("#3B82F6");
-    setFormLabel("Azul");
-    setUserEditedLabel(false);
     setEditOpen(true);
   };
 
@@ -98,16 +91,15 @@ export function SavedColorsManagementTab() {
     setIsNew(false);
     setEditingColor(c);
     setFormHex(c.hex);
-    setFormLabel(c.label || getColorName(c.hex));
-    setUserEditedLabel(!!c.label);
     setEditOpen(true);
   };
 
   const handleSave = () => {
+    const label = getColorName(formHex);
     if (isNew) {
-      addColor.mutate({ hex: formHex, label: formLabel.trim() || undefined, order_index: colors.length + 1 });
+      addColor.mutate({ hex: formHex, label, order_index: colors.length + 1 });
     } else if (editingColor) {
-      updateColor.mutate({ id: editingColor.id, hex: formHex, label: formLabel.trim() || undefined });
+      updateColor.mutate({ id: editingColor.id, hex: formHex, label });
     }
     setEditOpen(false);
   };
@@ -166,16 +158,13 @@ export function SavedColorsManagementTab() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Nome (opcional)</Label>
-              <Input
-                value={formLabel}
-                onChange={(e) => { setFormLabel(e.target.value); setUserEditedLabel(true); }}
-                placeholder="ex: Azul marca"
-              />
-            </div>
-            <div className="space-y-2">
               <Label>Cor</Label>
               <ColorPicker value={formHex} onChange={handleFormHexChange} />
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: formHex }} />
+              <span className="text-sm font-medium text-foreground">{getColorName(formHex)}</span>
+              <span className="text-xs text-muted-foreground font-mono">{formHex}</span>
             </div>
           </div>
           <DialogFooter className="flex-row gap-2">
