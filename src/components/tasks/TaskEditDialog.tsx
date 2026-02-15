@@ -173,6 +173,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
   const [newAttachmentName, setNewAttachmentName] = useState("");
   const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [newComment, setNewComment] = useState("");
@@ -380,6 +381,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden w-[calc(100%-2rem)] sm:w-full">
         {isLoading ? (
@@ -729,9 +731,10 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       <div 
                         key={sub.id} 
                         className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+                          "flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50",
                           sub.status === "done" && "bg-success/5 border-success/30"
                         )}
+                        onClick={() => setEditingSubtaskId(sub.id)}
                       >
                         <Checkbox
                           checked={sub.status === "done"}
@@ -742,6 +745,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                               isDone: !!checked,
                             })
                           }
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <div className="flex-1 min-w-0">
                           <span className={cn(
@@ -756,16 +760,19 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                             </Badge>
                             {sub.deliverable_type && (
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                {sub.deliverable_type === "art" ? "Arte" : "Vídeo"}
+                                {sub.deliverable_type === "arte" ? "Arte" : "Vídeo"}
                               </Badge>
                             )}
+                            <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", taskStatusConfig[sub.status]?.color)}>
+                              {taskStatusConfig[sub.status]?.label || sub.status}
+                            </Badge>
                           </div>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 shrink-0"
-                          onClick={() => deleteSubtask.mutate({ subtaskId: sub.id, parentTaskId: displayTask.id })}
+                          onClick={(e) => { e.stopPropagation(); deleteSubtask.mutate({ subtaskId: sub.id, parentTaskId: displayTask.id }); }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -1152,5 +1159,15 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         )}
       </DialogContent>
     </Dialog>
+
+      {/* Nested dialog for editing a subtask */}
+      {editingSubtaskId && (
+        <TaskEditDialog
+          taskId={editingSubtaskId}
+          open={!!editingSubtaskId}
+          onOpenChange={(open) => { if (!open) setEditingSubtaskId(null); }}
+        />
+      )}
+    </>
   );
 }
