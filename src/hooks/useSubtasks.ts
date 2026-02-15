@@ -4,7 +4,7 @@ import type { Task } from "@/types/tasks";
 import { toast } from "sonner";
 import { useMemo } from "react";
 
-export type SubtaskCounts = Record<string, { total: number; done: number }>;
+export type SubtaskCounts = Record<string, { total: number; done: number; weight: number }>;
 
 export function useTasksSubtaskCounts(taskIds: string[]) {
   const stableKey = useMemo(() => [...taskIds].sort().join(","), [taskIds]);
@@ -16,7 +16,7 @@ export function useTasksSubtaskCounts(taskIds: string[]) {
 
       const { data, error } = await supabase
         .from("tasks")
-        .select("parent_task_id, status")
+        .select("parent_task_id, status, weight")
         .in("parent_task_id", taskIds)
         .is("archived_at", null);
 
@@ -25,9 +25,10 @@ export function useTasksSubtaskCounts(taskIds: string[]) {
       const counts: SubtaskCounts = {};
       data?.forEach((row) => {
         const pid = row.parent_task_id!;
-        if (!counts[pid]) counts[pid] = { total: 0, done: 0 };
+        if (!counts[pid]) counts[pid] = { total: 0, done: 0, weight: 0 };
         counts[pid].total++;
         if (row.status === "done") counts[pid].done++;
+        if (row.status !== "done") counts[pid].weight += row.weight;
       });
       return counts;
     },
