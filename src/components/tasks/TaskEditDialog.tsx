@@ -192,6 +192,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   }, [open, taskId]);
 
   // Sync form state when task loads initially (skip if user has local changes)
+  const displayTaskId = displayTask?.id;
   useEffect(() => {
     if (displayTask && !isDirtyRef.current) {
       setTitle(displayTask.title);
@@ -205,7 +206,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       setWeight(displayTask.weight);
       setDeliverableType(displayTask.deliverable_type || null);
     }
-  }, [displayTask]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayTaskId]);
 
   // Mark form as dirty when any field changes
   const markDirty = () => { isDirtyRef.current = true; };
