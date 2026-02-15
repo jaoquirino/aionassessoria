@@ -193,31 +193,33 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   // Sync form state when task loads initially (skip if user has local changes)
   const displayTaskId = displayTask?.id;
+  const displayTaskUpdatedAt = displayTask?.updated_at;
   useEffect(() => {
-    if (displayTask && !isDirtyRef.current) {
-      setTitle(displayTask.title);
-      setStatus(displayTask.status);
-      setPriority(displayTask.priority || "medium");
-      setDueDate(displayTask.due_date ? parseLocalDate(displayTask.due_date) : undefined);
-      setDescriptionNotes(displayTask.description_notes || "");
-      setClientId(displayTask.client_id || "");
-      setContractModuleId(displayTask.contract_module_id || "");
-      setTaskType(displayTask.type);
-      setWeight(displayTask.weight);
-      setDeliverableType(displayTask.deliverable_type || null);
-    }
+    if (!open || !displayTask || isDirtyRef.current) return;
+    setTitle(displayTask.title);
+    setStatus(displayTask.status);
+    setPriority(displayTask.priority || "medium");
+    setDueDate(displayTask.due_date ? parseLocalDate(displayTask.due_date) : undefined);
+    setDescriptionNotes(displayTask.description_notes || "");
+    setClientId(displayTask.client_id || "");
+    setContractModuleId(displayTask.contract_module_id || "");
+    setTaskType(displayTask.type);
+    setWeight(displayTask.weight);
+    setDeliverableType(displayTask.deliverable_type || null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayTaskId]);
+  }, [displayTaskId, open]);
 
   // Mark form as dirty when any field changes
   const markDirty = () => { isDirtyRef.current = true; };
  
    // Sync assignees when data loads
+   const assigneesKey = taskAssigneesData.map(a => a.team_member_id).join(",");
    useEffect(() => {
      if (!isDirtyRef.current) {
        setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
      }
-   }, [taskAssigneesData]);
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [assigneesKey]);
 
   // Handler para mudar módulo e atualizar tipo/peso automaticamente
   const handleModuleChange = (newModuleId: string) => {
