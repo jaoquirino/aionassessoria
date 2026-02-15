@@ -181,9 +181,6 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
           )}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Use @ para mencionar · Ctrl+Enter para enviar
-      </p>
     </div>
   );
 }
