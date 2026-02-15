@@ -51,8 +51,7 @@ export function SubtaskRow({
 }: SubtaskRowProps) {
   const subOverdue = sub.due_date && parseLocalDate(sub.due_date) < new Date() && sub.status !== "done";
 
-  // Weight popover controlled state
-  const [weightOpen, setWeightOpen] = useState(false);
+
 
   // Assignees from server
   const displayAssignees = assignees.map(a => a.team_member).filter(Boolean) as TeamMember[];
@@ -99,37 +98,10 @@ export function SubtaskRow({
             </button>
           </PriorityPopover>
 
-          {/* Weight */}
-          <Popover open={weightOpen} onOpenChange={setWeightOpen}>
-            <PopoverTrigger asChild onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-              <button type="button" className="inline-flex">
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted">
-                  Peso: {sub.weight}
-                </Badge>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-32 p-2" align="start" onClick={(e) => e.stopPropagation()}>
-              <p className="text-xs font-medium text-muted-foreground px-2 py-1">Peso</p>
-              <div className="space-y-1">
-                {[1, 2, 3, 4, 5].map(w => (
-                  <button
-                    key={w}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onUpdate(sub.id, parentId, { weight: w } as any);
-                      setWeightOpen(false);
-                    }}
-                    className={cn(
-                      "w-full text-left px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors",
-                      sub.weight === w && "bg-muted"
-                    )}
-                  >
-                    {w}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+          {/* Weight (read-only, derived from module) */}
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+            Peso: {sub.weight}
+          </Badge>
 
           {/* Deliverable type (Design only) */}
           {isDesign && (

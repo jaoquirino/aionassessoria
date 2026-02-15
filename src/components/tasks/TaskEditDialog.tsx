@@ -289,9 +289,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         due_date: dueDate ? `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-${String(dueDate.getDate()).padStart(2, "0")}` : displayTask.due_date,
         description_notes: descriptionNotes || null,
         contract_module_id: contractModuleId || null,
-        contract_id: contractId,
         type: taskType,
-        weight,
         deliverable_type: deliverableType,
       } as any);
 
@@ -692,22 +690,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   )}
 
 
-                  {/* Weight + Deliverable Type for subtasks */}
+                  {/* Deliverable Type for subtasks */}
                   {isSubtask && (
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Peso</Label>
-                        <Select value={String(weight)} onValueChange={(v) => { setWeight(Number(v)); markDirty(); }}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[1,2,3,4,5].map(w => (
-                              <SelectItem key={w} value={String(w)}>{w}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
                       {/* Only show deliverable type if parent module is design */}
                       {(() => {
                         const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);

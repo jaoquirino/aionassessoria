@@ -80,7 +80,7 @@ export function useAddSubtask() {
           assigned_to: parentTask.assigned_to,
           due_date: parentTask.due_date,
           status: "todo",
-          weight: parentTask.weight,
+          weight: 0, // Will be set by trigger based on module
           priority: parentTask.priority || "medium",
           is_deliverable: parentTask.is_deliverable,
           deliverable_type: parentTask.deliverable_type,
