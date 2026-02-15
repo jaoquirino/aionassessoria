@@ -278,6 +278,7 @@ export default function Tasks() {
               onAddTask={handleQuickAddTask}
               onUpdateField={handleUpdateField}
               onArchiveTask={(taskId) => archiveTask.mutate(taskId)}
+              onUpdateStatus={(taskId, status) => updateStatus.mutate({ taskId, status })}
               teamMembers={teamMembers}
               clients={clients}
             />
@@ -286,6 +287,7 @@ export default function Tasks() {
               tasks={filteredTasks} 
               onTaskClick={handleTaskClick}
               onUpdateField={handleUpdateField}
+              onUpdateStatus={(taskId, status) => updateStatus.mutate({ taskId, status })}
               teamMembers={teamMembers}
               clients={clients}
             />
