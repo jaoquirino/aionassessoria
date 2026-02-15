@@ -1,6 +1,6 @@
 // Task types matching database schema
 
-export type TaskType = "recurring" | "planning" | "project" | "extra";
+export type TaskType = "recurring" | "planning" | "project" | "extra" | "onboarding";
 export type TaskStatusDB = "todo" | "in_progress" | "review" | "waiting_client" | "done";
 
 export interface TeamMember {
@@ -218,6 +218,7 @@ export const taskTypeConfig: Record<TaskType, { label: string; color: string; we
   planning: { label: "Planejamento", color: "border-purple/30 text-purple", weight: 1 },
   project: { label: "Projeto", color: "border-primary/30 text-primary", weight: 4 },
   extra: { label: "Extra", color: "border-orange/30 text-orange", weight: 3 },
+  onboarding: { label: "Onboarding", color: "border-emerald-500/30 text-emerald-600", weight: 4 },
 };
 
 export const priorityConfig: Record<TaskPriority, { label: string; color: string; order: number }> = {

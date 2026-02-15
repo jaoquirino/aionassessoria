@@ -116,7 +116,7 @@ export function useClientOnboardingProgress(clientId: string | null) {
         .from("tasks")
         .select("id, status, contract_module_id, type")
         .eq("client_id", clientId)
-        .eq("type", "project")
+        .eq("type", "onboarding")
         .not("contract_module_id", "is", null);
 
       if (tasksError) throw tasksError;
@@ -220,7 +220,7 @@ export function useGenerateModuleOnboarding() {
               contract_module_id: onboarding.contract_module_id,
               title: step.title,
               description_objective: step.description,
-              type: "project",
+              type: "onboarding",
               required_role: step.responsible_role,
               priority: "high",
               due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 7 days from now

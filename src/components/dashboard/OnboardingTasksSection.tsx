@@ -36,24 +36,15 @@
        const now = new Date();
  
        // Fetch onboarding tasks (type = 'project')
-        // Only show project tasks for clients that are actually in onboarding status
+        // Only show onboarding-type tasks
         const { data: tasksData, error } = await supabase
           .from("tasks")
-          .select("*, client:clients(name, status)")
-          .eq("type", "project")
+          .select("*, client:clients(name)")
+          .eq("type", "onboarding")
           .is("archived_at", null)
           .neq("status", "done")
           .order("due_date", { ascending: true })
-          .limit(20);
-
-        if (error) throw error;
-
-        // Filter to only clients with onboarding status
-        const onboardingTasks = (tasksData || []).filter(
-          (task: any) => task.client?.status === "onboarding"
-        ).slice(0, 5);
- 
-       if (error) throw error;
+          .limit(5);
  
        // Fetch team members for names
        const { data: teamMembers } = await supabase
@@ -62,7 +53,7 @@
  
        const membersMap = new Map(teamMembers?.map(m => [m.id, m]) || []);
  
-        return (onboardingTasks).map(task => ({
+        return (tasksData || []).map(task => ({
           id: task.id,
           title: task.title,
           clientName: task.client?.name || "—",

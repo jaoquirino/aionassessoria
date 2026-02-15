@@ -212,7 +212,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     const selectedModule = clientModules.find(m => m.contractModuleId === newModuleId);
     if (selectedModule) {
       setWeight(selectedModule.defaultWeight);
-      setTaskType(selectedModule.isRecurring ? "recurring" : "project");
+      setTaskType(selectedModule.isRecurring ? "recurring" : "extra");
     }
   };
 

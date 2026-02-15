@@ -51,7 +51,7 @@ export function OnboardingOverview() {
       const { data: tasks, error: tasksError } = await supabase
         .from("tasks")
         .select("id, status, client_id, contract_module_id")
-        .eq("type", "project")
+        .eq("type", "onboarding")
         .is("archived_at", null);
 
       if (tasksError) throw tasksError;
