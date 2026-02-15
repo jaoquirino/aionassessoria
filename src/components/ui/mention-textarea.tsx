@@ -15,6 +15,8 @@ interface TeamMember {
 
 interface MentionTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   onValueChange?: (value: string) => void;
+  /** Called when user presses Ctrl+Enter */
+  onCtrlEnter?: () => void;
 }
 
 export function MentionTextarea({
@@ -22,6 +24,8 @@ export function MentionTextarea({
   value,
   onChange,
   onValueChange,
+  onCtrlEnter,
+  onKeyDown: externalOnKeyDown,
   ...props
 }: MentionTextareaProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -109,31 +113,39 @@ export function MentionTextarea({
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!showSuggestions || filteredMembers.length === 0) return;
+    // Ctrl+Enter → submit
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      onCtrlEnter?.();
+      return;
+    }
 
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev < filteredMembers.length - 1 ? prev + 1 : 0
-        );
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : filteredMembers.length - 1
-        );
-        break;
-      case "Enter":
-        if (showSuggestions) {
+    if (showSuggestions && filteredMembers.length > 0) {
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < filteredMembers.length - 1 ? prev + 1 : 0
+          );
+          return;
+        case "ArrowUp":
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev > 0 ? prev - 1 : filteredMembers.length - 1
+          );
+          return;
+        case "Enter":
           e.preventDefault();
           insertMention(filteredMembers[selectedIndex]);
-        }
-        break;
-      case "Escape":
-        setShowSuggestions(false);
-        break;
+          return;
+        case "Escape":
+          setShowSuggestions(false);
+          return;
+      }
     }
+
+    // Let Enter create new lines normally (default textarea behavior)
+    externalOnKeyDown?.(e);
   };
 
   // Close suggestions when clicking outside

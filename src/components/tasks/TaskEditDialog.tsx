@@ -387,13 +387,27 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     !displayTask.checklist?.length || displayTask.checklist.every(item => item.is_completed)
   );
 
+  const handleDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      const target = e.target as HTMLElement;
+      const tagName = target.tagName.toLowerCase();
+      if (tagName === "textarea") return;
+      e.preventDefault();
+      handleSave();
+      onOpenChange(false);
+    }
+  };
+
   return (
     <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={cn(
-        "max-h-[90vh] p-0 overflow-hidden w-[calc(100%-2rem)] sm:w-full",
-        isSubtask ? "max-w-lg" : "max-w-2xl"
-      )}>
+      <DialogContent 
+        className={cn(
+          "max-h-[90vh] p-0 overflow-hidden w-[calc(100%-2rem)] sm:w-full",
+          isSubtask ? "max-w-lg" : "max-w-2xl"
+        )}
+        onKeyDown={handleDialogKeyDown}
+      >
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-8 w-3/4" />

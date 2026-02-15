@@ -89,6 +89,17 @@ export function EditDialog({
     onOpenChange(newOpen);
   };
 
+  const handleDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      const target = e.target as HTMLElement;
+      const tagName = target.tagName.toLowerCase();
+      // Don't trigger save if user is typing in a textarea
+      if (tagName === "textarea") return;
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent 
@@ -100,6 +111,7 @@ export function EditDialog({
         onInteractOutside={(e) => {
           // Prevent default close behavior, we handle it in onOpenChange
         }}
+        onKeyDown={handleDialogKeyDown}
       >
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>{title}</DialogTitle>

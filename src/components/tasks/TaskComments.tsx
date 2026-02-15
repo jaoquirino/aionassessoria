@@ -26,8 +26,7 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
   const addComment = useAddTaskComment();
   const deleteComment = useDeleteTaskComment();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!newComment.trim()) return;
 
     addComment.mutate(
@@ -158,18 +157,20 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
       </div>
 
       {/* New Comment Form with @ mentions */}
-      <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+      <div className="flex gap-2 items-end">
         <div className="flex-1">
           <MentionTextarea
             placeholder="Escreva um comentário... Use @ para mencionar alguém"
             value={newComment}
             onValueChange={setNewComment}
+            onCtrlEnter={handleSubmit}
             className="min-h-[60px] resize-none w-full"
           />
         </div>
         <Button 
-          type="submit" 
+          type="button" 
           size="icon" 
+          onClick={handleSubmit}
           disabled={!newComment.trim() || addComment.isPending}
           className="shrink-0 h-10 w-10"
         >
@@ -179,9 +180,9 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
             <Send className="h-4 w-4" />
           )}
         </Button>
-      </form>
+      </div>
       <p className="text-xs text-muted-foreground">
-        Use @ para mencionar membros da equipe
+        Use @ para mencionar · Ctrl+Enter para enviar
       </p>
     </div>
   );
