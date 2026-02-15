@@ -207,12 +207,12 @@ export interface UpdateTaskInput {
 export type TaskStatusDisplay = TaskStatusDB | "overdue";
 
 export const taskStatusConfig: Record<TaskStatusDisplay, { label: string; color: string }> = {
-  overdue: { label: "Pra ontem", color: "bg-destructive/20 text-destructive" },
-  todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
-  in_progress: { label: "Em produção", color: "bg-primary/20 text-primary" },
-  review: { label: "Em revisão", color: "bg-warning/20 text-warning" },
-  waiting_client: { label: "Aguardando cliente", color: "bg-info/20 text-info" },
-  done: { label: "Entregue", color: "bg-success/20 text-success" },
+  overdue: { label: "Pra ontem", color: "bg-red-500/25 text-red-600 dark:text-red-400" },
+  todo: { label: "A fazer", color: "bg-gray-400/25 text-gray-700 dark:text-gray-300" },
+  in_progress: { label: "Em produção", color: "bg-blue-500/25 text-blue-600 dark:text-blue-400" },
+  review: { label: "Em revisão", color: "bg-amber-500/25 text-amber-600 dark:text-amber-400" },
+  waiting_client: { label: "Aguardando cliente", color: "bg-cyan-500/25 text-cyan-600 dark:text-cyan-400" },
+  done: { label: "Entregue", color: "bg-emerald-500/25 text-emerald-600 dark:text-emerald-400" },
 };
 
 export const taskTypeConfig: Record<TaskType, { label: string; color: string; weight: number }> = {
