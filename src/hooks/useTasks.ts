@@ -36,6 +36,7 @@ export function useTasks() {
           )
         `)
         .is("archived_at", null)
+        .is("parent_task_id", null)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

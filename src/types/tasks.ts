@@ -100,6 +100,7 @@ export interface Task {
   is_deliverable: boolean;
   deliverable_type: string | null;
   archived_at: string | null;
+  parent_task_id: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -112,6 +113,7 @@ export interface Task {
   attachments?: TaskAttachment[];
   history?: TaskHistory[];
   comments?: TaskComment[];
+  subtasks?: Task[];
 }
 
 export interface TaskComment {

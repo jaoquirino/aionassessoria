@@ -53,6 +53,7 @@ import { cn, parseLocalDate } from "@/lib/utils";
    useClients,
    useArchiveTask,
  } from "@/hooks/useTasks";
+ import { useSubtasks, useAddSubtask, useToggleSubtask, useDeleteSubtask } from "@/hooks/useSubtasks";
  import { useTaskAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType, type TaskPriority } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
@@ -143,9 +144,12 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const { data: comments = [] } = useTaskComments(taskId);
    const { data: taskAssigneesData = [] } = useTaskAssignees(taskId);
    const setTaskAssignees = useSetTaskAssignees();
+  const { data: subtasks = [] } = useSubtasks(open ? taskId : null);
+  const addSubtask = useAddSubtask();
+  const toggleSubtask = useToggleSubtask();
+  const deleteSubtask = useDeleteSubtask();
   
   const updateTask = useUpdateTask();
-  // const updateStatus = useUpdateTaskStatus();
   const addChecklistItem = useAddChecklistItem();
   const toggleChecklistItem = useToggleChecklistItem();
   const deleteChecklistItem = useDeleteChecklistItem();
@@ -168,6 +172,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const [deliverableType, setDeliverableType] = useState<string | null>(null);
 
   const [newChecklistItem, setNewChecklistItem] = useState("");
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [newAttachmentName, setNewAttachmentName] = useState("");
   const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [newComment, setNewComment] = useState("");
@@ -321,6 +326,12 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     setNewChecklistItem("");
   };
 
+  const handleAddSubtask = () => {
+    if (!displayTask || !newSubtaskTitle.trim()) return;
+    addSubtask.mutate({ parentTask: displayTask, title: newSubtaskTitle.trim() });
+    setNewSubtaskTitle("");
+  };
+
   const handleAddAttachment = () => {
     if (!displayTask || !newAttachmentName.trim() || !newAttachmentUrl.trim()) return;
     let url = newAttachmentUrl.trim();
@@ -358,6 +369,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   if (!open) return null;
 
   const isOverdue = displayTask ? parseLocalDate(displayTask.due_date) < new Date() && displayTask.status !== "done" : false;
+  const subtaskProgress = subtasks.length 
+    ? subtasks.filter(s => s.status === "done").length / subtasks.length 
+    : 0;
   const checklistProgress = displayTask?.checklist?.length 
     ? displayTask.checklist.filter(item => item.is_completed).length / displayTask.checklist.length 
     : 0;
@@ -411,10 +425,10 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   </TabsTrigger>
                   <TabsTrigger value="checklist" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <CheckSquare className="h-4 w-4 mr-2" />
-                    Checklist
-                    {displayTask.checklist?.length ? (
+                    Subtarefas
+                    {subtasks.length > 0 ? (
                       <Badge variant="secondary" className="ml-2 text-xs">
-                        {displayTask.checklist.filter(i => i.is_completed).length}/{displayTask.checklist.length}
+                        {subtasks.filter(s => s.status === "done").length}/{subtasks.length}
                       </Badge>
                     ) : null}
                   </TabsTrigger>
@@ -678,77 +692,89 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   </div>
                 </TabsContent>
 
-                {/* Checklist Tab */}
+                {/* Subtasks Tab */}
                 <TabsContent value="checklist" className="p-6 space-y-4 mt-0">
                   {/* Progress Bar */}
-                  {displayTask.checklist && displayTask.checklist.length > 0 && (
+                  {subtasks.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Progresso</span>
-                        <span>{Math.round(checklistProgress * 100)}%</span>
+                        <span>{Math.round(subtaskProgress * 100)}%</span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-success transition-all"
-                          style={{ width: `${checklistProgress * 100}%` }}
+                          style={{ width: `${subtaskProgress * 100}%` }}
                         />
                       </div>
                     </div>
                   )}
 
-                  {/* Add Item */}
+                  {/* Add Subtask */}
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Nova subetapa..."
-                      value={newChecklistItem}
-                      onChange={(e) => setNewChecklistItem(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddChecklistItem()}
+                      placeholder="Nova subtarefa..."
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddSubtask()}
                     />
-                    <Button variant="outline" onClick={handleAddChecklistItem}>
+                    <Button variant="outline" onClick={handleAddSubtask}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
 
-                  {/* Checklist Items */}
+                  {/* Subtask Items */}
                   <div className="space-y-2">
-                    {displayTask.checklist?.map((item) => (
+                    {subtasks.map((sub) => (
                       <div 
-                        key={item.id} 
+                        key={sub.id} 
                         className={cn(
                           "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                          item.is_completed && "bg-success/5 border-success/30"
+                          sub.status === "done" && "bg-success/5 border-success/30"
                         )}
                       >
                         <Checkbox
-                          checked={item.is_completed}
+                          checked={sub.status === "done"}
                           onCheckedChange={(checked) => 
-                            toggleChecklistItem.mutate({ 
-                              itemId: item.id, 
-                              isCompleted: !!checked, 
-                              taskId: displayTask.id 
+                            toggleSubtask.mutate({ 
+                              subtaskId: sub.id, 
+                              parentTaskId: displayTask.id,
+                              isDone: !!checked,
                             })
                           }
                         />
-                        <span className={cn(
-                          "flex-1 text-sm",
-                          item.is_completed && "line-through text-muted-foreground"
-                        )}>
-                          {item.item_text}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className={cn(
+                            "text-sm",
+                            sub.status === "done" && "line-through text-muted-foreground"
+                          )}>
+                            {sub.title}
+                          </span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              Peso: {sub.weight}
+                            </Badge>
+                            {sub.deliverable_type && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                {sub.deliverable_type === "art" ? "Arte" : "Vídeo"}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
-                          onClick={() => deleteChecklistItem.mutate({ itemId: item.id, taskId: displayTask.id })}
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => deleteSubtask.mutate({ subtaskId: sub.id, parentTaskId: displayTask.id })}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
 
-                    {(!displayTask.checklist || displayTask.checklist.length === 0) && (
+                    {subtasks.length === 0 && (
                       <p className="text-center text-muted-foreground py-8">
-                        Nenhuma subetapa adicionada
+                        Nenhuma subtarefa adicionada
                       </p>
                     )}
                   </div>

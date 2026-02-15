@@ -803,6 +803,7 @@ export type Database = {
           due_date: string
           id: string
           is_deliverable: boolean
+          parent_task_id: string | null
           priority: string
           required_role: string
           status: Database["public"]["Enums"]["task_status"]
@@ -827,6 +828,7 @@ export type Database = {
           due_date: string
           id?: string
           is_deliverable?: boolean
+          parent_task_id?: string | null
           priority?: string
           required_role: string
           status?: Database["public"]["Enums"]["task_status"]
@@ -851,6 +853,7 @@ export type Database = {
           due_date?: string
           id?: string
           is_deliverable?: boolean
+          parent_task_id?: string | null
           priority?: string
           required_role?: string
           status?: Database["public"]["Enums"]["task_status"]
@@ -907,6 +910,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
