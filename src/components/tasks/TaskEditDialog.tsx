@@ -193,9 +193,12 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   // Sync form state when task loads initially (skip if user has local changes)
   const displayTaskId = displayTask?.id;
-  const displayTaskUpdatedAt = displayTask?.updated_at;
+  const syncedTaskIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!open || !displayTask || isDirtyRef.current) return;
+    // Only sync once per task open
+    if (syncedTaskIdRef.current === displayTaskId) return;
+    syncedTaskIdRef.current = displayTaskId || null;
     setTitle(displayTask.title);
     setStatus(displayTask.status);
     setPriority(displayTask.priority || "medium");
@@ -209,13 +212,22 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayTaskId, open]);
 
+  // Reset synced ref when dialog closes
+  useEffect(() => {
+    if (!open) {
+      syncedTaskIdRef.current = null;
+    }
+  }, [open]);
+
   // Mark form as dirty when any field changes
   const markDirty = () => { isDirtyRef.current = true; };
  
    // Sync assignees when data loads
    const assigneesKey = taskAssigneesData.map(a => a.team_member_id).join(",");
+   const syncedAssigneesRef = useRef<string>("");
    useEffect(() => {
-     if (!isDirtyRef.current) {
+     if (!isDirtyRef.current && assigneesKey !== syncedAssigneesRef.current) {
+       syncedAssigneesRef.current = assigneesKey;
        setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
      }
      // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -835,7 +847,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                 {/* Comments Tab */}
                 <TabsContent value="comments" className="p-6 mt-0">
-                  <TaskComments taskId={task.id} />
+                  <TaskComments taskId={displayTask.id} />
                 </TabsContent>
 
                 {/* History Tab */}
