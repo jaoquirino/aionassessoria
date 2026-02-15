@@ -51,7 +51,7 @@ export function ColorPicker({ value, onChange, showPaletteManagement = false }: 
 
   return (
     <div className="space-y-3">
-      <HexColorPicker color={hex} onChange={handleColorChange} style={{ width: "100%" }} />
+      <HexColorPicker color={hex} onChange={handleColorChange} style={{ width: "100%", height: 160 }} />
 
       {/* Saved palette swatches */}
       <div className="space-y-1.5">
