@@ -141,6 +141,7 @@ export function useAddSubtask() {
         queryKey: ["subtasks", variables.parentTask.id],
       });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["subtask_counts"] });
     },
   });
 }
@@ -195,6 +196,7 @@ export function useToggleSubtask() {
         queryKey: ["subtasks", variables.parentTaskId],
       });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["subtask_counts"] });
     },
   });
 }
@@ -241,6 +243,7 @@ export function useDeleteSubtask() {
         queryKey: ["subtasks", variables.parentTaskId],
       });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["subtask_counts"] });
     },
   });
 }
