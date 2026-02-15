@@ -96,6 +96,9 @@ export function useCreateClient() {
         .insert({
           name: input.name,
           status: input.status || "onboarding",
+          cnpj: input.cnpj || null,
+          phone: input.phone || null,
+          email: input.email || null,
         })
         .select()
         .single();
@@ -103,13 +106,41 @@ export function useCreateClient() {
       if (error) throw error;
       return data;
     },
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: ["all_clients"] });
+      const previousClients = queryClient.getQueryData(["all_clients"]);
+
+      const optimisticClient = {
+        id: `temp-${Date.now()}`,
+        name: input.name,
+        status: input.status || "onboarding",
+        cnpj: input.cnpj || null,
+        phone: input.phone || null,
+        email: input.email || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_internal: false,
+        contracts: [],
+      } as ClientWithContracts;
+
+      queryClient.setQueryData(["all_clients"], (old: ClientWithContracts[] | undefined) => {
+        return old ? [optimisticClient, ...old] : [optimisticClient];
+      });
+
+      return { previousClients };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousClients) {
+        queryClient.setQueryData(["all_clients"], context.previousClients);
+      }
+      toast.error("Erro ao adicionar cliente: " + error.message);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["all_clients"] });
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Cliente adicionado com sucesso");
     },
-    onError: (error) => {
-      toast.error("Erro ao adicionar cliente: " + error.message);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["all_clients"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
     },
   });
 }
