@@ -921,24 +921,36 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                                 </SelectContent>
                               </Select>
                             </div>
-                            {/* Inline editable assignee */}
-                            <AssigneePopover
-                              currentAssignee={teamMembers.find(m => m.id === sub.assigned_to) || null}
+                            {/* Inline editable assignees (multi) */}
+                            <MultiAssigneePopover
+                              currentAssignees={
+                                (subtaskAssigneesMap[sub.id] || [])
+                                  .map(a => a.team_member)
+                                  .filter(Boolean) as any[]
+                              }
                               teamMembers={teamMembers}
-                              onSelect={(memberId) => {
-                                updateSubtask.mutate({ subtaskId: sub.id, parentTaskId: parentId, updates: { assigned_to: memberId } as any });
+                              onSelect={(memberIds) => {
+                                setSubtaskAssignees.mutate({ taskId: sub.id, memberIds });
+                                // Also update assigned_to for legacy compat
+                                updateSubtask.mutate({ subtaskId: sub.id, parentTaskId: parentId, updates: { assigned_to: memberIds[0] || null } as any });
                               }}
                             >
                               <button type="button" onClick={(e) => e.stopPropagation()} className="inline-flex">
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted">
-                                  <User className="h-2.5 w-2.5 mr-0.5" />
-                                  {(() => {
-                                    const a = teamMembers.find(m => m.id === sub.assigned_to);
-                                    return a ? a.name.split(" ")[0] : "Sem resp.";
-                                  })()}
-                                </Badge>
+                                {(() => {
+                                  const assignees = (subtaskAssigneesMap[sub.id] || [])
+                                    .map(a => a.team_member)
+                                    .filter(Boolean) as any[];
+                                  return assignees.length > 0 ? (
+                                    <StackedAvatars assignees={assignees} size="sm" />
+                                  ) : (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted">
+                                      <User className="h-2.5 w-2.5 mr-0.5" />
+                                      Sem resp.
+                                    </Badge>
+                                  );
+                                })()}
                               </button>
-                            </AssigneePopover>
+                            </MultiAssigneePopover>
                           </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
