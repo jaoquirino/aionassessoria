@@ -86,7 +86,7 @@ export function PeriodSelector({ value, onChange, customRange, onCustomRangeChan
               <CalendarDays className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
+          <PopoverContent className="w-auto p-0 max-w-[calc(100vw-2rem)]" align="end" side="bottom" collisionPadding={16}>
             <div className="p-4 space-y-4">
               <p className="text-sm font-medium">Selecione o período</p>
               <Calendar
@@ -94,7 +94,7 @@ export function PeriodSelector({ value, onChange, customRange, onCustomRangeChan
                 selected={{ from: tempRange.from, to: tempRange.to }}
                 onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
                 locale={ptBR}
-                numberOfMonths={2}
+                numberOfMonths={typeof window !== "undefined" && window.innerWidth < 640 ? 1 : 2}
                 initialFocus
                 className="p-3 pointer-events-auto"
               />
