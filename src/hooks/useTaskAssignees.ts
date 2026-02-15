@@ -48,7 +48,6 @@ export function useTasksAssignees(taskIds: string[]) {
       return result;
     },
     enabled: taskIds.length > 0,
-    staleTime: 30000,
   });
 }
  
@@ -101,7 +100,7 @@ export function useTasksAssignees(taskIds: string[]) {
        if (error) throw error;
        return data;
      },
-     onSuccess: (_, variables) => {
+     onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ["task_assignees"] });
        queryClient.invalidateQueries({ queryKey: ["tasks"] });
      },
@@ -130,7 +129,7 @@ export function useTasksAssignees(taskIds: string[]) {
  }
  
  // Set multiple assignees (replace all)
-export function useSetTaskAssignees() {
+ export function useSetTaskAssignees() {
    const queryClient = useQueryClient();
  
    return useMutation({
@@ -153,40 +152,7 @@ export function useSetTaskAssignees() {
          if (error) throw error;
        }
      },
-     onMutate: async ({ taskId, memberIds }) => {
-       // Optimistic update for bulk task_assignees map
-       await queryClient.cancelQueries({ queryKey: ["task_assignees"] });
-
-       // Update the bulk map (used in subtask list)
-       queryClient.setQueriesData<Record<string, TaskAssignee[]>>(
-         { queryKey: ["task_assignees"] },
-         (old) => {
-           if (!old || typeof old !== "object" || Array.isArray(old)) return old;
-           return {
-             ...old,
-             [taskId]: memberIds.map((memberId, i) => ({
-               id: `temp-${Date.now()}-${i}`,
-               task_id: taskId,
-               team_member_id: memberId,
-               created_at: new Date().toISOString(),
-               // team_member will be resolved from cache
-             })),
-           };
-         }
-       );
-
-       // Also update single task assignees query
-       queryClient.setQueryData<TaskAssignee[]>(
-         ["task_assignees", taskId],
-         memberIds.map((memberId, i) => ({
-           id: `temp-${Date.now()}-${i}`,
-           task_id: taskId,
-           team_member_id: memberId,
-           created_at: new Date().toISOString(),
-         }))
-       );
-     },
-     onSettled: () => {
+     onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ["task_assignees"] });
        queryClient.invalidateQueries({ queryKey: ["tasks"] });
      },
