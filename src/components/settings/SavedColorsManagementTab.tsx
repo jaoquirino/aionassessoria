@@ -5,6 +5,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ColorPicker } from "@/components/ui/color-picker";
+
+function hexToHsl(hex: string): [number, number, number] {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l * 100];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return [h * 360, s * 100, l * 100];
+}
+
+function getColorName(hex: string): string {
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return "";
+  const [h, s, l] = hexToHsl(hex);
+  if (l < 10) return "Preto";
+  if (l > 95) return "Branco";
+  if (s < 10) return "Cinza";
+  if (h < 15) return "Vermelho";
+  if (h < 40) return "Laranja";
+  if (h < 65) return "Amarelo";
+  if (h < 80) return "Lima";
+  if (h < 160) return "Verde";
+  if (h < 190) return "Ciano";
+  if (h < 250) return "Azul";
+  if (h < 290) return "Roxo";
+  if (h < 330) return "Rosa";
+  return "Vermelho";
+}
 import {
   Dialog,
   DialogContent,
@@ -42,12 +76,21 @@ export function SavedColorsManagementTab() {
   const [formHex, setFormHex] = useState("#3B82F6");
   const [formLabel, setFormLabel] = useState("");
   const [isNew, setIsNew] = useState(false);
+  const [userEditedLabel, setUserEditedLabel] = useState(false);
+
+  const handleFormHexChange = (newHex: string) => {
+    setFormHex(newHex);
+    if (!userEditedLabel) {
+      setFormLabel(getColorName(newHex));
+    }
+  };
 
   const openNew = () => {
     setIsNew(true);
     setEditingColor(null);
     setFormHex("#3B82F6");
-    setFormLabel("");
+    setFormLabel("Azul");
+    setUserEditedLabel(false);
     setEditOpen(true);
   };
 
@@ -55,7 +98,8 @@ export function SavedColorsManagementTab() {
     setIsNew(false);
     setEditingColor(c);
     setFormHex(c.hex);
-    setFormLabel(c.label || "");
+    setFormLabel(c.label || getColorName(c.hex));
+    setUserEditedLabel(!!c.label);
     setEditOpen(true);
   };
 
@@ -125,13 +169,13 @@ export function SavedColorsManagementTab() {
               <Label>Nome (opcional)</Label>
               <Input
                 value={formLabel}
-                onChange={(e) => setFormLabel(e.target.value)}
+                onChange={(e) => { setFormLabel(e.target.value); setUserEditedLabel(true); }}
                 placeholder="ex: Azul marca"
               />
             </div>
             <div className="space-y-2">
               <Label>Cor</Label>
-              <ColorPicker value={formHex} onChange={setFormHex} />
+              <ColorPicker value={formHex} onChange={handleFormHexChange} />
             </div>
           </div>
           <DialogFooter className="flex-row gap-2">
