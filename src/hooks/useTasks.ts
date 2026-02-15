@@ -493,8 +493,42 @@ export function useAddChecklistItem() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ taskId, text }) => {
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] });
+      const previousTask = queryClient.getQueryData(["task", taskId]);
+
+      const optimisticItem = {
+        id: `temp-${Date.now()}`,
+        task_id: taskId,
+        item_text: text,
+        is_completed: false,
+        completed_at: null,
+        completed_by: null,
+        order_index: 999,
+        created_at: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData(["task", taskId], (old: Task | null | undefined) => {
+        if (!old) return old;
+        return { ...old, checklist: [...(old.checklist || []), optimisticItem] };
+      });
+
+      // Also update tasks list cache
+      queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.map(t => t.id === taskId ? { ...t, checklist: [...(t.checklist || []), optimisticItem] } : t);
+      });
+
+      return { previousTask };
+    },
+    onError: (_, variables, context) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", variables.taskId], context.previousTask);
+      }
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -517,7 +551,28 @@ export function useToggleChecklistItem() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ itemId, isCompleted, taskId }) => {
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] });
+      const previousTask = queryClient.getQueryData(["task", taskId]);
+
+      queryClient.setQueryData(["task", taskId], (old: Task | null | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          checklist: (old.checklist || []).map(item =>
+            item.id === itemId ? { ...item, is_completed: isCompleted, completed_at: isCompleted ? new Date().toISOString() : null } : item
+          ),
+        };
+      });
+
+      return { previousTask };
+    },
+    onError: (_, variables, context) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", variables.taskId], context.previousTask);
+      }
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
     },
   });
@@ -531,8 +586,34 @@ export function useDeleteChecklistItem() {
       const { error } = await supabase.from("task_checklist").delete().eq("id", itemId);
       if (error) throw error;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ itemId, taskId }) => {
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] });
+      const previousTask = queryClient.getQueryData(["task", taskId]);
+
+      queryClient.setQueryData(["task", taskId], (old: Task | null | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          checklist: (old.checklist || []).filter(item => item.id !== itemId),
+        };
+      });
+
+      // Also update tasks list cache
+      queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.map(t => t.id === taskId ? { ...t, checklist: (t.checklist || []).filter(item => item.id !== itemId) } : t);
+      });
+
+      return { previousTask };
+    },
+    onError: (_, variables, context) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", variables.taskId], context.previousTask);
+      }
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -552,14 +633,40 @@ export function useAddAttachment() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      toast.success("Link adicionado");
+    onMutate: async ({ taskId, fileName, fileUrl, fileType }) => {
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] });
+      const previousTask = queryClient.getQueryData(["task", taskId]);
+
+      const optimisticAttachment = {
+        id: `temp-${Date.now()}`,
+        task_id: taskId,
+        file_name: fileName,
+        file_url: fileUrl,
+        file_type: fileType || "link",
+        uploaded_by: null,
+        created_at: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData(["task", taskId], (old: Task | null | undefined) => {
+        if (!old) return old;
+        return { ...old, attachments: [optimisticAttachment, ...(old.attachments || [])] };
+      });
+
+      return { previousTask };
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", variables.taskId], context.previousTask);
+      }
       console.error("Error adding attachment:", error);
       toast.error("Erro ao adicionar anexo: " + error.message);
+    },
+    onSuccess: () => {
+      toast.success("Link adicionado");
+    },
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -572,9 +679,27 @@ export function useDeleteAttachment() {
       const { error } = await supabase.from("task_attachments").delete().eq("id", attachmentId);
       if (error) throw error;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
+    onMutate: async ({ attachmentId, taskId }) => {
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] });
+      const previousTask = queryClient.getQueryData(["task", taskId]);
+
+      queryClient.setQueryData(["task", taskId], (old: Task | null | undefined) => {
+        if (!old) return old;
+        return { ...old, attachments: (old.attachments || []).filter(a => a.id !== attachmentId) };
+      });
+
+      return { previousTask };
+    },
+    onError: (_, variables, context) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", variables.taskId], context.previousTask);
+      }
+    },
+    onSuccess: () => {
       toast.success("Anexo removido");
+    },
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
     },
   });
 }
@@ -594,7 +719,34 @@ export function useAddComment() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ taskId, comment }) => {
+      await queryClient.cancelQueries({ queryKey: ["task", taskId] });
+      const previousTask = queryClient.getQueryData(["task", taskId]);
+
+      const optimisticHistory = {
+        id: `temp-${Date.now()}`,
+        task_id: taskId,
+        action_type: "comment",
+        comment,
+        old_value: null,
+        new_value: null,
+        performed_by: null,
+        created_at: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData(["task", taskId], (old: Task | null | undefined) => {
+        if (!old) return old;
+        return { ...old, history: [optimisticHistory, ...(old.history || [])] };
+      });
+
+      return { previousTask };
+    },
+    onError: (_, variables, context) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", variables.taskId], context.previousTask);
+      }
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
     },
   });

@@ -114,8 +114,8 @@
                "group flex items-center gap-4 rounded-lg border p-4 transition-all hover:bg-muted/50 cursor-pointer",
                task.isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border"
              )}
-             onClick={() => navigate("/tarefas?filter=onboarding")}
-           >
+              onClick={() => navigate(`/tarefas?task=${task.id}`)}
+            >
              <div
                className={cn(
                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",

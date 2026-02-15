@@ -200,7 +200,7 @@ export default function Dashboard() {
                     "group flex items-center gap-4 rounded-lg border p-4 transition-all hover:bg-muted/50 cursor-pointer",
                     task.isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border"
                   )}
-                  onClick={() => navigate("/tarefas")}
+                  onClick={() => navigate(`/tarefas?task=${task.id}`)}
                 >
                   <div
                     className={cn(
@@ -273,7 +273,8 @@ export default function Dashboard() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 * index }}
-                    className="space-y-2"
+                    className="space-y-2 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors"
+                    onClick={() => navigate(`/equipe`)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
