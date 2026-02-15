@@ -25,19 +25,37 @@ function hexToHsl(hex: string): [number, number, number] {
 function getColorName(hex: string): string {
   if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return "";
   const [h, s, l] = hexToHsl(hex);
-  if (l < 10) return "Preto";
+  if (l < 8) return "Preto";
   if (l > 95) return "Branco";
-  if (s < 10) return "Cinza";
-  if (h < 15) return "Vermelho";
-  if (h < 40) return "Laranja";
-  if (h < 65) return "Amarelo";
-  if (h < 80) return "Lima";
-  if (h < 160) return "Verde";
-  if (h < 190) return "Ciano";
-  if (h < 250) return "Azul";
-  if (h < 290) return "Roxo";
-  if (h < 330) return "Rosa";
-  return "Vermelho";
+  if (s < 8) {
+    if (l < 30) return "Cinza Escuro";
+    if (l < 60) return "Cinza";
+    return "Cinza Claro";
+  }
+  // Light/dark prefix
+  const prefix = l < 30 ? "Escuro" : l > 75 ? "Claro" : "";
+  const addPrefix = (name: string) => prefix ? `${name} ${prefix}` : name;
+
+  if (h < 10) return addPrefix("Vermelho");
+  if (h < 25) return addPrefix("Vermelho Alaranjado");
+  if (h < 40) return addPrefix("Laranja");
+  if (h < 50) return addPrefix("Âmbar");
+  if (h < 65) return addPrefix("Amarelo");
+  if (h < 80) return addPrefix("Amarelo Esverdeado");
+  if (h < 90) return addPrefix("Lima");
+  if (h < 120) return addPrefix("Verde Lima");
+  if (h < 150) return addPrefix("Verde");
+  if (h < 170) return addPrefix("Verde Água");
+  if (h < 190) return addPrefix("Ciano");
+  if (h < 210) return addPrefix("Azul Claro");
+  if (h < 230) return addPrefix("Azul");
+  if (h < 250) return addPrefix("Azul Escuro");
+  if (h < 270) return addPrefix("Índigo");
+  if (h < 290) return addPrefix("Roxo");
+  if (h < 310) return addPrefix("Violeta");
+  if (h < 330) return addPrefix("Rosa");
+  if (h < 345) return addPrefix("Rosa Avermelhado");
+  return addPrefix("Vermelho");
 }
 import {
   Dialog,
