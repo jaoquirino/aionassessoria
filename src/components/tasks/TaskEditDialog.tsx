@@ -864,13 +864,17 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   {/* Attachments List */}
                   <div className="space-y-2">
                     {displayTask.attachments?.map((attachment) => (
-                      <div
+                      <a
                         key={attachment.id}
-                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden"
+                        href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <ExternalLink className="h-4 w-4 text-primary shrink-0" />
+                        <ExternalLink className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0 overflow-hidden max-w-full">
-                          <p className="text-sm font-medium truncate text-primary">{attachment.file_name}</p>
+                          <p className="text-sm font-medium truncate text-primary underline-offset-2 hover:underline">{attachment.file_name}</p>
                           <p className="text-xs text-muted-foreground break-all max-w-full">{attachment.file_url}</p>
                         </div>
                         <Button
@@ -901,7 +905,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </div>
+                      </a>
                     ))}
 
                     {(!displayTask.attachments || displayTask.attachments.length === 0) && (
