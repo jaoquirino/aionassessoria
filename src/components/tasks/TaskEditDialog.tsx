@@ -425,9 +425,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                  <Badge variant="outline" className={cn("text-xs", taskTypeConfig[taskType].color)}>
                    {taskTypeConfig[taskType].label}
                  </Badge>
-                 <Badge variant="outline" className="text-xs">
-                   Peso: {weight}
-                 </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    Peso: {weight + subtasks.filter(s => s.status !== "done").reduce((sum, s) => sum + s.weight, 0)}
+                  </Badge>
                  {isOverdue && (
                    <Badge variant="destructive" className="text-xs gap-1">
                      <AlertTriangle className="h-3 w-3" />
