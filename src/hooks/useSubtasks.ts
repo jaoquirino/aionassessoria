@@ -2,6 +2,38 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Task } from "@/types/tasks";
 import { toast } from "sonner";
+import { useMemo } from "react";
+
+export type SubtaskCounts = Record<string, { total: number; done: number }>;
+
+export function useTasksSubtaskCounts(taskIds: string[]) {
+  const stableKey = useMemo(() => [...taskIds].sort().join(","), [taskIds]);
+
+  return useQuery({
+    queryKey: ["subtask_counts", stableKey],
+    queryFn: async () => {
+      if (!taskIds.length) return {} as SubtaskCounts;
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("parent_task_id, status")
+        .in("parent_task_id", taskIds)
+        .is("archived_at", null);
+
+      if (error) throw error;
+
+      const counts: SubtaskCounts = {};
+      data?.forEach((row) => {
+        const pid = row.parent_task_id!;
+        if (!counts[pid]) counts[pid] = { total: 0, done: 0 };
+        counts[pid].total++;
+        if (row.status === "done") counts[pid].done++;
+      });
+      return counts;
+    },
+    enabled: taskIds.length > 0,
+  });
+}
 
 export function useSubtasks(parentTaskId: string | null) {
   return useQuery({

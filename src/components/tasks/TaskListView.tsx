@@ -10,6 +10,7 @@ import { taskStatusConfig, taskTypeConfig, priorityConfig } from "@/types/tasks"
  import { MultiAssigneePopover } from "./MultiAssigneePopover";
  import { StackedAvatars } from "./StackedAvatars";
  import { useTasksAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
+ import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
 import { format } from "date-fns";
 
 interface TaskListViewProps {
@@ -25,6 +26,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, onUpdateStatus
    // Fetch all task assignees
    const taskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
    const { data: assigneesByTask = {} } = useTasksAssignees(taskIds);
+   const { data: subtaskCounts = {} } = useTasksSubtaskCounts(taskIds);
    const setAssignees = useSetTaskAssignees();
  
    const handleSetAssignees = (taskId: string, memberIds: string[]) => {
@@ -168,6 +170,21 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, onUpdateStatus
                       <Progress value={checklistProgress} className="h-1.5 w-16" />
                     </div>
                   )}
+
+                  {/* Subtask Progress */}
+                  {subtaskCounts[task.id] && subtaskCounts[task.id].total > 0 && (() => {
+                    const sc = subtaskCounts[task.id];
+                    return (
+                      <div 
+                        className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer hover:opacity-80"
+                        onClick={(e) => { e.stopPropagation(); onTaskClick?.(task.id, "checklist"); }}
+                      >
+                        <CheckSquare className="h-3 w-3" />
+                        <span>Subtarefas {sc.done}/{sc.total}</span>
+                        <Progress value={(sc.done / sc.total) * 100} className="h-1.5 w-16" />
+                      </div>
+                    );
+                  })()}
                   
                   {/* Data - Clicável */}
                   <div onClick={handleFieldClick} onPointerDown={handleFieldClick}>

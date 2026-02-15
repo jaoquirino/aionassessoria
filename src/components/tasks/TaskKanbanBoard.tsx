@@ -20,6 +20,7 @@ import { taskStatusConfig, priorityConfig } from "@/types/tasks";
  import { KanbanColumnMenu, AddColumnDialog } from "./KanbanColumnMenu";
  import { useKanbanColumns, useUpdateKanbanColumn, useDeleteKanbanColumn, useCreateKanbanColumn, useReorderKanbanColumns, type KanbanColumn } from "@/hooks/useKanbanColumns";
  import { useTasksAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
+ import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
 import { format } from "date-fns";
 
  interface TaskKanbanBoardProps {
@@ -52,6 +53,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
    // Fetch all task assignees
    const taskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
    const { data: assigneesByTask = {} } = useTasksAssignees(taskIds);
+   const { data: subtaskCounts = {} } = useTasksSubtaskCounts(taskIds);
    const setAssignees = useSetTaskAssignees();
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -221,6 +223,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
                    clients={clients}
                     assignees={(assigneesByTask[task.id] || []).map(a => a.team_member).filter(Boolean) as TeamMember[]}
                     onSetAssignees={(memberIds) => handleSetAssignees(task.id, memberIds)}
+                    subtaskCount={subtaskCounts[task.id]}
                 />
               ))}
 
@@ -270,9 +273,10 @@ interface TaskCardProps {
   clients: Client[];
    assignees: TeamMember[];
    onSetAssignees: (memberIds: string[]) => void;
+   subtaskCount?: { total: number; done: number };
 }
 
- function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, onArchive, onUpdateStatus, teamMembers, clients, assignees, onSetAssignees }: TaskCardProps) {
+ function TaskCard({ task, index, isOverdue, isDragging, onDragStart, onDragEnd, onClick, onUpdateField, onArchive, onUpdateStatus, teamMembers, clients, assignees, onSetAssignees, subtaskCount }: TaskCardProps) {
   const priority = task.priority as TaskPriority || "medium";
   const priorityInfo = priorityConfig[priority];
 
@@ -435,6 +439,23 @@ interface TaskCardProps {
                 <span>{Math.round(checklistProgress)}%</span>
               </div>
               <Progress value={checklistProgress} className="h-1.5" />
+            </div>
+          )}
+
+          {/* Subtask Progress */}
+          {subtaskCount && subtaskCount.total > 0 && (
+            <div 
+              className="space-y-1 pt-1 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={(e) => { e.stopPropagation(); onClick("checklist"); }}
+            >
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <CheckSquare className="h-3 w-3" />
+                  <span>Subtarefas {subtaskCount.done}/{subtaskCount.total}</span>
+                </div>
+                <span>{Math.round((subtaskCount.done / subtaskCount.total) * 100)}%</span>
+              </div>
+              <Progress value={(subtaskCount.done / subtaskCount.total) * 100} className="h-1.5" />
             </div>
           )}
 
