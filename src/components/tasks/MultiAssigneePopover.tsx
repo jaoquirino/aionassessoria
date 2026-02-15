@@ -29,19 +29,17 @@
    const handleOpenChange = (newOpen: boolean) => {
      if (newOpen) {
        setSelectedIds(currentAssignees.map(a => a.id));
-     } else if (JSON.stringify(selectedIds.sort()) !== JSON.stringify(currentAssignees.map(a => a.id).sort())) {
-       // Save on close if changed
-       onSelect(selectedIds);
      }
      setOpen(newOpen);
    };
  
    const toggleMember = (memberId: string) => {
-     setSelectedIds(prev => 
-       prev.includes(memberId) 
-         ? prev.filter(id => id !== memberId)
-         : [...prev, memberId]
-     );
+     const newIds = selectedIds.includes(memberId) 
+       ? selectedIds.filter(id => id !== memberId)
+       : [...selectedIds, memberId];
+     setSelectedIds(newIds);
+     // Fire immediately for instant feedback
+     onSelect(newIds);
    };
  
    return (

@@ -19,7 +19,7 @@ import {
   CalendarIcon,
   Archive,
   Copy,
-  Pencil,
+  
 } from "lucide-react";
 import {
   Dialog,
@@ -57,9 +57,7 @@ import { cn, parseLocalDate } from "@/lib/utils";
  import { useSubtasks, useAddSubtask, useToggleSubtask, useDeleteSubtask, useUpdateSubtask } from "@/hooks/useSubtasks";
  import { useTaskAssignees, useSetTaskAssignees, useTasksAssignees } from "@/hooks/useTaskAssignees";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType, type TaskPriority } from "@/types/tasks";
-import { DatePopover, PriorityPopover } from "./InlineFieldPopover";
-import { MultiAssigneePopover } from "./MultiAssigneePopover";
-import { StackedAvatars } from "./StackedAvatars";
+import { SubtaskRow } from "./SubtaskRow";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -799,183 +797,21 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                   {/* Subtask Items */}
                   <div className="space-y-2">
-                    {subtasks.map((sub) => {
-                      const subOverdue = sub.due_date && parseLocalDate(sub.due_date) < new Date() && sub.status !== "done";
-                      const priorityEmojis: Record<string, string> = { urgent: "🔴", high: "🟠", medium: "🟡", low: "🟢" };
-                      const parentId = displayTask.id;
-                      return (
-                      <div 
-                        key={sub.id} 
-                        className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50",
-                          sub.status === "done" && "bg-success/5 border-success/30",
-                          subOverdue && "border-destructive/50 bg-destructive/5"
-                        )}
-                        onClick={() => setEditingSubtaskId(sub.id)}
-                      >
-                        <Checkbox
-                          checked={sub.status === "done"}
-                          onCheckedChange={(checked) => 
-                            toggleSubtask.mutate({ 
-                              subtaskId: sub.id, 
-                              parentTaskId: parentId,
-                              isDone: !!checked,
-                            })
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <span className={cn(
-                            "text-sm font-medium",
-                            sub.status === "done" && "line-through text-muted-foreground"
-                          )}>
-                            {sub.title}
-                          </span>
-                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                            {/* Inline editable priority */}
-                            <PriorityPopover
-                              currentPriority={(sub.priority as any) || "medium"}
-                              onSelect={(p) => {
-                                updateSubtask.mutate({ subtaskId: sub.id, parentTaskId: parentId, updates: { priority: p } as any });
-                              }}
-                            >
-                              <button type="button" onClick={(e) => e.stopPropagation()} className="inline-flex">
-                                <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted", subOverdue && "border-destructive text-destructive")}>
-                                  {priorityEmojis[sub.priority] || "🟡"} {sub.priority === "urgent" ? "Urgente" : sub.priority === "high" ? "Alta" : sub.priority === "medium" ? "Média" : "Baixa"}
-                                </Badge>
-                              </button>
-                            </PriorityPopover>
-                            {/* Inline editable weight */}
-                            <Popover>
-                              <PopoverTrigger asChild onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-                                <button type="button" className="inline-flex">
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted">
-                                    Peso: {sub.weight}
-                                  </Badge>
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-32 p-2" align="start" onClick={(e) => e.stopPropagation()}>
-                                <p className="text-xs font-medium text-muted-foreground px-2 py-1">Peso</p>
-                                <div className="space-y-1">
-                                  {[1,2,3,4,5].map(w => (
-                                    <button
-                                      key={w}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        updateSubtask.mutate({ subtaskId: sub.id, parentTaskId: parentId, updates: { weight: w } as any });
-                                      }}
-                                      className={cn(
-                                        "w-full text-left px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors",
-                                        sub.weight === w && "bg-muted"
-                                      )}
-                                    >
-                                      {w}
-                                    </button>
-                                  ))}
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                            {sub.deliverable_type && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                {sub.deliverable_type === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
-                              </Badge>
-                            )}
-                            {/* Inline editable date */}
-                            <DatePopover
-                              currentDate={sub.due_date ? parseLocalDate(sub.due_date) : new Date()}
-                              onSelect={(date) => {
-                                const yyyy = date.getFullYear();
-                                const mm = String(date.getMonth() + 1).padStart(2, "0");
-                                const dd = String(date.getDate()).padStart(2, "0");
-                                updateSubtask.mutate({ subtaskId: sub.id, parentTaskId: parentId, updates: { due_date: `${yyyy}-${mm}-${dd}` } as any });
-                              }}
-                            >
-                              <button type="button" onClick={(e) => e.stopPropagation()} className="inline-flex">
-                                <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted", subOverdue && "border-destructive text-destructive")}>
-                                  <CalendarIcon className="h-2.5 w-2.5 mr-0.5" />
-                                  {sub.due_date ? parseLocalDate(sub.due_date).toLocaleDateString("pt-BR") : "Sem prazo"}
-                                </Badge>
-                              </button>
-                            </DatePopover>
-                            {/* Inline editable module */}
-                            <div onClick={(e) => e.stopPropagation()} className="inline-flex">
-                              <Select
-                                value={sub.contract_module_id || ""}
-                                onValueChange={(val) => {
-                                  supabase.from("contract_modules").select("contract_id").eq("id", val).single().then(({ data }) => {
-                                    updateSubtask.mutate({ subtaskId: sub.id, parentTaskId: parentId, updates: { contract_module_id: val, contract_id: data?.contract_id } as any });
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="h-5 text-[10px] px-1.5 py-0 w-auto border-dashed gap-0.5 inline-flex">
-                                  <SelectValue placeholder="Módulo">
-                                    {clientModules.find(m => m.contractModuleId === sub.contract_module_id)?.moduleName || "Módulo"}
-                                  </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {clientModules.map((module) => (
-                                    <SelectItem key={module.contractModuleId} value={module.contractModuleId} className="text-xs">
-                                      {module.moduleName}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            {/* Inline editable assignees (multi) */}
-                            <MultiAssigneePopover
-                              currentAssignees={
-                                (subtaskAssigneesMap[sub.id] || [])
-                                  .map(a => a.team_member)
-                                  .filter(Boolean) as any[]
-                              }
-                              teamMembers={teamMembers}
-                              onSelect={(memberIds) => {
-                                setSubtaskAssignees.mutate({ taskId: sub.id, memberIds });
-                                // Also update assigned_to for legacy compat
-                                updateSubtask.mutate({ subtaskId: sub.id, parentTaskId: parentId, updates: { assigned_to: memberIds[0] || null } as any });
-                              }}
-                            >
-                              <button type="button" onClick={(e) => e.stopPropagation()} className="inline-flex">
-                                {(() => {
-                                  const assignees = (subtaskAssigneesMap[sub.id] || [])
-                                    .map(a => a.team_member)
-                                    .filter(Boolean) as any[];
-                                  return assignees.length > 0 ? (
-                                    <StackedAvatars assignees={assignees} size="sm" />
-                                  ) : (
-                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted">
-                                      <User className="h-2.5 w-2.5 mr-0.5" />
-                                      Sem resp.
-                                    </Badge>
-                                  );
-                                })()}
-                              </button>
-                            </MultiAssigneePopover>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            title="Editar subtarefa"
-                            onClick={() => setEditingSubtaskId(sub.id)}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 hover:text-destructive hover:bg-destructive/10"
-                            title="Arquivar subtarefa"
-                            onClick={() => deleteSubtask.mutate({ subtaskId: sub.id, parentTaskId: parentId })}
-                          >
-                            <Archive className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                      );
-                    })}
+                    {subtasks.map((sub) => (
+                      <SubtaskRow
+                        key={sub.id}
+                        sub={sub}
+                        parentId={displayTask.id}
+                        teamMembers={teamMembers}
+                        clientModules={clientModules}
+                        assignees={subtaskAssigneesMap[sub.id] || []}
+                        onToggle={(subtaskId, parentTaskId, isDone) => toggleSubtask.mutate({ subtaskId, parentTaskId, isDone })}
+                        onUpdate={(subtaskId, parentTaskId, updates) => updateSubtask.mutate({ subtaskId, parentTaskId, updates })}
+                        onSetAssignees={(taskId, memberIds) => setSubtaskAssignees.mutate({ taskId, memberIds })}
+                        onEdit={(subtaskId) => setEditingSubtaskId(subtaskId)}
+                        onDelete={(subtaskId, parentTaskId) => deleteSubtask.mutate({ subtaskId, parentTaskId })}
+                      />
+                    ))}
 
                     {subtasks.length === 0 && (
                       <p className="text-center text-muted-foreground py-8">
