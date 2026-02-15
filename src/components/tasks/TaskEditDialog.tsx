@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -57,8 +57,9 @@ import { cn, parseLocalDate } from "@/lib/utils";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType, type TaskPriority } from "@/types/tasks";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import type { Task } from "@/types/tasks";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 
 interface TaskEditDialogProps {
   taskId: string | null;
@@ -126,7 +127,16 @@ function useClientModules(clientId: string | null) {
 }
 
 export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "details" }: TaskEditDialogProps) {
-  const { data: task, isLoading } = useTask(taskId);
+  const { data: task, isLoading: taskLoading } = useTask(taskId);
+  // Pre-populate from tasks list cache for instant display
+  const queryClient = useQueryClient();
+  const cachedTask = useMemo(() => {
+    if (task) return null; // Already loaded
+    const tasks = queryClient.getQueryData<Task[]>(["tasks"]);
+    return tasks?.find(t => t.id === taskId) || null;
+  }, [taskId, task]);
+  const displayTask = task || cachedTask;
+  const isLoading = !displayTask && taskLoading;
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
   const { data: comments = [] } = useTaskComments(taskId);
@@ -182,19 +192,19 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   // Sync form state when task loads initially (skip if user has local changes)
   useEffect(() => {
-    if (task && !isDirtyRef.current) {
-      setTitle(task.title);
-      setStatus(task.status);
-      setPriority(task.priority || "medium");
-      setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
-      setDescriptionNotes(task.description_notes || "");
-      setClientId(task.client_id || "");
-      setContractModuleId(task.contract_module_id || "");
-      setTaskType(task.type);
-      setWeight(task.weight);
-      setDeliverableType(task.deliverable_type || null);
+    if (displayTask && !isDirtyRef.current) {
+      setTitle(displayTask.title);
+      setStatus(displayTask.status);
+      setPriority(displayTask.priority || "medium");
+      setDueDate(displayTask.due_date ? parseLocalDate(displayTask.due_date) : undefined);
+      setDescriptionNotes(displayTask.description_notes || "");
+      setClientId(displayTask.client_id || "");
+      setContractModuleId(displayTask.contract_module_id || "");
+      setTaskType(displayTask.type);
+      setWeight(displayTask.weight);
+      setDeliverableType(displayTask.deliverable_type || null);
     }
-  }, [task]);
+  }, [displayTask]);
 
   // Mark form as dirty when any field changes
   const markDirty = () => { isDirtyRef.current = true; };
@@ -218,15 +228,15 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   };
 
   const handleSave = async () => {
-    if (!task) return;
+    if (!displayTask) return;
 
     setIsSaving(true);
     try {
-      const clientChanged = clientId && clientId !== task.client_id;
+      const clientChanged = clientId && clientId !== displayTask.client_id;
 
       // Find the contract_id from the selected module
-      let contractId = task.contract_id;
-      if (contractModuleId && contractModuleId !== task.contract_module_id) {
+      let contractId = displayTask.contract_id;
+      if (contractModuleId && contractModuleId !== displayTask.contract_module_id) {
         const { data: cm } = await supabase
           .from("contract_modules")
           .select("contract_id")
@@ -241,13 +251,13 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       }
 
       await updateTask.mutateAsync({
-        id: task.id,
+        id: displayTask.id,
         title,
         status,
         priority,
         client_id: clientId,
-         assigned_to: selectedAssignees[0] || null, // Keep for backwards compatibility
-        due_date: dueDate ? `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-${String(dueDate.getDate()).padStart(2, "0")}` : task.due_date,
+         assigned_to: selectedAssignees[0] || null,
+        due_date: dueDate ? `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-${String(dueDate.getDate()).padStart(2, "0")}` : displayTask.due_date,
         description_notes: descriptionNotes || null,
         contract_module_id: contractModuleId || null,
         contract_id: contractId,
@@ -257,7 +267,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       } as any);
 
        // Save multiple assignees
-       await setTaskAssignees.mutateAsync({ taskId: task.id, memberIds: selectedAssignees });
+       await setTaskAssignees.mutateAsync({ taskId: displayTask.id, memberIds: selectedAssignees });
       isDirtyRef.current = false;
     } finally {
       setIsSaving(false);
@@ -266,41 +276,42 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   const handleCancel = () => {
     // Reset to original values
-    if (task) {
-      setTitle(task.title);
-      setStatus(task.status);
-      setPriority(task.priority || "medium");
+    if (displayTask) {
+      setTitle(displayTask.title);
+      setStatus(displayTask.status);
+      setPriority(displayTask.priority || "medium");
        setSelectedAssignees(taskAssigneesData.map(a => a.team_member_id));
-      setDueDate(task.due_date ? parseLocalDate(task.due_date) : undefined);
-      setDescriptionNotes(task.description_notes || "");
-      setClientId(task.client_id || "");
-      setContractModuleId(task.contract_module_id || "");
+      setDueDate(displayTask.due_date ? parseLocalDate(displayTask.due_date) : undefined);
+      setDescriptionNotes(displayTask.description_notes || "");
+      setClientId(displayTask.client_id || "");
+      setContractModuleId(displayTask.contract_module_id || "");
     }
     onOpenChange(false);
   };
 
-  // Auto-save on outside click
-  const handleOpenChange = async (newOpen: boolean) => {
-    if (!newOpen && task) {
-      await handleSave();
+  // Auto-save on outside click - close immediately, save in background
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && displayTask && isDirtyRef.current) {
+      // Fire and forget - close immediately
+      handleSave();
     }
     onOpenChange(newOpen);
   };
 
   const handleAddChecklistItem = () => {
-    if (!task || !newChecklistItem.trim()) return;
-    addChecklistItem.mutate({ taskId: task.id, text: newChecklistItem.trim() });
+    if (!displayTask || !newChecklistItem.trim()) return;
+    addChecklistItem.mutate({ taskId: displayTask.id, text: newChecklistItem.trim() });
     setNewChecklistItem("");
   };
 
   const handleAddAttachment = () => {
-    if (!task || !newAttachmentName.trim() || !newAttachmentUrl.trim()) return;
+    if (!displayTask || !newAttachmentName.trim() || !newAttachmentUrl.trim()) return;
     let url = newAttachmentUrl.trim();
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
       url = "https://" + url;
     }
     addAttachment.mutate({
-      taskId: task.id,
+      taskId: displayTask.id,
       fileName: newAttachmentName.trim(),
       fileUrl: url,
     });
@@ -309,19 +320,19 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   };
 
   const handleAddComment = () => {
-    if (!task || !newComment.trim()) return;
-    addComment.mutate({ taskId: task.id, comment: newComment.trim() });
+    if (!displayTask || !newComment.trim()) return;
+    addComment.mutate({ taskId: displayTask.id, comment: newComment.trim() });
     setNewComment("");
   };
 
-  const isOverdue = task && parseLocalDate(task.due_date) < new Date() && task.status !== "done";
-  const checklistProgress = task?.checklist?.length 
-    ? task.checklist.filter(item => item.is_completed).length / task.checklist.length 
+  const isOverdue = displayTask && parseLocalDate(displayTask.due_date) < new Date() && displayTask.status !== "done";
+  const checklistProgress = displayTask?.checklist?.length 
+    ? displayTask.checklist.filter(item => item.is_completed).length / displayTask.checklist.length 
     : 0;
   
   // Task can always be completed - no requirements for checklist or notes
-  const canComplete = task && (
-    !task.checklist?.length || task.checklist.every(item => item.is_completed)
+  const canComplete = displayTask && (
+    !displayTask.checklist?.length || displayTask.checklist.every(item => item.is_completed)
   );
 
   // Status color mapping
@@ -348,7 +359,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
             <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-32 w-full" />
           </div>
-        ) : task ? (
+        ) : displayTask ? (
           <div className="flex flex-col h-full max-h-[90vh]">
             {/* Header - Inline editable title */}
             <div className="p-6 pb-4 border-b shrink-0">
@@ -386,18 +397,18 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <TabsTrigger value="checklist" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <CheckSquare className="h-4 w-4 mr-2" />
                     Checklist
-                    {task.checklist?.length ? (
+                    {displayTask.checklist?.length ? (
                       <Badge variant="secondary" className="ml-2 text-xs">
-                        {task.checklist.filter(i => i.is_completed).length}/{task.checklist.length}
+                        {displayTask.checklist.filter(i => i.is_completed).length}/{displayTask.checklist.length}
                       </Badge>
                     ) : null}
                   </TabsTrigger>
                   <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <Paperclip className="h-4 w-4 mr-2" />
                     Anexos
-                    {task.attachments?.length ? (
+                    {displayTask.attachments?.length ? (
                       <Badge variant="secondary" className="ml-2 text-xs">
-                        {task.attachments.length}
+                        {displayTask.attachments.length}
                       </Badge>
                     ) : null}
                   </TabsTrigger>
@@ -467,7 +478,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   </div>
 
                   {/* Completion Warning - only show if checklist is incomplete */}
-                  {status !== "done" && task.checklist?.length > 0 && !task.checklist.every(i => i.is_completed) && (
+                  {status !== "done" && displayTask.checklist?.length > 0 && !displayTask.checklist.every(i => i.is_completed) && (
                     <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 text-sm">
                       <p className="font-medium text-warning">Para marcar como Entregue:</p>
                       <ul className="mt-1 text-muted-foreground text-xs space-y-1">
@@ -655,7 +666,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 {/* Checklist Tab */}
                 <TabsContent value="checklist" className="p-6 space-y-4 mt-0">
                   {/* Progress Bar */}
-                  {task.checklist && task.checklist.length > 0 && (
+                  {displayTask.checklist && displayTask.checklist.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Progresso</span>
@@ -685,7 +696,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                   {/* Checklist Items */}
                   <div className="space-y-2">
-                    {task.checklist?.map((item) => (
+                    {displayTask.checklist?.map((item) => (
                       <div 
                         key={item.id} 
                         className={cn(
@@ -699,7 +710,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                             toggleChecklistItem.mutate({ 
                               itemId: item.id, 
                               isCompleted: !!checked, 
-                              taskId: task.id 
+                              taskId: displayTask.id 
                             })
                           }
                         />
@@ -713,14 +724,14 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => deleteChecklistItem.mutate({ itemId: item.id, taskId: task.id })}
+                          onClick={() => deleteChecklistItem.mutate({ itemId: item.id, taskId: displayTask.id })}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
 
-                    {(!task.checklist || task.checklist.length === 0) && (
+                    {(!displayTask.checklist || displayTask.checklist.length === 0) && (
                       <p className="text-center text-muted-foreground py-8">
                         Nenhuma subetapa adicionada
                       </p>
@@ -770,7 +781,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                   {/* Attachments List */}
                   <div className="space-y-2">
-                    {task.attachments?.map((attachment) => (
+                    {displayTask.attachments?.map((attachment) => (
                       <div
                         key={attachment.id}
                         className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden"
@@ -803,7 +814,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           title="Excluir"
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteAttachment.mutate({ attachmentId: attachment.id, taskId: task.id }); 
+                            deleteAttachment.mutate({ attachmentId: attachment.id, taskId: displayTask.id }); 
                           }}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -811,7 +822,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       </div>
                     ))}
 
-                    {(!task.attachments || task.attachments.length === 0) && (
+                    {(!displayTask.attachments || displayTask.attachments.length === 0) && (
                       <p className="text-center text-muted-foreground py-8">
                         Nenhum link adicionado
                       </p>
@@ -842,7 +853,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                   {/* History List */}
                   <div className="space-y-3">
-                    {task.history?.map((entry) => {
+                    {displayTask.history?.map((entry) => {
                       const priorityLabels: Record<string, string> = {
                         low: "Baixa",
                         medium: "Média",
@@ -1061,7 +1072,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       );
                     })}
 
-                    {(!task.history || task.history.length === 0) && (
+                    {(!displayTask.history || displayTask.history.length === 0) && (
                       <p className="text-center text-muted-foreground py-8">
                         Nenhum histórico
                       </p>
@@ -1075,8 +1086,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
             <DialogFooter className="p-4 border-t shrink-0 flex-wrap gap-2">
               <Button 
                 variant="ghost" 
-                onClick={async () => { 
-                  await archiveTask.mutateAsync(task.id); 
+                onClick={() => { 
+                  archiveTask.mutate(displayTask.id); 
                   onOpenChange(false); 
                 }}
                 disabled={isSaving || archiveTask.isPending}
@@ -1085,11 +1096,11 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 <Archive className="h-4 w-4" />
                 Arquivar
               </Button>
-              <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+              <Button variant="outline" onClick={handleCancel}>
                 Cancelar
               </Button>
-              <Button onClick={async () => { await handleSave(); onOpenChange(false); }} disabled={isSaving}>
-                {isSaving ? "Salvando..." : "Salvar"}
+              <Button onClick={() => { handleSave(); onOpenChange(false); }}>
+                Salvar
               </Button>
             </DialogFooter>
           </div>
