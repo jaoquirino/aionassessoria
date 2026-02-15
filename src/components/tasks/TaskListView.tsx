@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn, parseLocalDate } from "@/lib/utils";
 import type { Task, TeamMember, TaskPriority, TaskStatusDB, Client } from "@/types/tasks";
 import { taskStatusConfig, taskTypeConfig, priorityConfig } from "@/types/tasks";
+import { PriorityBadge } from "./PriorityBadge";
  import { DatePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
  import { MultiAssigneePopover } from "./MultiAssigneePopover";
  import { StackedAvatars } from "./StackedAvatars";
@@ -153,9 +154,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, onUpdateStatus
                     onSelect={(newPriority) => onUpdateField?.(task.id, "priority", newPriority)}
                   >
                     <button type="button" className="inline-flex ml-2" onClick={handleFieldClick} onPointerDown={handleFieldClick}>
-                      <Badge className={cn("text-xs cursor-pointer hover:opacity-80 transition-opacity", priorityInfo.color)}>
-                        {priorityInfo.label}
-                      </Badge>
+                      <PriorityBadge priorityKey={priority} className="text-xs cursor-pointer hover:opacity-80 transition-opacity" />
                     </button>
                   </PriorityPopover>
                   

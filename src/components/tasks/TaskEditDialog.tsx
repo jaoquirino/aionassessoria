@@ -57,6 +57,7 @@ import { cn, parseLocalDate } from "@/lib/utils";
  import { useSubtasks, useAddSubtask, useToggleSubtask, useDeleteSubtask, useUpdateSubtask } from "@/hooks/useSubtasks";
  import { useTaskAssignees, useSetTaskAssignees, useTasksAssignees } from "@/hooks/useTaskAssignees";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType, type TaskPriority } from "@/types/tasks";
+import { usePriorities } from "@/hooks/usePriorities";
 import { SubtaskRow } from "./SubtaskRow";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
@@ -152,6 +153,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const addSubtask = useAddSubtask();
   const toggleSubtask = useToggleSubtask();
   const deleteSubtask = useDeleteSubtask();
+  const { data: dbPriorities = [] } = usePriorities();
   const updateSubtask = useUpdateSubtask();
   const setSubtaskAssignees = useSetTaskAssignees();
   
@@ -533,10 +535,21 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="urgent">🔴 Urgente</SelectItem>
-                          <SelectItem value="high">🟠 Alta</SelectItem>
-                          <SelectItem value="medium">🟡 Média</SelectItem>
-                          <SelectItem value="low">🟢 Baixa</SelectItem>
+                          {dbPriorities.length > 0 ? dbPriorities.map(p => (
+                            <SelectItem key={p.key} value={p.key}>
+                              <span className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                                {p.label}
+                              </span>
+                            </SelectItem>
+                          )) : (
+                            <>
+                              <SelectItem value="urgent">🔴 Urgente</SelectItem>
+                              <SelectItem value="high">🟠 Alta</SelectItem>
+                              <SelectItem value="medium">🟡 Média</SelectItem>
+                              <SelectItem value="low">🟢 Baixa</SelectItem>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>

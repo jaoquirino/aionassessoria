@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { useArchivedTasks, useUnarchiveTask, useDeleteTask } from "@/hooks/useTasks";
 import { taskTypeConfig, priorityConfig, taskStatusConfig, type TaskType, type TaskPriority, type TaskStatusDB } from "@/types/tasks";
+import { PriorityBadge } from "@/components/tasks/PriorityBadge";
 import { cn } from "@/lib/utils";
 
 interface TaskPreview {
@@ -150,9 +151,7 @@ export function ArchivedTasksTab() {
                         <Badge variant="outline" className={cn("text-xs", typeConfig?.color)}>
                           {typeConfig?.label || task.type}
                         </Badge>
-                        <Badge className={cn("text-xs", prioConfig.color)}>
-                          {prioConfig.label}
-                        </Badge>
+                        <PriorityBadge priorityKey={task.priority} className="text-xs" />
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span>{task.client?.name || "Sem cliente"}</span>
@@ -219,9 +218,7 @@ export function ArchivedTasksTab() {
                 <Badge variant="outline" className={cn("text-xs", taskTypeConfig[previewTask.type as TaskType]?.color)}>
                   {taskTypeConfig[previewTask.type as TaskType]?.label || previewTask.type}
                 </Badge>
-                <Badge className={cn("text-xs", priorityConfig[previewTask.priority as TaskPriority]?.color)}>
-                  {priorityConfig[previewTask.priority as TaskPriority]?.label || previewTask.priority}
-                </Badge>
+                <PriorityBadge priorityKey={previewTask.priority} className="text-xs" />
                 <Badge className={cn("text-xs", taskStatusConfig[previewTask.status as TaskStatusDB]?.color)}>
                   {taskStatusConfig[previewTask.status as TaskStatusDB]?.label || previewTask.status}
                 </Badge>

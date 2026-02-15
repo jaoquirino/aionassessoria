@@ -8,6 +8,7 @@ import { ptBR } from "date-fns/locale";
 import type { TeamMember, TaskPriority, Client } from "@/types/tasks";
 import { priorityConfig } from "@/types/tasks";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
+import { usePriorities } from "@/hooks/usePriorities";
 
 interface InlineFieldPopoverProps {
   children: React.ReactNode;
@@ -217,13 +218,22 @@ export function PriorityPopover({
   disabled 
 }: PriorityPopoverProps) {
   const [open, setOpen] = useState(false);
+  const { data: dbPriorities = [] } = usePriorities();
 
   const handleSelect = (priority: TaskPriority) => {
     onSelect(priority);
     setOpen(false);
   };
 
-  const priorities: TaskPriority[] = ["low", "medium", "high", "urgent"];
+  // Use DB priorities if available, fallback to hardcoded
+  const priorities = dbPriorities.length > 0
+    ? dbPriorities
+    : [
+        { key: "low", label: "Baixa", color: "#10B981" },
+        { key: "medium", label: "Média", color: "#3B82F6" },
+        { key: "high", label: "Alta", color: "#F59E0B" },
+        { key: "urgent", label: "Pra ontem", color: "#EF4444" },
+      ];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -244,21 +254,27 @@ export function PriorityPopover({
       >
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground px-2 py-1">Prioridade</p>
-          {priorities.map((priority) => {
-            const config = priorityConfig[priority];
-            return (
-              <button
-                key={priority}
-                onClick={(e) => { e.stopPropagation(); handleSelect(priority); }}
-                className={cn(
-                  "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors",
-                  currentPriority === priority && "bg-muted"
-                )}
+          {priorities.map((p) => (
+            <button
+              key={p.key}
+              onClick={(e) => { e.stopPropagation(); handleSelect(p.key as TaskPriority); }}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-muted transition-colors",
+                currentPriority === p.key && "bg-muted"
+              )}
+            >
+              <Badge
+                className="text-xs"
+                style={{
+                  backgroundColor: `${p.color}40`,
+                  color: p.color,
+                  borderColor: `${p.color}60`,
+                }}
               >
-                <Badge className={cn("text-xs", config.color)}>{config.label}</Badge>
-              </button>
-            );
-          })}
+                {p.label}
+              </Badge>
+            </button>
+          ))}
         </div>
         {isUpdating && (
           <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-md">

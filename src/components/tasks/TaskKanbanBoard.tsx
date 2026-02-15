@@ -14,13 +14,15 @@ import {
 import { cn, parseLocalDate } from "@/lib/utils";
 import type { Task, TaskStatusDB, TaskPriority, TeamMember, Client } from "@/types/tasks";
 import { taskStatusConfig, priorityConfig } from "@/types/tasks";
+import { PriorityBadge } from "./PriorityBadge";
  import { DatePopover, PriorityPopover, ClientPopover } from "./InlineFieldPopover";
  import { MultiAssigneePopover } from "./MultiAssigneePopover";
  import { StackedAvatars } from "./StackedAvatars";
  import { KanbanColumnMenu, AddColumnDialog, getColumnColorStyle, getColumnColorClass } from "./KanbanColumnMenu";
  import { useKanbanColumns, useUpdateKanbanColumn, useDeleteKanbanColumn, useCreateKanbanColumn, useReorderKanbanColumns, type KanbanColumn } from "@/hooks/useKanbanColumns";
  import { useTasksAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
- import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
+import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
+import { usePriorities } from "@/hooks/usePriorities";
 import { format } from "date-fns";
 
  interface TaskKanbanBoardProps {
@@ -55,6 +57,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
    const { data: assigneesByTask = {} } = useTasksAssignees(taskIds);
    const { data: subtaskCounts = {} } = useTasksSubtaskCounts(taskIds);
    const setAssignees = useSetTaskAssignees();
+   const { data: dbPriorities = [] } = usePriorities();
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     setDraggedTask(taskId);
@@ -118,7 +121,8 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
     });
 
     // Ordenar por prioridade
-    const priorityOrder = (p: TaskPriority) => priorityConfig[p]?.order || 99;
+    const priorityOrderMap = Object.fromEntries(dbPriorities.map(p => [p.key, p.order_index]));
+    const priorityOrder = (p: TaskPriority) => priorityOrderMap[p] ?? priorityConfig[p]?.order ?? 99;
     
      Object.keys(result).forEach((key) => {
        result[key].sort((a, b) => 
@@ -393,9 +397,7 @@ interface TaskCardProps {
               onPointerDown={handleFieldClick}
               className="inline-flex self-start"
             >
-              <Badge className={cn("text-xs cursor-pointer hover:opacity-80 transition-opacity", priorityInfo.color)}>
-                {priorityInfo.label}
-              </Badge>
+              <PriorityBadge priorityKey={priority} className="text-xs cursor-pointer hover:opacity-80 transition-opacity" />
             </button>
            </PriorityPopover>
 
