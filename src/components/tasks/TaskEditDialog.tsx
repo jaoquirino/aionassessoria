@@ -131,10 +131,11 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   // Pre-populate from tasks list cache for instant display
   const queryClient = useQueryClient();
   const cachedTask = useMemo(() => {
-    if (task) return null; // Already loaded
+    if (!taskId) return null;
     const tasks = queryClient.getQueryData<Task[]>(["tasks"]);
     return tasks?.find(t => t.id === taskId) || null;
-  }, [taskId, task]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId]);
   const displayTask = task || cachedTask;
   const isLoading = !displayTask && taskLoading;
   const { data: teamMembers = [] } = useTeamMembers();
@@ -325,16 +326,6 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     setNewComment("");
   };
 
-  const isOverdue = displayTask && parseLocalDate(displayTask.due_date) < new Date() && displayTask.status !== "done";
-  const checklistProgress = displayTask?.checklist?.length 
-    ? displayTask.checklist.filter(item => item.is_completed).length / displayTask.checklist.length 
-    : 0;
-  
-  // Task can always be completed - no requirements for checklist or notes
-  const canComplete = displayTask && (
-    !displayTask.checklist?.length || displayTask.checklist.every(item => item.is_completed)
-  );
-
   // Status color mapping
   const getStatusColor = (statusKey: string) => {
     const colors: Record<string, string> = {
@@ -349,6 +340,14 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   };
 
   if (!open) return null;
+
+  const isOverdue = displayTask ? parseLocalDate(displayTask.due_date) < new Date() && displayTask.status !== "done" : false;
+  const checklistProgress = displayTask?.checklist?.length 
+    ? displayTask.checklist.filter(item => item.is_completed).length / displayTask.checklist.length 
+    : 0;
+  const canComplete = displayTask && (
+    !displayTask.checklist?.length || displayTask.checklist.every(item => item.is_completed)
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
