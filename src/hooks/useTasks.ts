@@ -188,12 +188,59 @@ export function useCreateTask() {
 
       return task;
     },
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      const previousTasks = queryClient.getQueryData(["tasks"]);
+
+      // Create optimistic task
+      const optimisticTask = {
+        id: `temp-${Date.now()}`,
+        title: input.title,
+        status: input.status || "todo",
+        priority: input.priority || "medium",
+        client_id: input.client_id,
+        due_date: input.due_date,
+        weight: 2,
+        type: input.type,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        assigned_to: input.assigned_to || null,
+        contract_id: input.contract_id || null,
+        contract_module_id: input.contract_module_id || null,
+        description_notes: null,
+        description_objective: null,
+        description_deliverable: null,
+        description_references: null,
+        is_deliverable: input.is_deliverable || false,
+        deliverable_type: (input as any).deliverable_type || null,
+        required_role: input.required_role,
+        created_by: null,
+        archived_at: null,
+        client: null,
+        contract: null,
+        contract_module: null,
+        assignee: null,
+        creator: null,
+        checklist: [],
+      } as unknown as Task;
+
+      queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
+        return old ? [optimisticTask, ...old] : [optimisticTask];
+      });
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks);
+      }
+      toast.error("Erro ao criar tarefa: " + error.message);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
       toast.success("Tarefa criada com sucesso");
     },
-    onError: (error) => {
-      toast.error("Erro ao criar tarefa: " + error.message);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -216,13 +263,32 @@ export function useUpdateTask() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["task", variables.id] });
+    onMutate: async (input) => {
+      const { id, ...updateData } = input;
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      const previousTasks = queryClient.getQueryData(["tasks"]);
+
+      queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.map((task) =>
+          task.id === id ? { ...task, ...updateData } : task
+        );
+      });
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks);
+      }
+      toast.error("Erro ao atualizar tarefa: " + error.message);
+    },
+    onSuccess: () => {
       toast.success("Tarefa atualizada");
     },
-    onError: (error) => {
-      toast.error("Erro ao atualizar tarefa: " + error.message);
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task", variables.id] });
     },
   });
 }
@@ -353,12 +419,29 @@ export function useArchiveTask() {
         .eq("id", taskId);
       if (error) throw error;
     },
+    onMutate: async (taskId) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks"] });
+      const previousTasks = queryClient.getQueryData(["tasks"]);
+
+      // Optimistically remove from list
+      queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.filter((task) => task.id !== taskId);
+      });
+
+      return { previousTasks };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks"], context.previousTasks);
+      }
+      toast.error("Erro ao arquivar tarefa: " + error.message);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
       toast.success("Tarefa arquivada");
     },
-    onError: (error) => {
-      toast.error("Erro ao arquivar tarefa: " + error.message);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }

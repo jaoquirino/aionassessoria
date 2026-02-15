@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, CalendarIcon, Image, Video, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ interface DeliveriesDashboardProps {
 }
 
 export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
+  const navigate = useNavigate();
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [useCustomDates, setUseCustomDates] = useState(false);
@@ -262,7 +264,8 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                 return (
                   <div
                     key={delivery.id}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    onClick={() => navigate(`/tarefas?task=${delivery.id}`)}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
                       <StatusIcon className={cn(
