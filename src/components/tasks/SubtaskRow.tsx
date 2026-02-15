@@ -54,16 +54,21 @@ export function SubtaskRow({
   // Weight popover controlled state
   const [weightOpen, setWeightOpen] = useState(false);
 
-  // Assignee optimistic local state
+  // Assignee optimistic local state — never flicker back to empty
   const serverAssignees = assignees.map(a => a.team_member).filter(Boolean) as TeamMember[];
   const [localAssignees, setLocalAssignees] = useState<TeamMember[] | null>(null);
   const displayAssignees = localAssignees ?? serverAssignees;
 
-  // Reset local when server data changes
-  const serverKey = assignees.map(a => a.team_member_id).join(",");
-  useEffect(() => { setLocalAssignees(null); }, [serverKey]);
+  // Only clear local override when server catches up to match it
+  const serverKey = assignees.map(a => a.team_member_id).sort().join(",");
+  const localKey = localAssignees?.map(a => a.id).sort().join(",") ?? null;
+  useEffect(() => {
+    if (localKey !== null && serverKey === localKey) {
+      setLocalAssignees(null);
+    }
+  }, [serverKey, localKey]);
 
-  // Deliverable type logic
+  // Deliverable type logic — use sub data directly (optimistically updated)
   const mod = clientModules.find(m => m.contractModuleId === sub.contract_module_id);
   const isDesign = mod?.moduleName?.toLowerCase().includes("design");
 
@@ -181,19 +186,15 @@ export function SubtaskRow({
           <div onClick={(e) => e.stopPropagation()} className="inline-flex">
             <Select
               value={sub.contract_module_id || ""}
-              onValueChange={(val) => {
+              onValueChange={async (val) => {
                 const selectedMod = clientModules.find(m => m.contractModuleId === val);
                 const selIsDesign = selectedMod?.moduleName?.toLowerCase().includes("design");
+                const { data: cmData } = await supabase.from("contract_modules").select("contract_id").eq("id", val).single();
                 onUpdate(sub.id, parentId, {
                   contract_module_id: val,
+                  contract_id: cmData?.contract_id || sub.contract_id,
                   deliverable_type: selIsDesign ? (sub.deliverable_type || null) : null,
                 } as any);
-                // Fetch contract_id in background
-                supabase.from("contract_modules").select("contract_id").eq("id", val).single().then(({ data }) => {
-                  if (data?.contract_id) {
-                    onUpdate(sub.id, parentId, { contract_id: data.contract_id } as any);
-                  }
-                });
               }}
             >
               <SelectTrigger className="h-5 text-[10px] px-1.5 py-0 w-auto border-dashed gap-0.5 inline-flex">
