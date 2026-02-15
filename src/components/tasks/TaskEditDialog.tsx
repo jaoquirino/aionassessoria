@@ -386,7 +386,10 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   return (
     <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden w-[calc(100%-2rem)] sm:w-full">
+      <DialogContent className={cn(
+        "max-h-[90vh] p-0 overflow-hidden w-[calc(100%-2rem)] sm:w-full",
+        isSubtask ? "max-w-lg" : "max-w-2xl"
+      )}>
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-8 w-3/4" />
@@ -395,31 +398,36 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
           </div>
         ) : displayTask ? (
           <div className="flex flex-col h-full max-h-[90vh]">
-            {/* Header - Inline editable title */}
-            <div className="p-6 pb-4 border-b shrink-0">
-              <div className="flex items-center gap-2 mb-3">
-                <Badge variant="outline" className={cn("text-xs", taskTypeConfig[taskType].color)}>
-                  {taskTypeConfig[taskType].label}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  Peso: {weight}
-                </Badge>
-                {isOverdue && (
-                  <Badge variant="destructive" className="text-xs gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    Atrasada
-                  </Badge>
-                )}
-              </div>
-              <Input 
-                ref={titleInputRef}
-                value={title} 
-                onChange={(e) => { setTitle(e.target.value); markDirty(); }}
-                className="text-xl font-bold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
-                placeholder="Título da tarefa"
-                autoFocus
-              />
-            </div>
+             {/* Header - Inline editable title */}
+             <div className={cn("p-6 pb-4 border-b shrink-0", isSubtask && "border-l-4 border-l-primary")}>
+               {isSubtask && (
+                 <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                   <CheckSquare className="h-3 w-3" /> Subtarefa
+                 </p>
+               )}
+               <div className="flex items-center gap-2 mb-3">
+                 <Badge variant="outline" className={cn("text-xs", taskTypeConfig[taskType].color)}>
+                   {taskTypeConfig[taskType].label}
+                 </Badge>
+                 <Badge variant="outline" className="text-xs">
+                   Peso: {weight}
+                 </Badge>
+                 {isOverdue && (
+                   <Badge variant="destructive" className="text-xs gap-1">
+                     <AlertTriangle className="h-3 w-3" />
+                     Atrasada
+                   </Badge>
+                 )}
+               </div>
+               <Input 
+                 ref={titleInputRef}
+                 value={title} 
+                 onChange={(e) => { setTitle(e.target.value); markDirty(); }}
+                 className="text-xl font-bold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                 placeholder="Título da tarefa"
+                 autoFocus
+               />
+             </div>
 
             <ScrollArea className="flex-1">
               <Tabs defaultValue={initialTab} className="w-full">
@@ -785,13 +793,18 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
                   {/* Subtask Items */}
                   <div className="space-y-2">
-                    {subtasks.map((sub) => (
+                    {subtasks.map((sub) => {
+                      const subOverdue = sub.due_date && parseLocalDate(sub.due_date) < new Date() && sub.status !== "done";
+                      const priorityEmojis: Record<string, string> = { urgent: "🔴", high: "🟠", medium: "🟡", low: "🟢" };
+                      return (
                       <div 
                         key={sub.id} 
                         className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-                          sub.status === "done" && "bg-success/5 border-success/30"
+                          "flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50",
+                          sub.status === "done" && "bg-success/5 border-success/30",
+                          subOverdue && "border-destructive/50 bg-destructive/5"
                         )}
+                        onClick={() => setEditingSubtaskId(sub.id)}
                       >
                         <Checkbox
                           checked={sub.status === "done"}
@@ -802,6 +815,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                               isDone: !!checked,
                             })
                           }
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <div className="flex-1 min-w-0">
                           <span className={cn(
@@ -811,12 +825,15 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                             {sub.title}
                           </span>
                           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", subOverdue && "border-destructive text-destructive")}>
+                              {priorityEmojis[sub.priority] || "🟡"} {sub.priority === "urgent" ? "Urgente" : sub.priority === "high" ? "Alta" : sub.priority === "medium" ? "Média" : "Baixa"}
+                            </Badge>
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                               Peso: {sub.weight}
                             </Badge>
                             {sub.deliverable_type && (
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                {sub.deliverable_type === "arte" ? "Arte" : "Vídeo"}
+                                {sub.deliverable_type === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
                               </Badge>
                             )}
                             {/* Inline editable date */}
@@ -830,36 +847,39 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                               }}
                             >
                               <button type="button" onClick={(e) => e.stopPropagation()} className="inline-flex">
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted">
+                                <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 cursor-pointer hover:bg-muted", subOverdue && "border-destructive text-destructive")}>
                                   <CalendarIcon className="h-2.5 w-2.5 mr-0.5" />
                                   {sub.due_date ? parseLocalDate(sub.due_date).toLocaleDateString("pt-BR") : "Sem prazo"}
                                 </Badge>
                               </button>
                             </DatePopover>
                             {/* Inline editable module */}
-                            <Select
-                              value={sub.contract_module_id || ""}
-                              onValueChange={(val) => {
-                                // Find contract_id from module
-                                const mod = clientModules.find(m => m.contractModuleId === val);
-                                if (mod) {
-                                  supabase.from("contract_modules").select("contract_id").eq("id", val).single().then(({ data }) => {
-                                    updateTask.mutate({ id: sub.id, contract_module_id: val, contract_id: data?.contract_id } as any);
-                                  });
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="h-5 text-[10px] px-1.5 py-0 w-auto border-dashed gap-0.5 inline-flex">
-                                <SelectValue placeholder="Módulo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {clientModules.map((module) => (
-                                  <SelectItem key={module.contractModuleId} value={module.contractModuleId} className="text-xs">
-                                    {module.moduleName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <div onClick={(e) => e.stopPropagation()} className="inline-flex">
+                              <Select
+                                value={sub.contract_module_id || ""}
+                                onValueChange={(val) => {
+                                  const mod = clientModules.find(m => m.contractModuleId === val);
+                                  if (mod) {
+                                    supabase.from("contract_modules").select("contract_id").eq("id", val).single().then(({ data }) => {
+                                      updateTask.mutate({ id: sub.id, contract_module_id: val, contract_id: data?.contract_id } as any);
+                                    });
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="h-5 text-[10px] px-1.5 py-0 w-auto border-dashed gap-0.5 inline-flex">
+                                  <SelectValue placeholder="Módulo">
+                                    {clientModules.find(m => m.contractModuleId === sub.contract_module_id)?.moduleName || "Módulo"}
+                                  </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {clientModules.map((module) => (
+                                    <SelectItem key={module.contractModuleId} value={module.contractModuleId} className="text-xs">
+                                      {module.moduleName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                             {/* Inline editable assignee */}
                             <AssigneePopover
                               currentAssignee={teamMembers.find(m => m.id === sub.assigned_to) || null}
@@ -880,7 +900,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                             </AssigneePopover>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -901,7 +921,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           </Button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
 
                     {subtasks.length === 0 && (
                       <p className="text-center text-muted-foreground py-8">
