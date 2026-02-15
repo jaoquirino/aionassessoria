@@ -367,8 +367,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     return colors[statusKey] || "bg-muted text-muted-foreground";
   };
 
-  if (!open) return null;
+  const isSubtask = !!displayTask?.parent_task_id;
 
+  if (!open) return null;
   const isOverdue = displayTask ? parseLocalDate(displayTask.due_date) < new Date() && displayTask.status !== "done" : false;
   const subtaskProgress = subtasks.length 
     ? subtasks.filter(s => s.status === "done").length / subtasks.length 
@@ -425,42 +426,47 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     <FileText className="h-4 w-4 mr-2" />
                     Detalhes
                   </TabsTrigger>
-                  <TabsTrigger value="checklist" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                    <CheckSquare className="h-4 w-4 mr-2" />
-                    Subtarefas
-                    {subtasks.length > 0 ? (
-                      <Badge variant="secondary" className="ml-2 text-xs">
-                        {subtasks.filter(s => s.status === "done").length}/{subtasks.length}
-                      </Badge>
-                    ) : null}
-                  </TabsTrigger>
-                  <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                    <Paperclip className="h-4 w-4 mr-2" />
-                    Anexos
-                    {displayTask.attachments?.length ? (
-                      <Badge variant="secondary" className="ml-2 text-xs">
-                        {displayTask.attachments.length}
-                      </Badge>
-                    ) : null}
-                  </TabsTrigger>
-                  <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Comentários
-                    {comments.length > 0 ? (
-                      <Badge variant="secondary" className="ml-2 text-xs">
-                        {comments.length}
-                      </Badge>
-                    ) : null}
-                  </TabsTrigger>
-                  <TabsTrigger value="history" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
-                    <History className="h-4 w-4 mr-2" />
-                    Histórico
-                  </TabsTrigger>
+                  {!isSubtask && (
+                    <>
+                      <TabsTrigger value="checklist" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                        Subtarefas
+                        {subtasks.length > 0 ? (
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            {subtasks.filter(s => s.status === "done").length}/{subtasks.length}
+                          </Badge>
+                        ) : null}
+                      </TabsTrigger>
+                      <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+                        <Paperclip className="h-4 w-4 mr-2" />
+                        Anexos
+                        {displayTask.attachments?.length ? (
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            {displayTask.attachments.length}
+                          </Badge>
+                        ) : null}
+                      </TabsTrigger>
+                      <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Comentários
+                        {comments.length > 0 ? (
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            {comments.length}
+                          </Badge>
+                        ) : null}
+                      </TabsTrigger>
+                      <TabsTrigger value="history" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+                        <History className="h-4 w-4 mr-2" />
+                        Histórico
+                      </TabsTrigger>
+                    </>
+                  )}
                 </TabsList>
 
                 {/* Details Tab */}
                 <TabsContent value="details" className="p-6 space-y-6 mt-0">
-                  {/* Status + Priority side by side */}
+                  {/* Status + Priority side by side - hide for subtasks */}
+                  {!isSubtask && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Status</Label>
@@ -507,9 +513,10 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       </Select>
                     </div>
                   </div>
+                  )}
 
-                  {/* Completion Warning - only show if checklist is incomplete */}
-                  {status !== "done" && displayTask.checklist?.length > 0 && !displayTask.checklist.every(i => i.is_completed) && (
+                  {/* Completion Warning - hide for subtasks */}
+                  {!isSubtask && status !== "done" && displayTask.checklist?.length > 0 && !displayTask.checklist.every(i => i.is_completed) && (
                     <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 text-sm">
                       <p className="font-medium text-warning">Para marcar como Entregue:</p>
                       <ul className="mt-1 text-muted-foreground text-xs space-y-1">
@@ -519,7 +526,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   )}
 
                   {/* Meta Info */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={cn("grid gap-4", isSubtask ? "grid-cols-1" : "grid-cols-2")}>
+                    {!isSubtask && (
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
                          <User className="h-3 w-3" /> Responsáveis
@@ -564,6 +572,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                          )}
                        </div>
                     </div>
+                    )}
 
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
@@ -596,7 +605,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     </div>
                   </div>
 
-                  {/* Client & Module Selection */}
+                  {/* Client & Module Selection - hide for subtasks */}
+                  {!isSubtask && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
@@ -649,10 +659,46 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       </Select>
                     </div>
                   </div>
+                  )}
 
 
-                   {/* Deliverable Type - only for design modules */}
-                  {(() => {
+                  {/* Weight + Deliverable Type for subtasks */}
+                  {isSubtask && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Peso</Label>
+                        <Select value={String(weight)} onValueChange={(v) => { setWeight(Number(v)); markDirty(); }}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[1,2,3,4,5].map(w => (
+                              <SelectItem key={w} value={String(w)}>{w}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tipo de Entregável</Label>
+                        <Select 
+                          value={deliverableType || "none"} 
+                          onValueChange={(val) => { setDeliverableType(val === "none" ? null : val); markDirty(); }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Nenhum" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum</SelectItem>
+                            <SelectItem value="arte">🎨 Arte</SelectItem>
+                            <SelectItem value="video">🎬 Vídeo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                   {/* Deliverable Type - only for design modules (parent tasks) */}
+                  {!isSubtask && (() => {
                     const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);
                     const isDesignModule = selectedModule?.moduleName?.toLowerCase().includes("design");
                     if (!isDesignModule) return null;
