@@ -65,11 +65,12 @@ export function PrioritiesManagementTab() {
   };
 
   const handleSave = () => {
-    if (!formKey.trim() || !formLabel.trim()) return;
+    if (!formLabel.trim()) return;
 
     if (isNew) {
+      const autoKey = formLabel.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
       createPriority.mutate({
-        key: formKey.trim().toLowerCase().replace(/\s+/g, "_"),
+        key: autoKey || `priority_${Date.now()}`,
         label: formLabel.trim(),
         color: formColor,
         order_index: priorities.length + 1,
@@ -119,10 +120,6 @@ export function PrioritiesManagementTab() {
             className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div
-                className="w-5 h-5 rounded-full border border-border"
-                style={{ backgroundColor: p.color }}
-              />
               <Badge
                 className="text-xs"
                 style={{
@@ -133,7 +130,6 @@ export function PrioritiesManagementTab() {
               >
                 {p.label}
               </Badge>
-              <span className="text-xs text-muted-foreground font-mono">{p.key}</span>
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -168,16 +164,6 @@ export function PrioritiesManagementTab() {
             <DialogTitle>{isNew ? "Nova Prioridade" : "Editar Prioridade"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {isNew && (
-              <div className="space-y-2">
-                <Label>Chave (identificador único)</Label>
-                <Input
-                  value={formKey}
-                  onChange={(e) => setFormKey(e.target.value)}
-                  placeholder="ex: critical"
-                />
-              </div>
-            )}
             <div className="space-y-2">
               <Label>Nome</Label>
               <Input
@@ -209,7 +195,7 @@ export function PrioritiesManagementTab() {
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={!formLabel.trim() || (isNew && !formKey.trim())}>
+            <Button onClick={handleSave} disabled={!formLabel.trim()}>
               {isNew ? "Criar" : "Salvar"}
             </Button>
           </DialogFooter>
