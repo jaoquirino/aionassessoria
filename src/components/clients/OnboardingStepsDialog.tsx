@@ -53,7 +53,7 @@ export function OnboardingStepsDialog({
         .select("id, title, status, description_objective, description_notes, created_at")
         .eq("client_id", clientId)
         .eq("contract_module_id", contractModuleId)
-        .eq("type", "project")
+        .eq("type", "onboarding")
         .is("archived_at", null)
         .order("created_at", { ascending: true });
 
