@@ -189,7 +189,7 @@ export default function Team() {
           transition={{ delay: 0.2 }}
           className="glass rounded-xl p-6"
         >
-          <h3 className="font-semibold text-foreground mb-4">Capacidade Total da Agência</h3>
+          <h3 className="font-semibold text-foreground mb-4">Capacidade Total da Equipe</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Peso utilizado</span>
@@ -201,8 +201,11 @@ export default function Team() {
               value={totalCapacity > 0 ? (usedCapacity / totalCapacity) * 100 : 0}
               className={cn(
                 "h-3",
-                usedCapacity > totalCapacity && "[&>div]:bg-destructive",
-                usedCapacity > totalCapacity * 0.8 && usedCapacity <= totalCapacity && "[&>div]:bg-warning"
+                usedCapacity > totalCapacity
+                  ? "[&>div]:bg-destructive"
+                  : usedCapacity > totalCapacity * 0.8
+                    ? "[&>div]:bg-warning"
+                    : "[&>div]:bg-success"
               )}
             />
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
