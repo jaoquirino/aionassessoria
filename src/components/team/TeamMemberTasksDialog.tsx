@@ -16,6 +16,7 @@ import { PeriodSelector, type PeriodOption, type CustomDateRange, getPeriodDates
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
 import { useTasksAssignees } from "@/hooks/useTaskAssignees";
+import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
 import type { Task } from "@/types/tasks";
 import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
 import { cn, parseLocalDate } from "@/lib/utils";
@@ -59,6 +60,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
   // Get all task IDs to fetch assignees
   const taskIds = useMemo(() => allTasks.map((t: Task) => t.id), [allTasks]);
   const { data: assigneesMap = {}, isLoading: assigneesLoading } = useTasksAssignees(taskIds);
+  const { data: subtaskCounts = {} } = useTasksSubtaskCounts(taskIds);
 
   const handleTaskClick = (taskId: string) => {
     onOpenChange(false);
@@ -167,9 +169,9 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                              <div className="flex-1 min-w-0">
                                <div className="flex items-center gap-2">
                                  <p className="font-medium text-foreground truncate">{task.title}</p>
-                                 <Badge variant="outline" className="text-xs shrink-0">
-                                   Peso: {task.weight}
-                                 </Badge>
+                                  <Badge variant="outline" className="text-xs shrink-0">
+                                    Peso: {task.weight + (subtaskCounts[task.id]?.weight || 0)}
+                                  </Badge>
                                </div>
                                <p className="text-sm text-muted-foreground mt-1">
                                  {clientMap.get(task.client_id) || "—"}
@@ -226,9 +228,9 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                              <div className="flex items-center gap-2">
                                <CheckCircle className="h-4 w-4 text-success shrink-0" />
                                <p className="font-medium text-foreground truncate">{task.title}</p>
-                               <Badge variant="outline" className="text-xs shrink-0">
-                                 Peso: {task.weight}
-                               </Badge>
+                                <Badge variant="outline" className="text-xs shrink-0">
+                                  Peso: {task.weight + (subtaskCounts[task.id]?.weight || 0)}
+                                </Badge>
                              </div>
                              <p className="text-sm text-muted-foreground mt-1 ml-6">
                                {clientMap.get(task.client_id) || "—"}
