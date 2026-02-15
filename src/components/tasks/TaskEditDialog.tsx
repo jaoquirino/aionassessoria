@@ -55,9 +55,11 @@ import { cn, parseLocalDate } from "@/lib/utils";
    useArchiveTask,
  } from "@/hooks/useTasks";
  import { useSubtasks, useAddSubtask, useToggleSubtask, useDeleteSubtask, useUpdateSubtask } from "@/hooks/useSubtasks";
- import { useTaskAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
+ import { useTaskAssignees, useSetTaskAssignees, useTasksAssignees } from "@/hooks/useTaskAssignees";
 import { taskStatusConfig, taskTypeConfig, type TaskStatusDB, type TaskType, type TaskPriority } from "@/types/tasks";
-import { DatePopover, AssigneePopover, PriorityPopover } from "./InlineFieldPopover";
+import { DatePopover, PriorityPopover } from "./InlineFieldPopover";
+import { MultiAssigneePopover } from "./MultiAssigneePopover";
+import { StackedAvatars } from "./StackedAvatars";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -147,10 +149,13 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
    const { data: taskAssigneesData = [] } = useTaskAssignees(taskId);
    const setTaskAssignees = useSetTaskAssignees();
   const { data: subtasks = [] } = useSubtasks(open ? taskId : null);
+  const subtaskIds = useMemo(() => subtasks.map(s => s.id), [subtasks]);
+  const { data: subtaskAssigneesMap = {} } = useTasksAssignees(subtaskIds);
   const addSubtask = useAddSubtask();
   const toggleSubtask = useToggleSubtask();
   const deleteSubtask = useDeleteSubtask();
   const updateSubtask = useUpdateSubtask();
+  const setSubtaskAssignees = useSetTaskAssignees();
   
   const updateTask = useUpdateTask();
   const addChecklistItem = useAddChecklistItem();
