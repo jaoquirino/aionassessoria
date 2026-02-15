@@ -98,7 +98,7 @@ export function useDashboardData() {
 
       // Filter out onboarding (project) tasks from general stats
       // Also filter out tasks from internal clients for weight calculations
-      const operationalTasks = tasks.filter(t => t.type !== "project");
+      const operationalTasks = tasks.filter(t => t.type !== "project" && t.type !== "onboarding");
       const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
 
       // Calculate stats (excluding onboarding tasks)

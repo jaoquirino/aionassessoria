@@ -1053,7 +1053,7 @@ export type Database = {
       client_status: "onboarding" | "active" | "paused" | "ended"
       onboarding_step_status: "pending" | "in_progress" | "completed"
       task_status: "todo" | "in_progress" | "review" | "waiting_client" | "done"
-      task_type: "recurring" | "planning" | "project" | "extra"
+      task_type: "recurring" | "planning" | "project" | "extra" | "onboarding"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1185,7 +1185,7 @@ export const Constants = {
       client_status: ["onboarding", "active", "paused", "ended"],
       onboarding_step_status: ["pending", "in_progress", "completed"],
       task_status: ["todo", "in_progress", "review", "waiting_client", "done"],
-      task_type: ["recurring", "planning", "project", "extra"],
+      task_type: ["recurring", "planning", "project", "extra", "onboarding"],
     },
   },
 } as const

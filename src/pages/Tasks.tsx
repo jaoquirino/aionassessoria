@@ -69,7 +69,7 @@ export default function Tasks() {
 
   // Filter out project (onboarding) tasks from the base tasks for stats and display
   const operationalTasks = useMemo(() => {
-    return tasks.filter(task => task.type !== "project");
+    return tasks.filter(task => task.type !== "project" && task.type !== "onboarding");
   }, [tasks]);
 
   const filteredTasks = useMemo(() => {
