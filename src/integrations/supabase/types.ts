@@ -988,6 +988,7 @@ export type Database = {
           is_active: boolean
           name: string
           permission: string
+          restricted_view: boolean
           role: string
           updated_at: string
           user_id: string | null
@@ -1001,6 +1002,7 @@ export type Database = {
           is_active?: boolean
           name: string
           permission?: string
+          restricted_view?: boolean
           role: string
           updated_at?: string
           user_id?: string | null
@@ -1014,6 +1016,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           permission?: string
+          restricted_view?: boolean
           role?: string
           updated_at?: string
           user_id?: string | null
@@ -1073,6 +1076,7 @@ export type Database = {
           is_active: boolean | null
           name: string | null
           permission: string | null
+          restricted_view: boolean | null
           role: string | null
           updated_at: string | null
         }
@@ -1084,6 +1088,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string | null
           permission?: string | null
+          restricted_view?: boolean | null
           role?: string | null
           updated_at?: string | null
         }
@@ -1095,6 +1100,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string | null
           permission?: string | null
+          restricted_view?: boolean | null
           role?: string | null
           updated_at?: string | null
         }

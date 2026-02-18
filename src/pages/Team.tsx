@@ -272,6 +272,11 @@ export default function Team() {
                     >
                       {member.permission === "admin" ? "Admin" : "Operacional"}
                     </Badge>
+                    {(member as any).restricted_view && (
+                      <Badge variant="outline" className="text-xs mt-0.5 border-warning/30 text-warning">
+                        Visão restrita
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
