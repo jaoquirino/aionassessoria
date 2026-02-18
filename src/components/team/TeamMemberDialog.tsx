@@ -360,7 +360,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
             <div>
               <p className="text-sm font-medium">Visão restrita</p>
               <p className="text-xs text-muted-foreground">
-                Só verá tarefas atribuídas a ele (ideal para freelancers)
+                Só verá tarefas atribuídas a ele
               </p>
             </div>
             <Switch
