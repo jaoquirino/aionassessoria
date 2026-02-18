@@ -10,6 +10,7 @@ export interface TeamMember {
   avatar_url: string | null;
   capacity_limit: number;
   is_active: boolean;
+  restricted_view: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +31,7 @@ export interface UpdateTeamMemberInput {
   permission?: string;
   capacity_limit?: number;
   is_active?: boolean;
+  restricted_view?: boolean;
 }
 
 // Fetch all team members with their task weights

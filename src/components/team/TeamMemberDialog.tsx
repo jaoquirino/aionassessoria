@@ -11,6 +11,7 @@ import { useLinkToTeamMember, useUnlinkTeamMember, useCurrentTeamMember } from "
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import { PasswordRequirements } from "@/components/settings/PasswordRequirements";
 import { isPasswordStrong } from "@/lib/passwordValidation";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
   const [roles, setRoles] = useState<string[]>(["Designer"]);
   const [permission, setPermission] = useState("operational");
   const [capacityLimit, setCapacityLimit] = useState(15);
+  const [restrictedView, setRestrictedView] = useState(false);
   const [isCreatingWithLogin, setIsCreatingWithLogin] = useState(false);
 
   const { user } = useAuth();
@@ -56,6 +58,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
       setRoles(memberRoles);
       setPermission(member.permission);
       setCapacityLimit(member.capacity_limit);
+      setRestrictedView((member as any).restricted_view ?? false);
     } else {
       setName("");
       setUsername("");
@@ -64,6 +67,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
       setRoles(["Designer"]);
       setPermission("operational");
       setCapacityLimit(15);
+      setRestrictedView(false);
     }
   }, [member, open]);
 
@@ -93,6 +97,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           role: roleString,
           permission,
           capacity_limit: capacityLimit,
+          restricted_view: restrictedView,
         });
         onOpenChange(false);
       } else if (username.trim() && password.trim()) {
@@ -347,6 +352,20 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
               max={50}
               value={capacityLimit}
               onChange={(e) => setCapacityLimit(Number(e.target.value))}
+            />
+          </div>
+
+          {/* Restricted View Toggle */}
+          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+            <div>
+              <p className="text-sm font-medium">Visão restrita</p>
+              <p className="text-xs text-muted-foreground">
+                Só verá tarefas atribuídas a ele (ideal para freelancers)
+              </p>
+            </div>
+            <Switch
+              checked={restrictedView}
+              onCheckedChange={setRestrictedView}
             />
           </div>
         </div>

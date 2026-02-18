@@ -11,6 +11,8 @@ import { CollapsibleFilters, type FiltersState } from "@/components/tasks/Collap
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { useTasks, useUpdateTaskStatus, useUpdateTaskField, useTeamMembers, useClients, useCreateTask, useArchiveTask } from "@/hooks/useTasks";
 import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
+import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
+import { useTasksAssignees } from "@/hooks/useTaskAssignees";
 import type { TaskStatusDB } from "@/types/tasks";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
@@ -45,6 +47,7 @@ export default function Tasks() {
   const { data: tasks = [], isLoading, isFetching } = useTasks();
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
+  const { data: currentTeamMember } = useCurrentTeamMember();
   const updateStatus = useUpdateTaskStatus();
   const updateField = useUpdateTaskField();
   const createTask = useCreateTask();
@@ -68,10 +71,29 @@ export default function Tasks() {
     return clients.map((c) => ({ value: c.id, label: c.name }));
   }, [clients]);
 
-  // Filter out project (onboarding) tasks from the base tasks for stats and display
+  // Filter out project/onboarding tasks and apply restricted view
+  const isRestricted = currentTeamMember?.restricted_view === true;
+  const currentMemberId = currentTeamMember?.id;
+
+  // Fetch assignees for restricted view filtering
+  const allTaskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
+  const { data: assigneesByTask = {} } = useTasksAssignees(isRestricted ? allTaskIds : []);
+
   const operationalTasks = useMemo(() => {
-    return tasks.filter(task => task.type !== "project" && task.type !== "onboarding");
-  }, [tasks]);
+    let filtered = tasks.filter(task => task.type !== "project" && task.type !== "onboarding");
+    
+    if (isRestricted && currentMemberId) {
+      filtered = filtered.filter(task => {
+        // Check legacy assigned_to
+        if (task.assigned_to === currentMemberId) return true;
+        // Check task_assignees
+        const taskAssignees = assigneesByTask[task.id] || [];
+        return taskAssignees.some(a => a.team_member_id === currentMemberId);
+      });
+    }
+    
+    return filtered;
+  }, [tasks, isRestricted, currentMemberId, assigneesByTask]);
 
   const filteredTasks = useMemo(() => {
     return operationalTasks.filter((task) => {
