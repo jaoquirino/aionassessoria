@@ -449,7 +449,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
              </div>
 
             <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-x-hidden">
-              <Tabs defaultValue={initialTab} className="w-full">
+              <Tabs defaultValue={initialTab} className="w-full overflow-hidden">
                 <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 px-4 sticky top-0 bg-background z-10 overflow-x-auto flex-nowrap">
                   <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <FileText className="h-4 w-4 mr-2" />
@@ -858,7 +858,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Attachments Tab - Simplified */}
-                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0">
+                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0 overflow-hidden">
                   {/* Add URL/Link */}
                   <div className="space-y-3">
                     <Label className="flex items-center gap-1">
@@ -959,7 +959,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Comments Tab */}
-                <TabsContent value="comments" className="p-6 mt-0">
+                <TabsContent value="comments" className="p-6 mt-0 overflow-hidden">
                   <TaskComments taskId={displayTask.id} />
                 </TabsContent>
 
