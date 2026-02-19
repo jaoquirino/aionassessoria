@@ -186,6 +186,7 @@ export function SubtaskRow({
               onSetAssignees(sub.id, memberIds);
               onUpdate(sub.id, parentId, { assigned_to: memberIds[0] || null } as any);
             }}
+            closeOnSelect
           >
             <button type="button" onClick={(e) => e.stopPropagation()} className="inline-flex">
               {displayAssignees.length > 0 ? (

@@ -392,7 +392,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
     if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
       const target = e.target as HTMLElement;
       const tagName = target.tagName.toLowerCase();
-      if (tagName === "textarea") return;
+      if (tagName === "textarea" || tagName === "input") return;
       e.preventDefault();
       handleSave();
       onOpenChange(false);

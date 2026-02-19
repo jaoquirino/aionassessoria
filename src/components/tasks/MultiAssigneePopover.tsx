@@ -10,6 +10,7 @@ interface MultiAssigneePopoverProps {
   teamMembers: TeamMember[];
   onSelect: (memberIds: string[]) => void;
   disabled?: boolean;
+  closeOnSelect?: boolean;
 }
 
 export function MultiAssigneePopover({ 
