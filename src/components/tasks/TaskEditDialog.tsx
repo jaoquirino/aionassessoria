@@ -898,11 +898,11 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <Separator />
 
                   {/* Attachments List */}
-                   <div className="space-y-2 max-w-full">
+                   <div className="space-y-2">
                     {displayTask.attachments?.map((attachment) => (
                       <div
                         key={attachment.id}
-                        className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors group cursor-pointer overflow-hidden"
+                        className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors group cursor-pointer min-w-0"
                       >
                         <a
                           href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
