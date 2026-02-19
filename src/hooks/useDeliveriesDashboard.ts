@@ -58,7 +58,21 @@ export function useDeliveriesByClient(clientId?: string) {
 
       if (error) throw error;
 
-      return (data || []).map((task: any) => ({
+      const allTasks = data || [];
+
+      // Identify parent tasks that have subtasks in the result set
+      const parentIdsWithSubtasks = new Set(
+        allTasks
+          .filter((t: any) => t.parent_task_id)
+          .map((t: any) => t.parent_task_id)
+      );
+
+      // Exclude parent tasks that have subtasks — subtasks replace them
+      const filtered = allTasks.filter(
+        (t: any) => !parentIdsWithSubtasks.has(t.id)
+      );
+
+      return filtered.map((task: any) => ({
         id: task.id,
         title: task.title,
         clientId: task.client_id,
