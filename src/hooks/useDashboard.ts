@@ -75,12 +75,13 @@ export function useDashboardData() {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // Parallel fetch for all data - much faster
-      const [tasksRes, clientsRes, contractsRes, teamMembersRes, contractModulesRes] = await Promise.all([
+      const [tasksRes, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes] = await Promise.all([
         supabase.from("tasks").select("*").order("due_date"),
         supabase.from("clients").select("*, is_internal"),
         supabase.from("contracts").select("*, client:clients(name)").eq("status", "active"),
         supabase.from("team_members_public").select("*").eq("is_active", true),
         supabase.from("contract_modules").select("*, service_module:service_modules(name, primary_role), contract:contracts(client_id, status)"),
+        supabase.from("task_assignees").select("task_id, team_member_id"),
       ]);
 
       const tasks = tasksRes.data || [];
@@ -88,6 +89,15 @@ export function useDashboardData() {
       const contracts = contractsRes.data || [];
       const teamMembers = teamMembersRes.data || [];
       const contractModules = contractModulesRes.data || [];
+      const taskAssignees = taskAssigneesRes.data || [];
+
+      // Build a map of task_id -> team_member_ids for multi-assignee lookup
+      const taskAssigneeMap = new Map<string, string[]>();
+      taskAssignees.forEach((ta: { task_id: string; team_member_id: string }) => {
+        const existing = taskAssigneeMap.get(ta.task_id) || [];
+        existing.push(ta.team_member_id);
+        taskAssigneeMap.set(ta.task_id, existing);
+      });
 
       // Create internal client IDs set for filtering
       const internalClientIds = new Set(
