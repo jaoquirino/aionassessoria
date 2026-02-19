@@ -947,7 +947,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </a>
+                      </div>
                     ))}
 
                     {(!displayTask.attachments || displayTask.attachments.length === 0) && (
