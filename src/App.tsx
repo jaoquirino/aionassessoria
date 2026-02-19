@@ -49,6 +49,7 @@ function ProtectedRoutes() {
   return (
     <>
       <NotificationToastContainer />
+      <MentionNotificationContainer />
       <MainLayout />
     </>
   );
