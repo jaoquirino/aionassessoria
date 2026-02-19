@@ -41,11 +41,14 @@ export function MultiAssigneePopover({
   };
 
   const toggleMember = (memberId: string) => {
-    setSelectedIds(prev => 
-      prev.includes(memberId) 
-        ? prev.filter(id => id !== memberId)
-        : [...prev, memberId]
-    );
+    const newIds = selectedIds.includes(memberId) 
+      ? selectedIds.filter(id => id !== memberId)
+      : [...selectedIds, memberId];
+    setSelectedIds(newIds);
+    if (closeOnSelect) {
+      onSelect(newIds);
+      setOpen(false);
+    }
   };
 
   return (
