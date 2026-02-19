@@ -18,7 +18,8 @@ export function MultiAssigneePopover({
   currentAssignees, 
   teamMembers, 
   onSelect, 
-  disabled 
+  disabled,
+  closeOnSelect 
 }: MultiAssigneePopoverProps) {
   const [open, setOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>(
