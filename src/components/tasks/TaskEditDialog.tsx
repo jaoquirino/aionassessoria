@@ -908,7 +908,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 flex-1 min-w-0"
+                          className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink className="h-4 w-4 text-primary shrink-0" />
