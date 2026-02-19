@@ -448,7 +448,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                />
              </div>
 
-            <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-x-hidden [&_[style*='min-width']]:!min-w-0 [&_[style*='min-width']]:!display-block">
+            <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-x-hidden [&>[data-radix-scroll-area-viewport]>div]:!block [&>[data-radix-scroll-area-viewport]>div]:!min-w-0">
               <Tabs defaultValue={initialTab} className="w-full">
                 <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 px-4 sticky top-0 bg-background z-10 overflow-x-auto flex-nowrap">
                   <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
