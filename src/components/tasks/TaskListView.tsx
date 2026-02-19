@@ -130,6 +130,7 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, onUpdateStatus
                        currentAssignees={taskAssignees}
                       teamMembers={teamMembers}
                        onSelect={(memberIds) => handleSetAssignees(task.id, memberIds)}
+                       closeOnSelect
                     >
                       <button
                         type="button"

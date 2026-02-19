@@ -63,9 +63,11 @@ export interface DashboardClientHealth {
 export function useDashboardData() {
   const { data: currentMember } = useCurrentTeamMember();
   const isAdmin = currentMember?.permission === "admin";
+  const isRestricted = currentMember?.restricted_view === true;
+  const currentMemberId = currentMember?.id;
 
   return useQuery({
-    queryKey: ["dashboard", isAdmin],
+    queryKey: ["dashboard", isAdmin, isRestricted, currentMemberId],
     queryFn: async () => {
       const today = new Date();
       const startOfWeek = new Date(today);
@@ -75,12 +77,13 @@ export function useDashboardData() {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // Parallel fetch for all data - much faster
-      const [tasksRes, clientsRes, contractsRes, teamMembersRes, contractModulesRes] = await Promise.all([
+      const [tasksRes, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes] = await Promise.all([
         supabase.from("tasks").select("*").order("due_date"),
         supabase.from("clients").select("*, is_internal"),
         supabase.from("contracts").select("*, client:clients(name)").eq("status", "active"),
         supabase.from("team_members_public").select("*").eq("is_active", true),
         supabase.from("contract_modules").select("*, service_module:service_modules(name, primary_role), contract:contracts(client_id, status)"),
+        supabase.from("task_assignees").select("task_id, team_member_id"),
       ]);
 
       const tasks = tasksRes.data || [];
@@ -88,6 +91,15 @@ export function useDashboardData() {
       const contracts = contractsRes.data || [];
       const teamMembers = teamMembersRes.data || [];
       const contractModules = contractModulesRes.data || [];
+      const taskAssignees = taskAssigneesRes.data || [];
+
+      // Build a map of task_id -> team_member_ids for multi-assignee lookup
+      const taskAssigneeMap = new Map<string, string[]>();
+      taskAssignees.forEach((ta: { task_id: string; team_member_id: string }) => {
+        const existing = taskAssigneeMap.get(ta.task_id) || [];
+        existing.push(ta.team_member_id);
+        taskAssigneeMap.set(ta.task_id, existing);
+      });
 
       // Create internal client IDs set for filtering
       const internalClientIds = new Set(
@@ -134,11 +146,28 @@ export function useDashboardData() {
       const memberMap = new Map(teamMembers.map(m => [m.id, m.name]));
       const clientMap = new Map(clients.map(c => [c.id, c.name]));
 
-      const dashboardTasks: DashboardTask[] = activeTasks.slice(0, 5).map(t => ({
+      // Helper: check if a task is assigned to a specific member (via assigned_to OR task_assignees)
+      const isAssignedTo = (task: any, memberId: string) => {
+        if (task.assigned_to === memberId) return true;
+        const assigneeIds = taskAssigneeMap.get(task.id);
+        return assigneeIds ? assigneeIds.includes(memberId) : false;
+      };
+
+      // Get all assignee names for a task
+      const getAssigneeName = (task: any) => {
+        const assigneeIds = taskAssigneeMap.get(task.id) || [];
+        if (task.assigned_to) assigneeIds.push(task.assigned_to);
+        const uniqueIds = [...new Set(assigneeIds)];
+        if (uniqueIds.length === 0) return "Não atribuído";
+        const names = uniqueIds.map(id => memberMap.get(id)).filter(Boolean);
+        return names.length > 0 ? names.join(", ") : "Não atribuído";
+      };
+
+      const dashboardTasks: DashboardTask[] = activeTasks.map(t => ({
         id: t.id,
         title: t.title,
         clientName: clientMap.get(t.client_id) || "—",
-        assigneeName: t.assigned_to ? memberMap.get(t.assigned_to) || "Não atribuído" : "Não atribuído",
+        assigneeName: getAssigneeName(t),
         assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
         status: t.status,
@@ -149,15 +178,22 @@ export function useDashboardData() {
 
       // Map team capacity (using operational tasks only)
       // Also exclude internal client tasks from weight calculation
+      // Use task_assignees for multi-assignee support
       const memberTaskStats = new Map<string, { weight: number; count: number; overdue: number }>();
       operationalTasksForWeight.filter(t => t.status !== "done").forEach(t => {
-        if (t.assigned_to) {
-          const curr = memberTaskStats.get(t.assigned_to) || { weight: 0, count: 0, overdue: 0 };
+        // Get all assigned members for this task
+        const assignedMembers = new Set<string>();
+        if (t.assigned_to) assignedMembers.add(t.assigned_to);
+        const extraAssignees = taskAssigneeMap.get(t.id);
+        if (extraAssignees) extraAssignees.forEach(id => assignedMembers.add(id));
+
+        assignedMembers.forEach(memberId => {
+          const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
           curr.count += 1;
           if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
-          memberTaskStats.set(t.assigned_to, curr);
-        }
+          memberTaskStats.set(memberId, curr);
+        });
       });
 
       const dashboardTeam: DashboardTeamMember[] = teamMembers.map(m => {
@@ -285,6 +321,7 @@ export function useDashboardData() {
         contracts: dashboardContracts,
         clients: dashboardClients,
         isAdmin,
+        taskAssigneeMap,
       };
     },
     staleTime: 30000,

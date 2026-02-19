@@ -80,11 +80,21 @@ export default function Dashboard() {
     );
   }
 
-  const { stats, tasks, team, contracts, clients, isAdmin } = data;
+  const { stats, tasks, team, contracts, clients, isAdmin, taskAssigneeMap } = data;
+
+  // Helper: check if a task is assigned to current member via assigned_to or task_assignees
+  const isTaskAssignedToMe = (task: typeof tasks[0]) => {
+    if (!currentMember) return false;
+    // Check by name (assigned_to field mapped to name)
+    if (task.assigneeName.includes(currentMember.name)) return true;
+    // Check by task_assignees map using task ID
+    const assigneeIds = taskAssigneeMap?.get(task.id);
+    return assigneeIds ? assigneeIds.includes(currentMember.id) : false;
+  };
 
   // Filter data for restricted view users
   const filteredTasks = isRestricted && currentMember
-    ? tasks.filter(t => t.assigneeName === currentMember.name)
+    ? tasks.filter(isTaskAssignedToMe)
     : tasks;
 
   const filteredTeam = isRestricted && currentMember
@@ -219,7 +229,7 @@ export default function Dashboard() {
             {filteredTasks.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">Nenhuma tarefa ativa</p>
             ) : (
-              filteredTasks.map((task, index) => (
+              filteredTasks.slice(0, 8).map((task, index) => (
                 <motion.div
                   key={task.id}
                   initial={{ opacity: 0, x: -20 }}

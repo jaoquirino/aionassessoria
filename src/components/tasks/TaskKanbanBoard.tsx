@@ -417,6 +417,7 @@ interface TaskCardProps {
              currentAssignees={assignees}
             teamMembers={teamMembers}
              onSelect={onSetAssignees}
+             closeOnSelect
           >
             <button 
               type="button"
