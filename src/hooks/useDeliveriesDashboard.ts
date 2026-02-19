@@ -40,6 +40,7 @@ export function useDeliveriesByClient(clientId?: string) {
           client_id,
           archived_at,
           type,
+          parent_task_id,
           clients(name),
           contract_module_id,
           contract_modules(
