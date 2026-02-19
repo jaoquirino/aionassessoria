@@ -909,9 +909,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         onClick={(e) => e.stopPropagation()}
                       >
                         <ExternalLink className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0 overflow-hidden max-w-full">
+                        <div className="flex-1 min-w-0 overflow-hidden">
                           <p className="text-sm font-medium truncate text-primary underline-offset-2 hover:underline">{attachment.file_name}</p>
-                          <p className="text-xs text-muted-foreground break-all max-w-full">{attachment.file_url}</p>
+                          <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
                         </div>
                         <Button
                           variant="ghost"
