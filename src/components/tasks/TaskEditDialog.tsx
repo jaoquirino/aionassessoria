@@ -959,7 +959,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Comments Tab */}
-                <TabsContent value="comments" className="p-6 mt-0 overflow-hidden">
+                <TabsContent value="comments" className="p-6 mt-0">
                   <TaskComments taskId={displayTask.id} />
                 </TabsContent>
 
