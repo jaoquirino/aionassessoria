@@ -858,7 +858,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Attachments Tab - Simplified */}
-                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0 overflow-hidden max-w-full">
+                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0">
                   {/* Add URL/Link */}
                   <div className="space-y-3">
                     <Label className="flex items-center gap-1">
