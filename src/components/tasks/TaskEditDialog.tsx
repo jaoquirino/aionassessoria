@@ -898,7 +898,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <Separator />
 
                   {/* Attachments List */}
-                  <div className="space-y-2">
+                   <div className="space-y-2 w-full overflow-hidden">
                     {displayTask.attachments?.map((attachment) => (
                       <div
                         key={attachment.id}
