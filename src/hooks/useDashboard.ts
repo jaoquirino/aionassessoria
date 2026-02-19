@@ -321,6 +321,7 @@ export function useDashboardData() {
         contracts: dashboardContracts,
         clients: dashboardClients,
         isAdmin,
+        taskAssigneeMap,
       };
     },
     staleTime: 30000,
