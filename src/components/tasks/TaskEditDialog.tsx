@@ -416,7 +416,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
             <Skeleton className="h-32 w-full" />
           </div>
         ) : displayTask ? (
-          <div className="flex flex-col h-full max-h-[90vh]">
+          <div className="flex flex-col h-full max-h-[90vh] overflow-hidden">
              {/* Header - Inline editable title */}
              <div className={cn("p-6 pb-4 border-b shrink-0", isSubtask && "border-l-4 border-l-primary")}>
                {isSubtask && (
@@ -448,8 +448,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                />
              </div>
 
-            <ScrollArea className="flex-1 overflow-hidden">
-              <Tabs defaultValue={initialTab} className="w-full overflow-hidden">
+            <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-x-hidden">
+              <Tabs defaultValue={initialTab} className="w-full">
                 <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 px-4 sticky top-0 bg-background z-10 overflow-x-auto flex-nowrap">
                   <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <FileText className="h-4 w-4 mr-2" />
@@ -858,7 +858,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Attachments Tab - Simplified */}
-                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0">
+                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0 overflow-hidden">
                   {/* Add URL/Link */}
                   <div className="space-y-3">
                     <Label className="flex items-center gap-1">
@@ -898,21 +898,25 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <Separator />
 
                   {/* Attachments List */}
-                  <div className="space-y-2">
+                   <div className="space-y-2 max-w-full">
                     {displayTask.attachments?.map((attachment) => (
-                      <a
+                      <div
                         key={attachment.id}
-                        href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors group cursor-pointer"
                       >
-                        <ExternalLink className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <p className="text-sm font-medium truncate text-primary underline-offset-2 hover:underline">{attachment.file_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
-                        </div>
+                        <a
+                          href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="h-4 w-4 text-primary shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate text-primary underline-offset-2 hover:underline">{attachment.file_name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
+                          </div>
+                        </a>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -943,7 +947,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </a>
+                      </div>
                     ))}
 
                     {(!displayTask.attachments || displayTask.attachments.length === 0) && (
