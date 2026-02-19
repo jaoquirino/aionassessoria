@@ -448,9 +448,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                />
              </div>
 
-            <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-x-hidden">
-              <Tabs defaultValue={initialTab} className="w-full overflow-hidden">
-                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 px-4 sticky top-0 bg-background z-10 overflow-x-auto flex-nowrap">
+            <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-x-hidden [&>[data-radix-scroll-area-viewport]>div]:!block [&>[data-radix-scroll-area-viewport]>div]:!min-w-0">
+              <Tabs defaultValue={initialTab} className="w-full">
+                <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 px-4 sticky top-0 bg-background z-10 overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <FileText className="h-4 w-4 mr-2" />
                     Detalhes
@@ -858,7 +858,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Attachments Tab - Simplified */}
-                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0 overflow-hidden">
+                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0">
                   {/* Add URL/Link */}
                   <div className="space-y-3">
                     <Label className="flex items-center gap-1">
@@ -898,7 +898,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   <Separator />
 
                   {/* Attachments List */}
-                   <div className="space-y-2">
+                   <div className="space-y-2 min-w-0 overflow-hidden">
                     {displayTask.attachments?.map((attachment) => (
                       <div
                         key={attachment.id}
@@ -914,7 +914,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           <ExternalLink className="h-4 w-4 text-primary shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium truncate text-primary underline-offset-2 hover:underline">{attachment.file_name}</p>
-                            <p className="text-xs text-muted-foreground break-all line-clamp-1">{attachment.file_url}</p>
+                            <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
                           </div>
                         </a>
                         <Button
@@ -959,7 +959,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Comments Tab */}
-                <TabsContent value="comments" className="p-6 mt-0 overflow-hidden">
+                <TabsContent value="comments" className="p-6 mt-0">
                   <TaskComments taskId={displayTask.id} />
                 </TabsContent>
 
