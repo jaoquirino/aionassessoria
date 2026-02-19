@@ -900,19 +900,23 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   {/* Attachments List */}
                   <div className="space-y-2">
                     {displayTask.attachments?.map((attachment) => (
-                      <a
+                      <div
                         key={attachment.id}
-                        href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group overflow-hidden cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group cursor-pointer"
                       >
-                        <ExternalLink className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <p className="text-sm font-medium truncate text-primary underline-offset-2 hover:underline">{attachment.file_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
-                        </div>
+                        <a
+                          href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 flex-1 min-w-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="h-4 w-4 text-primary shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate text-primary underline-offset-2 hover:underline">{attachment.file_name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
+                          </div>
+                        </a>
                         <Button
                           variant="ghost"
                           size="icon"
