@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useDashboardData } from "@/hooks/useDashboard";
+import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
@@ -57,9 +58,12 @@ function getCapacityStatus(current: number, max: number) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { data, isLoading } = useDashboardData();
+  const { data: currentMember } = useCurrentTeamMember();
   const [activeTab, setActiveTab] = useState("overview");
   const [period, setPeriod] = useState<PeriodOption>("30d");
   const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
+
+  const isRestricted = currentMember?.restricted_view === true;
 
   if (isLoading || !data) {
     return (
@@ -78,6 +82,31 @@ export default function Dashboard() {
 
   const { stats, tasks, team, contracts, clients, isAdmin } = data;
 
+  // Filter data for restricted view users
+  const filteredTasks = isRestricted && currentMember
+    ? tasks.filter(t => t.assigneeName === currentMember.name)
+    : tasks;
+
+  const filteredTeam = isRestricted && currentMember
+    ? team.filter(m => m.id === currentMember.id)
+    : team;
+
+  // Recalculate stats for restricted users
+  const displayStats = isRestricted && currentMember
+    ? {
+        ...stats,
+        overdueTasks: filteredTasks.filter(t => t.isOverdue).length,
+        todayDeliveries: filteredTasks.filter(t => {
+          const due = new Date(t.dueDate);
+          return due.toDateString() === new Date().toDateString();
+        }).length,
+        weekDeliveries: filteredTasks.length,
+        weekCompleted: filteredTasks.filter(t => t.status === "done").length,
+        totalWeight: filteredTeam[0]?.currentWeight || 0,
+        totalCapacity: filteredTeam[0]?.maxWeight || 0,
+      }
+    : stats;
+
   // Overview content component
   const OverviewContent = () => (
     <>
@@ -85,16 +114,16 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Tarefas Atrasadas"
-          value={stats.overdueTasks}
+          value={displayStats.overdueTasks}
           subtitle="Requer atenção imediata"
           icon={AlertTriangle}
-          status={stats.overdueTasks > 0 ? "critical" : "normal"}
+          status={displayStats.overdueTasks > 0 ? "critical" : "normal"}
           delay={0}
           onClick={() => navigate("/tarefas?filter=overdue")}
         />
         <MetricCard
           title="Entregas Hoje"
-          value={stats.todayDeliveries}
+          value={displayStats.todayDeliveries}
           subtitle="Prazo para hoje"
           icon={CheckCircle}
           status="normal"
@@ -103,10 +132,10 @@ export default function Dashboard() {
         />
         <MetricCard
           title="Entregas da Semana"
-          value={stats.weekDeliveries}
-          subtitle={`${stats.weekCompleted} concluídas`}
+          value={displayStats.weekDeliveries}
+          subtitle={`${displayStats.weekCompleted} concluídas`}
           icon={Clock}
-          status={stats.weekDeliveries - stats.weekCompleted > 5 ? "attention" : "normal"}
+          status={displayStats.weekDeliveries - displayStats.weekCompleted > 5 ? "attention" : "normal"}
           delay={2}
           onClick={() => navigate("/tarefas?filter=week")}
         />
@@ -123,10 +152,10 @@ export default function Dashboard() {
         ) : (
           <MetricCard
             title="Peso Ativo"
-            value={stats.totalWeight}
-            subtitle={`Capacidade: ${stats.totalCapacity}`}
+            value={displayStats.totalWeight}
+            subtitle={`Capacidade: ${displayStats.totalCapacity}`}
             icon={Clock}
-            status={stats.totalWeight > stats.totalCapacity * 0.8 ? "attention" : "normal"}
+            status={displayStats.totalWeight > displayStats.totalCapacity * 0.8 ? "attention" : "normal"}
             delay={3}
             onClick={() => navigate("/tarefas")}
           />
@@ -172,9 +201,9 @@ export default function Dashboard() {
         >
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">Tarefas Ativas</h3>
+              <h3 className="text-lg font-semibold text-foreground">{isRestricted ? "Minhas Tarefas" : "Tarefas Ativas"}</h3>
               <p className="text-sm text-muted-foreground">
-                {stats.overdueTasks} atrasadas · {tasks.length} em andamento
+                {displayStats.overdueTasks} atrasadas · {filteredTasks.length} em andamento
               </p>
             </div>
             <button 
@@ -187,10 +216,10 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-3">
-            {tasks.length === 0 ? (
+            {filteredTasks.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">Nenhuma tarefa ativa</p>
             ) : (
-              tasks.map((task, index) => (
+              filteredTasks.map((task, index) => (
                 <motion.div
                   key={task.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -247,35 +276,25 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Team Capacity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="glass rounded-xl p-6"
-        >
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-foreground">Capacidade da Equipe</h3>
-            <p className="text-sm text-muted-foreground">Distribuição de carga</p>
-          </div>
-
-          <div className="space-y-5">
-            {team.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nenhum membro</p>
-            ) : (
-              team.slice(0, 4).map((member, index) => {
+        {/* Team Capacity / My Capacity */}
+        {isRestricted ? (
+          // Restricted: show only own capacity
+          filteredTeam.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="glass rounded-xl p-6"
+            >
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-foreground">Minha Capacidade</h3>
+                <p className="text-sm text-muted-foreground">Sua carga operacional</p>
+              </div>
+              {filteredTeam.map((member) => {
                 const status = getCapacityStatus(member.currentWeight, member.maxWeight);
                 const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
-
                 return (
-                  <motion.div
-                    key={member.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 * index }}
-                    className="space-y-2 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors"
-                    onClick={() => navigate(`/equipe`)}
-                  >
+                  <div key={member.id} className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
@@ -296,7 +315,6 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </div>
-
                     <Progress
                       value={percentage}
                       className={cn(
@@ -306,7 +324,6 @@ export default function Dashboard() {
                         status === "normal" && "[&>div]:bg-success"
                       )}
                     />
-
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{member.tasksCount} tarefas ativas</span>
                       {member.overdueTasks > 0 && (
@@ -315,12 +332,87 @@ export default function Dashboard() {
                         </span>
                       )}
                     </div>
-                  </motion.div>
+                  </div>
                 );
-              })
-            )}
-          </div>
-        </motion.div>
+              })}
+            </motion.div>
+          )
+        ) : (
+          // Normal: show full team capacity
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="glass rounded-xl p-6"
+          >
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-foreground">Capacidade da Equipe</h3>
+              <p className="text-sm text-muted-foreground">Distribuição de carga</p>
+            </div>
+
+            <div className="space-y-5">
+              {team.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">Nenhum membro</p>
+              ) : (
+                team.slice(0, 4).map((member, index) => {
+                  const status = getCapacityStatus(member.currentWeight, member.maxWeight);
+                  const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
+
+                  return (
+                    <motion.div
+                      key={member.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                      className="space-y-2 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition-colors"
+                      onClick={() => navigate(`/equipe`)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage src={member.avatar_url || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                              {member.name.split(" ").map(n => n[0]).join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{member.name}</p>
+                            <p className="text-xs text-muted-foreground">{member.role}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={cn("status-indicator", `status-${status}`)} />
+                          <span className="text-sm font-medium text-foreground">
+                            {member.currentWeight}/{member.maxWeight}
+                          </span>
+                        </div>
+                      </div>
+
+                      <Progress
+                        value={percentage}
+                        className={cn(
+                          "h-2",
+                          status === "critical" && "[&>div]:bg-destructive",
+                          status === "attention" && "[&>div]:bg-warning",
+                          status === "normal" && "[&>div]:bg-success"
+                        )}
+                      />
+
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{member.tasksCount} tarefas ativas</span>
+                        {member.overdueTasks > 0 && (
+                          <span className="text-destructive">
+                            {member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Onboarding Overview */}
@@ -516,7 +608,7 @@ export default function Dashboard() {
       >
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground">
-          {isAdmin ? "Visão geral da operação em tempo real" : "Sua visão operacional"}
+          {isRestricted ? "Suas tarefas e capacidade" : isAdmin ? "Visão geral da operação em tempo real" : "Sua visão operacional"}
         </p>
       </motion.div>
 
