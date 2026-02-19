@@ -147,7 +147,7 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
                     </DropdownMenu>
                   )}
                 </div>
-                <p className="text-sm text-foreground/80 mt-1 whitespace-pre-wrap break-words">
+                <p className="text-sm text-foreground/80 mt-1 whitespace-pre-wrap break-all">
                   {renderContent(comment.content)}
                 </p>
               </div>

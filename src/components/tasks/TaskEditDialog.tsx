@@ -858,7 +858,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                 </TabsContent>
 
                 {/* Attachments Tab - Simplified */}
-                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0 overflow-hidden">
+                <TabsContent value="attachments" className="p-4 sm:p-6 space-y-4 mt-0 overflow-hidden max-w-full">
                   {/* Add URL/Link */}
                   <div className="space-y-3">
                     <Label className="flex items-center gap-1">
@@ -902,7 +902,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     {displayTask.attachments?.map((attachment) => (
                       <div
                         key={attachment.id}
-                        className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors group cursor-pointer"
+                        className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors group cursor-pointer overflow-hidden"
                       >
                         <a
                           href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
@@ -914,7 +914,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           <ExternalLink className="h-4 w-4 text-primary shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium truncate text-primary underline-offset-2 hover:underline">{attachment.file_name}</p>
-                            <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
+                            <p className="text-xs text-muted-foreground break-all line-clamp-1">{attachment.file_url}</p>
                           </div>
                         </a>
                         <Button
