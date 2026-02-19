@@ -229,7 +229,7 @@ export default function Dashboard() {
             {filteredTasks.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">Nenhuma tarefa ativa</p>
             ) : (
-              filteredTasks.map((task, index) => (
+              filteredTasks.slice(0, 8).map((task, index) => (
                 <motion.div
                   key={task.id}
                   initial={{ opacity: 0, x: -20 }}
