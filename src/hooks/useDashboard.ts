@@ -144,11 +144,28 @@ export function useDashboardData() {
       const memberMap = new Map(teamMembers.map(m => [m.id, m.name]));
       const clientMap = new Map(clients.map(c => [c.id, c.name]));
 
-      const dashboardTasks: DashboardTask[] = activeTasks.slice(0, 5).map(t => ({
+      // Helper: check if a task is assigned to a specific member (via assigned_to OR task_assignees)
+      const isAssignedTo = (task: any, memberId: string) => {
+        if (task.assigned_to === memberId) return true;
+        const assigneeIds = taskAssigneeMap.get(task.id);
+        return assigneeIds ? assigneeIds.includes(memberId) : false;
+      };
+
+      // Get all assignee names for a task
+      const getAssigneeName = (task: any) => {
+        const assigneeIds = taskAssigneeMap.get(task.id) || [];
+        if (task.assigned_to) assigneeIds.push(task.assigned_to);
+        const uniqueIds = [...new Set(assigneeIds)];
+        if (uniqueIds.length === 0) return "Não atribuído";
+        const names = uniqueIds.map(id => memberMap.get(id)).filter(Boolean);
+        return names.length > 0 ? names.join(", ") : "Não atribuído";
+      };
+
+      const dashboardTasks: DashboardTask[] = activeTasks.map(t => ({
         id: t.id,
         title: t.title,
         clientName: clientMap.get(t.client_id) || "—",
-        assigneeName: t.assigned_to ? memberMap.get(t.assigned_to) || "Não atribuído" : "Não atribuído",
+        assigneeName: getAssigneeName(t),
         assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
         status: t.status,
@@ -159,15 +176,22 @@ export function useDashboardData() {
 
       // Map team capacity (using operational tasks only)
       // Also exclude internal client tasks from weight calculation
+      // Use task_assignees for multi-assignee support
       const memberTaskStats = new Map<string, { weight: number; count: number; overdue: number }>();
       operationalTasksForWeight.filter(t => t.status !== "done").forEach(t => {
-        if (t.assigned_to) {
-          const curr = memberTaskStats.get(t.assigned_to) || { weight: 0, count: 0, overdue: 0 };
+        // Get all assigned members for this task
+        const assignedMembers = new Set<string>();
+        if (t.assigned_to) assignedMembers.add(t.assigned_to);
+        const extraAssignees = taskAssigneeMap.get(t.id);
+        if (extraAssignees) extraAssignees.forEach(id => assignedMembers.add(id));
+
+        assignedMembers.forEach(memberId => {
+          const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
           curr.count += 1;
           if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
-          memberTaskStats.set(t.assigned_to, curr);
-        }
+          memberTaskStats.set(memberId, curr);
+        });
       });
 
       const dashboardTeam: DashboardTeamMember[] = teamMembers.map(m => {
