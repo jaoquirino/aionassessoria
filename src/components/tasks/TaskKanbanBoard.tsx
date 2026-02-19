@@ -309,7 +309,7 @@ interface TaskCardProps {
       onDragEnd={onDragEnd}
       onClick={() => onClick()}
       className={cn(
-        "glass rounded-lg p-3 cursor-pointer active:cursor-grabbing group transition-all hover:shadow-md",
+        "glass rounded-lg p-3 cursor-pointer active:cursor-grabbing group transition-all hover:shadow-md overflow-hidden",
         isDragging && "opacity-50 scale-95",
         isOverdue && "border-destructive/50 bg-destructive/5"
       )}
