@@ -63,9 +63,11 @@ export interface DashboardClientHealth {
 export function useDashboardData() {
   const { data: currentMember } = useCurrentTeamMember();
   const isAdmin = currentMember?.permission === "admin";
+  const isRestricted = currentMember?.restricted_view === true;
+  const currentMemberId = currentMember?.id;
 
   return useQuery({
-    queryKey: ["dashboard", isAdmin],
+    queryKey: ["dashboard", isAdmin, isRestricted, currentMemberId],
     queryFn: async () => {
       const today = new Date();
       const startOfWeek = new Date(today);
