@@ -902,17 +902,17 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     {displayTask.attachments?.map((attachment) => (
                       <div
                         key={attachment.id}
-                        className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors group cursor-pointer overflow-hidden"
+                        className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors group cursor-pointer"
                       >
                         <a
                           href={attachment.file_url.startsWith("http") ? attachment.file_url : `https://${attachment.file_url}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden"
+                          className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink className="h-4 w-4 text-primary shrink-0" />
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium truncate text-primary underline-offset-2 hover:underline">{attachment.file_name}</p>
                             <p className="text-xs text-muted-foreground truncate">{attachment.file_url}</p>
                           </div>
