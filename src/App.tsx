@@ -9,6 +9,7 @@ import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useIsAdmin, useIsTeamMember } from "@/hooks/useUserRoles";
 import { Loader2 } from "lucide-react";
 import { NotificationToastContainer } from "@/components/notifications/NotificationCenter";
+import { MentionNotificationContainer } from "@/components/notifications/MentionNotification";
 import { AccessDeniedScreen } from "@/components/auth/AccessDeniedScreen";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
