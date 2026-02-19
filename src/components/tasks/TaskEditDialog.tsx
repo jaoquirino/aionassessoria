@@ -171,6 +171,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const [status, setStatus] = useState<TaskStatusDB>("todo");
    const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState<Date | undefined>();
+  const [dueDateOpen, setDueDateOpen] = useState(false);
   const [descriptionNotes, setDescriptionNotes] = useState("");
   const [clientId, setClientId] = useState<string>("");
   const [contractModuleId, setContractModuleId] = useState<string>("");
@@ -642,7 +643,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                       <Label className="flex items-center gap-1">
                         <Clock className="h-3 w-3" /> Prazo
                       </Label>
-                      <Popover>
+                      <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -660,7 +661,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           <Calendar
                             mode="single"
                             selected={dueDate}
-                            onSelect={(d) => { setDueDate(d); markDirty(); }}
+                            onSelect={(d) => { setDueDate(d); markDirty(); setDueDateOpen(false); }}
                             initialFocus
                             className="pointer-events-auto"
                           />
@@ -918,6 +919,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           className="h-8 w-8 shrink-0"
                           title="Copiar link"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             const url = attachment.file_url.startsWith("http") 
                               ? attachment.file_url 
@@ -934,6 +936,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                           title="Excluir"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             deleteAttachment.mutate({ attachmentId: attachment.id, taskId: displayTask.id }); 
                           }}
