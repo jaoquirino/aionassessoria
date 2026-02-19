@@ -416,7 +416,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
             <Skeleton className="h-32 w-full" />
           </div>
         ) : displayTask ? (
-          <div className="flex flex-col h-full max-h-[90vh]">
+          <div className="flex flex-col h-full max-h-[90vh] overflow-hidden">
              {/* Header - Inline editable title */}
              <div className={cn("p-6 pb-4 border-b shrink-0", isSubtask && "border-l-4 border-l-primary")}>
                {isSubtask && (
