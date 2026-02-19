@@ -448,8 +448,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                />
              </div>
 
-            <ScrollArea className="flex-1">
-              <Tabs defaultValue={initialTab} className="w-full">
+            <ScrollArea className="flex-1 overflow-hidden">
+              <Tabs defaultValue={initialTab} className="w-full overflow-hidden">
                 <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0 px-4 sticky top-0 bg-background z-10 overflow-x-auto flex-nowrap">
                   <TabsTrigger value="details" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                     <FileText className="h-4 w-4 mr-2" />
