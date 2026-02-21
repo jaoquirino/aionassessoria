@@ -61,19 +61,31 @@ export function MentionNotificationContainer() {
             supabase.from("profiles").select("full_name").eq("user_id", c.user_id).maybeSingle(),
           ]);
 
+          const label = `${profile?.full_name || "Alguém"} mencionou você`;
+          const detail = task?.title || "Tarefa";
+
           push({
             id: `mc-${Date.now()}`,
-            label: `${profile?.full_name || "Alguém"} mencionou você`,
-            detail: task?.title || "Tarefa",
+            label,
+            detail,
             task_id: c.task_id,
             type: "comment",
+          });
+
+          // Persist to DB
+          await supabase.from("notifications").insert({
+            user_id: user.id,
+            type: "comment",
+            title: label,
+            detail,
+            task_id: c.task_id,
           });
         }
       )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "tasks" },
-        (payload) => {
+        async (payload) => {
           if (!teamMemberName || !teamMemberId) return;
           const n = payload.new as any;
           const o = payload.old as any;
@@ -82,12 +94,23 @@ export function MentionNotificationContainer() {
             const ov: string = o[f] || "";
             const nv: string = n[f] || "";
             if (nv.includes(`@${teamMemberName}`) && !ov.includes(`@${teamMemberName}`)) {
+              const label = "Você foi mencionado na descrição";
+              const detail = n.title || "Tarefa";
+
               push({
                 id: `md-${Date.now()}`,
-                label: "Você foi mencionado na descrição",
-                detail: n.title || "Tarefa",
+                label,
+                detail,
                 task_id: n.id,
                 type: "description",
+              });
+
+              await supabase.from("notifications").insert({
+                user_id: user.id,
+                type: "description",
+                title: label,
+                detail,
+                task_id: n.id,
               });
               break;
             }
@@ -108,12 +131,23 @@ export function MentionNotificationContainer() {
             .eq("id", a.task_id)
             .maybeSingle();
 
+          const label = "Você foi atribuído a uma tarefa";
+          const detail = task?.title || "Tarefa";
+
           push({
             id: `ma-${Date.now()}`,
-            label: "Você foi atribuído a uma tarefa",
-            detail: task?.title || "Tarefa",
+            label,
+            detail,
             task_id: a.task_id,
             type: "assignment",
+          });
+
+          await supabase.from("notifications").insert({
+            user_id: user.id,
+            type: "assignment",
+            title: label,
+            detail,
+            task_id: a.task_id,
           });
         }
       )

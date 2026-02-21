@@ -120,6 +120,10 @@ export function useGlobalRealtime() {
         queryClient.invalidateQueries({ queryKey: ["users_with_roles"] });
         queryClient.invalidateQueries({ queryKey: ["user_roles"] });
       })
+      // Notifications
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      })
       .subscribe();
 
     return () => {
