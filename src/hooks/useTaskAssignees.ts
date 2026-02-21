@@ -100,7 +100,24 @@ export function useTasksAssignees(taskIds: string[]) {
        if (error) throw error;
        return data;
      },
-     onSuccess: () => {
+     onMutate: async ({ taskId, memberId }) => {
+       await queryClient.cancelQueries({ queryKey: ["task_assignees"] });
+       const prev = queryClient.getQueriesData({ queryKey: ["task_assignees"] });
+       // Optimistically add to bulk cache
+       queryClient.setQueriesData<Record<string, TaskAssignee[]>>(
+         { queryKey: ["task_assignees"] },
+         (old) => {
+           if (!old || Array.isArray(old)) return old;
+           const existing = old[taskId] || [];
+           return { ...old, [taskId]: [...existing, { id: `temp-${memberId}`, task_id: taskId, team_member_id: memberId, created_at: new Date().toISOString() }] };
+         }
+       );
+       return { prev };
+     },
+     onError: (_err, _vars, ctx) => {
+       ctx?.prev?.forEach(([key, val]) => queryClient.setQueryData(key, val));
+     },
+     onSettled: () => {
        queryClient.invalidateQueries({ queryKey: ["task_assignees"] });
        queryClient.invalidateQueries({ queryKey: ["tasks"] });
      },
