@@ -76,13 +76,20 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
   const notifications = showHistory ? clearedNotifications : activeNotifications;
   const unreadCount = activeNotifications.filter((n) => !n.is_read).length;
 
+  const optimistic = (
+    queryKey: (string | boolean | undefined)[],
+    updater: (old: DBNotification[]) => DBNotification[]
+  ) => {
+    queryClient.setQueryData<DBNotification[]>(queryKey, (old) => updater(old || []));
+  };
+
   const handleNotificationClick = async (notification: DBNotification) => {
     if (!notification.is_read) {
-      await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", notification.id);
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      optimistic(["notifications", user?.id, false], (old) =>
+        old.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
+      );
+      supabase.from("notifications").update({ is_read: true }).eq("id", notification.id)
+        .then(() => queryClient.invalidateQueries({ queryKey: ["notifications"] }));
     }
     if (notification.task_id) {
       const tab = notification.type === "comment" ? "comments" : "details";
@@ -93,41 +100,45 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
 
   const markAllAsRead = async () => {
     if (!user) return;
-    await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("user_id", user.id)
-      .eq("is_cleared", false)
-      .eq("is_read", false);
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    optimistic(["notifications", user.id, false], (old) =>
+      old.map((n) => ({ ...n, is_read: true }))
+    );
+    supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_cleared", false).eq("is_read", false)
+      .then(() => queryClient.invalidateQueries({ queryKey: ["notifications"] }));
   };
 
   const clearAllNotifications = async () => {
     if (!user) return;
-    await supabase
-      .from("notifications")
-      .update({ is_cleared: true, is_read: true })
-      .eq("user_id", user.id)
-      .eq("is_cleared", false);
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    const current = activeNotifications;
+    optimistic(["notifications", user.id, false], () => []);
+    optimistic(["notifications", user.id, true], (old) => [
+      ...current.map((n) => ({ ...n, is_cleared: true, is_read: true })),
+      ...old,
+    ]);
+    supabase.from("notifications").update({ is_cleared: true, is_read: true }).eq("user_id", user.id).eq("is_cleared", false)
+      .then(() => queryClient.invalidateQueries({ queryKey: ["notifications"] }));
   };
 
   const restoreNotification = async (id: string) => {
-    await supabase
-      .from("notifications")
-      .update({ is_cleared: false })
-      .eq("id", id);
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    const item = clearedNotifications.find((n) => n.id === id);
+    if (item) {
+      optimistic(["notifications", user?.id, true], (old) => old.filter((n) => n.id !== id));
+      optimistic(["notifications", user?.id, false], (old) => [{ ...item, is_cleared: false }, ...old]);
+    }
+    supabase.from("notifications").update({ is_cleared: false }).eq("id", id)
+      .then(() => queryClient.invalidateQueries({ queryKey: ["notifications"] }));
   };
 
   const restoreAll = async () => {
     if (!user) return;
-    await supabase
-      .from("notifications")
-      .update({ is_cleared: false })
-      .eq("user_id", user.id)
-      .eq("is_cleared", true);
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    const items = clearedNotifications;
+    optimistic(["notifications", user.id, true], () => []);
+    optimistic(["notifications", user.id, false], (old) => [
+      ...items.map((n) => ({ ...n, is_cleared: false })),
+      ...old,
+    ]);
+    supabase.from("notifications").update({ is_cleared: false }).eq("user_id", user.id).eq("is_cleared", true)
+      .then(() => queryClient.invalidateQueries({ queryKey: ["notifications"] }));
   };
 
   return (
