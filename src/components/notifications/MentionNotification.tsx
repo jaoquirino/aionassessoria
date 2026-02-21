@@ -42,13 +42,14 @@ export function MentionNotificationContainer() {
       // Auto-clean after 5 seconds
       setTimeout(() => recentlyInserted.delete(key), 5000);
 
-      const { data: inserted, error } = await supabase.from("notifications").upsert({
+      const { data: inserted, error } = await supabase.from("notifications").insert({
         user_id: user.id,
         type,
         title,
         detail,
         task_id: taskId,
-      }, { onConflict: "user_id,task_id,type", ignoreDuplicates: true }).select("id").single();
+      }).select("id").single();
+      // Silently ignore unique constraint violations (duplicate)
       if (error || !inserted) return undefined;
       return inserted.id;
     };
