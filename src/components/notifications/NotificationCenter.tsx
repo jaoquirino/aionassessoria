@@ -242,7 +242,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
               })}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
         <div className="border-t p-2 flex gap-1">
