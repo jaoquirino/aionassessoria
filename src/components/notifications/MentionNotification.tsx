@@ -86,19 +86,13 @@ export function MentionNotificationContainer() {
           const label = `${profile?.full_name || "Alguém"} mencionou você`;
           const detail = task?.title || "Tarefa";
 
-          // Persist to DB FIRST, then show toast
-          const { data: inserted } = await supabase.from("notifications").insert({
-            user_id: user.id,
-            type: "comment",
-            title: label,
-            detail,
-            task_id: c.task_id,
-          }).select("id").single();
+          const dbId = await tryInsert(c.task_id, "comment", label, detail);
+          if (!dbId) return; // duplicate, skip
 
           playMentionSound();
           setToasts((prev) => [...prev, {
             id: `mc-${Date.now()}`,
-            dbId: inserted?.id,
+            dbId,
             label, detail, task_id: c.task_id, type: "comment",
           }]);
           queryClient.invalidateQueries({ queryKey: ["notifications"] });
