@@ -31,6 +31,27 @@ export function MentionNotificationContainer() {
   useEffect(() => {
     if (!user) return;
 
+    // Deduplication: track recently inserted notification keys to prevent duplicates
+    const recentlyInserted = new Set<string>();
+    const dedupeKey = (taskId: string, type: string) => `${taskId}:${type}`;
+
+    const tryInsert = async (taskId: string, type: string, title: string, detail: string): Promise<string | undefined> => {
+      const key = dedupeKey(taskId, type);
+      if (recentlyInserted.has(key)) return undefined;
+      recentlyInserted.add(key);
+      // Auto-clean after 5 seconds
+      setTimeout(() => recentlyInserted.delete(key), 5000);
+
+      const { data: inserted } = await supabase.from("notifications").insert({
+        user_id: user.id,
+        type,
+        title,
+        detail,
+        task_id: taskId,
+      }).select("id").single();
+      return inserted?.id;
+    };
+
     let teamMemberName: string | null = null;
     let teamMemberId: string | null = null;
 
