@@ -145,18 +145,13 @@ export function MentionNotificationContainer() {
           const label = "Você foi atribuído a uma tarefa";
           const detail = task?.title || "Tarefa";
 
-          const { data: inserted } = await supabase.from("notifications").insert({
-            user_id: user.id,
-            type: "assignment",
-            title: label,
-            detail,
-            task_id: a.task_id,
-          }).select("id").single();
+          const dbId = await tryInsert(a.task_id, "assignment", label, detail);
+          if (!dbId) return;
 
           playMentionSound();
           setToasts((prev) => [...prev, {
             id: `ma-${Date.now()}`,
-            dbId: inserted?.id,
+            dbId,
             label, detail, task_id: a.task_id, type: "assignment",
           }]);
           queryClient.invalidateQueries({ queryKey: ["notifications"] });
