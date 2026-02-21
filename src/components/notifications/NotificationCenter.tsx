@@ -189,7 +189,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
         </div>
 
         {/* List */}
-        <ScrollArea className="max-h-72">
+        <div className="max-h-72 overflow-y-auto overscroll-contain">
           {notifications.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">
               {showHistory ? "Nenhuma notificação no histórico" : "Nenhuma notificação"}
