@@ -31,6 +31,27 @@ export function MentionNotificationContainer() {
   useEffect(() => {
     if (!user) return;
 
+    // Deduplication: track recently inserted notification keys to prevent duplicates
+    const recentlyInserted = new Set<string>();
+    const dedupeKey = (taskId: string, type: string) => `${taskId}:${type}`;
+
+    const tryInsert = async (taskId: string, type: string, title: string, detail: string): Promise<string | undefined> => {
+      const key = dedupeKey(taskId, type);
+      if (recentlyInserted.has(key)) return undefined;
+      recentlyInserted.add(key);
+      // Auto-clean after 5 seconds
+      setTimeout(() => recentlyInserted.delete(key), 5000);
+
+      const { data: inserted } = await supabase.from("notifications").insert({
+        user_id: user.id,
+        type,
+        title,
+        detail,
+        task_id: taskId,
+      }).select("id").single();
+      return inserted?.id;
+    };
+
     let teamMemberName: string | null = null;
     let teamMemberId: string | null = null;
 
@@ -65,19 +86,13 @@ export function MentionNotificationContainer() {
           const label = `${profile?.full_name || "Alguém"} mencionou você`;
           const detail = task?.title || "Tarefa";
 
-          // Persist to DB FIRST, then show toast
-          const { data: inserted } = await supabase.from("notifications").insert({
-            user_id: user.id,
-            type: "comment",
-            title: label,
-            detail,
-            task_id: c.task_id,
-          }).select("id").single();
+          const dbId = await tryInsert(c.task_id, "comment", label, detail);
+          if (!dbId) return; // duplicate, skip
 
           playMentionSound();
           setToasts((prev) => [...prev, {
             id: `mc-${Date.now()}`,
-            dbId: inserted?.id,
+            dbId,
             label, detail, task_id: c.task_id, type: "comment",
           }]);
           queryClient.invalidateQueries({ queryKey: ["notifications"] });
@@ -98,18 +113,13 @@ export function MentionNotificationContainer() {
               const label = "Você foi mencionado na descrição";
               const detail = n.title || "Tarefa";
 
-              const { data: inserted } = await supabase.from("notifications").insert({
-                user_id: user.id,
-                type: "description",
-                title: label,
-                detail,
-                task_id: n.id,
-              }).select("id").single();
+              const dbId = await tryInsert(n.id, "description", label, detail);
+              if (!dbId) return;
 
               playMentionSound();
               setToasts((prev) => [...prev, {
                 id: `md-${Date.now()}`,
-                dbId: inserted?.id,
+                dbId,
                 label, detail, task_id: n.id, type: "description",
               }]);
               queryClient.invalidateQueries({ queryKey: ["notifications"] });
@@ -135,18 +145,13 @@ export function MentionNotificationContainer() {
           const label = "Você foi atribuído a uma tarefa";
           const detail = task?.title || "Tarefa";
 
-          const { data: inserted } = await supabase.from("notifications").insert({
-            user_id: user.id,
-            type: "assignment",
-            title: label,
-            detail,
-            task_id: a.task_id,
-          }).select("id").single();
+          const dbId = await tryInsert(a.task_id, "assignment", label, detail);
+          if (!dbId) return;
 
           playMentionSound();
           setToasts((prev) => [...prev, {
             id: `ma-${Date.now()}`,
-            dbId: inserted?.id,
+            dbId,
             label, detail, task_id: a.task_id, type: "assignment",
           }]);
           queryClient.invalidateQueries({ queryKey: ["notifications"] });
