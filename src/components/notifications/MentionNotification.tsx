@@ -22,6 +22,10 @@ const typeConfig = {
   assignment: { icon: UserPlus, label: "Atribuição" },
 } as const;
 
+// Module-level deduplication set — survives React StrictMode double-mount
+const recentlyInserted = new Set<string>();
+const dedupeKey = (taskId: string, type: string) => `${taskId}:${type}`;
+
 export function MentionNotificationContainer() {
   const [toasts, setToasts] = useState<MentionToast[]>([]);
   const navigate = useNavigate();
@@ -30,10 +34,6 @@ export function MentionNotificationContainer() {
 
   useEffect(() => {
     if (!user) return;
-
-    // Deduplication: track recently inserted notification keys to prevent duplicates
-    const recentlyInserted = new Set<string>();
-    const dedupeKey = (taskId: string, type: string) => `${taskId}:${type}`;
 
     const tryInsert = async (taskId: string, type: string, title: string, detail: string): Promise<string | undefined> => {
       const key = dedupeKey(taskId, type);
