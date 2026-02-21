@@ -85,6 +85,36 @@ export function useTasksAssignees(taskIds: string[]) {
    });
  }
  
+ // Helper: build a team members map from existing assignee cache
+ function getMembersMapFromCache(queryClient: ReturnType<typeof useQueryClient>): Map<string, TeamMember> {
+   const membersMap = new Map<string, TeamMember>();
+   const queries = queryClient.getQueriesData<Record<string, TaskAssignee[]>>({ queryKey: ["task_assignees"] });
+   for (const [, data] of queries) {
+     if (data && !Array.isArray(data)) {
+       Object.values(data).forEach(assignees => {
+         assignees.forEach(a => {
+           if (a.team_member) membersMap.set(a.team_member_id, a.team_member);
+         });
+       });
+     } else if (Array.isArray(data)) {
+       (data as TaskAssignee[]).forEach(a => {
+         if (a.team_member) membersMap.set(a.team_member_id, a.team_member);
+       });
+     }
+   }
+   return membersMap;
+ }
+
+ function makeOptimisticAssignee(taskId: string, memberId: string, membersMap: Map<string, TeamMember>): TaskAssignee {
+   return {
+     id: `temp-${memberId}`,
+     task_id: taskId,
+     team_member_id: memberId,
+     created_at: new Date().toISOString(),
+     team_member: membersMap.get(memberId),
+   };
+ }
+
  // Add assignee to task
  export function useAddTaskAssignee() {
    const queryClient = useQueryClient();
@@ -103,13 +133,13 @@ export function useTasksAssignees(taskIds: string[]) {
      onMutate: async ({ taskId, memberId }) => {
        await queryClient.cancelQueries({ queryKey: ["task_assignees"] });
        const prev = queryClient.getQueriesData({ queryKey: ["task_assignees"] });
-       // Optimistically add to bulk cache
+       const membersMap = getMembersMapFromCache(queryClient);
        queryClient.setQueriesData<Record<string, TaskAssignee[]>>(
          { queryKey: ["task_assignees"] },
          (old) => {
            if (!old || Array.isArray(old)) return old;
            const existing = old[taskId] || [];
-           return { ...old, [taskId]: [...existing, { id: `temp-${memberId}`, task_id: taskId, team_member_id: memberId, created_at: new Date().toISOString() }] };
+           return { ...old, [taskId]: [...existing, makeOptimisticAssignee(taskId, memberId, membersMap)] };
          }
        );
        return { prev };
@@ -167,13 +197,11 @@ export function useTasksAssignees(taskIds: string[]) {
  
    return useMutation({
      mutationFn: async ({ taskId, memberIds }: { taskId: string; memberIds: string[] }) => {
-       // Delete existing
        await supabase
          .from("task_assignees")
          .delete()
          .eq("task_id", taskId);
  
-       // Insert new if any
        if (memberIds.length > 0) {
          const { error } = await supabase
            .from("task_assignees")
@@ -188,11 +216,12 @@ export function useTasksAssignees(taskIds: string[]) {
      onMutate: async ({ taskId, memberIds }) => {
        await queryClient.cancelQueries({ queryKey: ["task_assignees"] });
        const prev = queryClient.getQueriesData({ queryKey: ["task_assignees"] });
+       const membersMap = getMembersMapFromCache(queryClient);
        queryClient.setQueriesData<Record<string, TaskAssignee[]>>(
          { queryKey: ["task_assignees"] },
          (old) => {
            if (!old || Array.isArray(old)) return old;
-           return { ...old, [taskId]: memberIds.map(mid => ({ id: `temp-${mid}`, task_id: taskId, team_member_id: mid, created_at: new Date().toISOString() })) };
+           return { ...old, [taskId]: memberIds.map(mid => makeOptimisticAssignee(taskId, mid, membersMap)) };
          }
        );
        return { prev };
