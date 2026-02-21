@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX notifications_unique_event ON public.notifications (user_id, task_id, type) WHERE is_cleared = false;
