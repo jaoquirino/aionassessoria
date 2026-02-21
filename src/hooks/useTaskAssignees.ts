@@ -138,7 +138,23 @@ export function useTasksAssignees(taskIds: string[]) {
  
        if (error) throw error;
      },
-     onSuccess: () => {
+     onMutate: async ({ taskId, memberId }) => {
+       await queryClient.cancelQueries({ queryKey: ["task_assignees"] });
+       const prev = queryClient.getQueriesData({ queryKey: ["task_assignees"] });
+       queryClient.setQueriesData<Record<string, TaskAssignee[]>>(
+         { queryKey: ["task_assignees"] },
+         (old) => {
+           if (!old || Array.isArray(old)) return old;
+           const existing = old[taskId] || [];
+           return { ...old, [taskId]: existing.filter(a => a.team_member_id !== memberId) };
+         }
+       );
+       return { prev };
+     },
+     onError: (_err, _vars, ctx) => {
+       ctx?.prev?.forEach(([key, val]) => queryClient.setQueryData(key, val));
+     },
+     onSettled: () => {
        queryClient.invalidateQueries({ queryKey: ["task_assignees"] });
        queryClient.invalidateQueries({ queryKey: ["tasks"] });
      },
