@@ -95,7 +95,9 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
   };
 
   // Check if task should be in "pra ontem" column based on urgent priority OR overdue date
+  // Tasks marked as "done" should NOT appear in the overdue column
   const isUrgentOrOverdue = (task: Task) => {
+    if (task.status === "done") return false;
     return task.priority === "urgent" || isOverdue(task);
   };
 
