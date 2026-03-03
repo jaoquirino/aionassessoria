@@ -28,6 +28,7 @@ const statusOptions = [
 const typeOptions = [
   { value: "recurring", label: "Entrega recorrente" },
   { value: "planning", label: "Planejamento" },
+  { value: "project", label: "Projeto" },
   { value: "extra", label: "Extra" },
 ];
 
