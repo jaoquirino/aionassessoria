@@ -28,6 +28,7 @@ const statusOptions = [
 const typeOptions = [
   { value: "recurring", label: "Entrega recorrente" },
   { value: "planning", label: "Planejamento" },
+  { value: "project", label: "Projeto" },
   { value: "extra", label: "Extra" },
 ];
 
@@ -80,7 +81,7 @@ export default function Tasks() {
   const { data: assigneesByTask = {} } = useTasksAssignees(isRestricted ? allTaskIds : []);
 
   const operationalTasks = useMemo(() => {
-    let filtered = tasks.filter(task => task.type !== "project" && task.type !== "onboarding");
+    let filtered = tasks.filter(task => task.type !== "onboarding");
     
     if (isRestricted && currentMemberId) {
       filtered = filtered.filter(task => {

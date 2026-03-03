@@ -48,7 +48,7 @@ export function useDeliveriesByClient(clientId?: string) {
           )
         `)
         .is("archived_at", null)
-        .not("type", "in", '("project","onboarding")')
+        .not("type", "eq", "onboarding")
         .order("due_date", { ascending: false });
 
       if (clientId) {
