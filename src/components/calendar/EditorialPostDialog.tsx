@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Loader2, Upload, X, Trash2 } from "lucide-react";
+import { Loader2, Upload, Trash2 } from "lucide-react";
+import { AttachmentThumbnail, PendingFileThumbnail } from "./AttachmentThumbnail";
 import {
   EditorialPost,
   useCreateEditorialPost,
@@ -233,34 +234,20 @@ export function EditorialPostDialog({ open, onOpenChange, post, clients, teamMem
             <Label>Arquivos (imagem/vídeo)</Label>
             <div className="flex flex-wrap gap-2 mt-1">
               {isEditing && attachments?.map((att) => (
-                <div key={att.id} className="relative group">
-                  {att.file_type?.startsWith("image/") ? (
-                    <img src={att.file_url} alt={att.file_name} className="h-20 w-20 object-cover rounded border border-border" />
-                  ) : (
-                    <div className="h-20 w-20 flex items-center justify-center rounded border border-border bg-muted text-xs text-muted-foreground p-1 text-center">
-                      {att.file_name}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => deleteAttachment.mutate(att.id)}
-                    className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
+                <AttachmentThumbnail
+                  key={att.id}
+                  fileUrl={att.file_url}
+                  fileName={att.file_name}
+                  fileType={att.file_type}
+                  onDelete={() => deleteAttachment.mutate(att.id)}
+                />
               ))}
               {!isEditing && pendingFiles.map((file, i) => (
-                <div key={i} className="relative group">
-                  <div className="h-20 w-20 flex items-center justify-center rounded border border-border bg-muted text-xs text-muted-foreground p-1 text-center">
-                    {file.name}
-                  </div>
-                  <button
-                    onClick={() => setPendingFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
+                <PendingFileThumbnail
+                  key={i}
+                  file={file}
+                  onDelete={() => setPendingFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                />
               ))}
             </div>
             <label className="inline-flex items-center gap-2 mt-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">

@@ -9,7 +9,7 @@ interface DayDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   date: Date | null;
   items: CalendarItem[];
-  onEditPost: (id: string) => void;
+  onItemClick: (item: CalendarItem) => void;
   clients?: { id: string; name: string; color: string | null; logo_url: string | null }[];
 }
 
@@ -24,7 +24,7 @@ const statusLabels: Record<string, string> = {
   done: "Concluída",
 };
 
-export function DayDetailDialog({ open, onOpenChange, date, items, onEditPost, clients = [] }: DayDetailDialogProps) {
+export function DayDetailDialog({ open, onOpenChange, date, items, onItemClick, clients = [] }: DayDetailDialogProps) {
   if (!date) return null;
 
   const clientColorMap: Record<string, string> = {};
@@ -50,7 +50,7 @@ export function DayDetailDialog({ open, onOpenChange, date, items, onEditPost, c
             return (
               <button
                 key={item.id}
-                onClick={() => item.type === "editorial" && onEditPost(item.id)}
+                onClick={() => onItemClick(item)}
                 className="w-full text-left p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
                 style={clientColor ? { borderLeftColor: clientColor, borderLeftWidth: 3 } : undefined}
               >
