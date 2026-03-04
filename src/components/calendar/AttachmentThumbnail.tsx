@@ -216,17 +216,25 @@ export function AttachmentThumbnail({ fileUrl, fileName, fileType, onDelete, siz
   // Generic file
   return (
     <div className="relative group">
-      <div className={cn(sizeClass, "flex items-center justify-center rounded-lg border border-border bg-muted text-xs text-muted-foreground p-1 text-center")}>
+      <div className={cn(sizeClass, "flex items-center justify-center rounded-lg border border-border bg-muted text-xs text-muted-foreground p-1 text-center cursor-pointer")} onClick={handleDownload}>
         {fileName}
       </div>
-      {onDelete && (
+      <div className="absolute -top-1 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={handleDownload}
+          className="bg-primary text-primary-foreground rounded-full p-0.5"
         >
-          <X className="h-3 w-3" />
+          <Download className="h-3 w-3" />
         </button>
-      )}
+        {onDelete && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="bg-destructive text-destructive-foreground rounded-full p-0.5"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
