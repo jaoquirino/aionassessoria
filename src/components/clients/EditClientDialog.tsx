@@ -70,6 +70,10 @@ export function EditClientDialog({
   const [editingContract, setEditingContract] = useState<ContractWithModules | null>(null);
   const [deleteClientOpen, setDeleteClientOpen] = useState(false);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+  const [clientColor, setClientColor] = useState("");
+  const [clientLogoUrl, setClientLogoUrl] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [onboardingDialogOpen, setOnboardingDialogOpen] = useState(false);
   const [selectedOnboardingModule, setSelectedOnboardingModule] = useState<{
     contractModuleId: string;
