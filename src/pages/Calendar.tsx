@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { CalendarWeekView } from "@/components/calendar/CalendarWeekView";
 import { CalendarDayView } from "@/components/calendar/CalendarDayView";
 import { CalendarYearView } from "@/components/calendar/CalendarYearView";
 import { EditorialPostDialog } from "@/components/calendar/EditorialPostDialog";
-import { DayDetailSheet } from "@/components/calendar/DayDetailSheet";
+import { DayDetailDialog } from "@/components/calendar/DayDetailDialog";
 import { useEditorialPosts, EditorialPost } from "@/hooks/useEditorialPosts";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
@@ -25,7 +25,7 @@ export default function Calendar() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<EditorialPost | null>(null);
-  const [daySheetOpen, setDaySheetOpen] = useState(false);
+  const [dayDialogOpen, setDayDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [newPostDate, setNewPostDate] = useState<Date | undefined>();
 
@@ -116,7 +116,7 @@ export default function Calendar() {
 
   const handleDayClick = (date: Date) => {
     setSelectedDate(date);
-    setDaySheetOpen(true);
+    setDayDialogOpen(true);
   };
 
   const handleEditPost = (id: string) => {
@@ -124,7 +124,7 @@ export default function Calendar() {
     if (post) {
       setEditingPost(post);
       setPostDialogOpen(true);
-      setDaySheetOpen(false);
+      setDayDialogOpen(false);
     }
   };
 
@@ -135,6 +135,12 @@ export default function Calendar() {
   };
 
   const handleToday = () => setCurrentDate(new Date());
+
+  const handleItemClick = (item: CalendarItem) => {
+    if (item.type === "editorial") {
+      handleEditPost(item.id);
+    }
+  };
 
   const handleMonthClickFromYear = (date: Date) => {
     setCurrentDate(date);
@@ -197,6 +203,7 @@ export default function Calendar() {
           currentDate={currentDate}
           itemsByDate={itemsByDate}
           onDayClick={handleDayClick}
+          onItemClick={handleItemClick}
           clients={clients}
         />
       )}
@@ -218,12 +225,13 @@ export default function Calendar() {
         />
       )}
 
-      <DayDetailSheet
-        open={daySheetOpen}
-        onOpenChange={setDaySheetOpen}
+      <DayDetailDialog
+        open={dayDialogOpen}
+        onOpenChange={setDayDialogOpen}
         date={selectedDate}
         items={selectedDayItems}
         onEditPost={handleEditPost}
+        clients={clients}
       />
 
       <EditorialPostDialog

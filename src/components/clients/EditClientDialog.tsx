@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList, Eye, Play, Upload, Palette } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { extractDominantColor } from "@/lib/extractDominantColor";
 import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
 import { useClientContractsWithModules, useDeleteContract, type ContractWithModules } from "@/hooks/useContracts";
 import { ContractDialog } from "./ContractDialog";
@@ -175,7 +176,14 @@ export function EditClientDialog({
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
       setClientLogoUrl(urlData.publicUrl);
-      toast.success("Logo enviada");
+      // Auto-detect dominant color from logo
+      const detectedColor = await extractDominantColor(urlData.publicUrl);
+      if (detectedColor && !clientColor) {
+        setClientColor(detectedColor);
+        toast.success("Logo enviada e cor detectada automaticamente");
+      } else {
+        toast.success("Logo enviada");
+      }
     } catch {
       toast.error("Erro ao enviar logo");
     }

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { format, startOfWeek, addDays, isToday, isSameDay } from "date-fns";
+import { format, startOfWeek, addDays, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { CalendarItem } from "./CalendarDayCell";
@@ -8,10 +8,11 @@ interface CalendarWeekViewProps {
   currentDate: Date;
   itemsByDate: Record<string, CalendarItem[]>;
   onDayClick: (date: Date) => void;
+  onItemClick?: (item: CalendarItem) => void;
   clients?: { id: string; name: string; color: string | null; logo_url: string | null }[];
 }
 
-export function CalendarWeekView({ currentDate, itemsByDate, onDayClick, clients = [] }: CalendarWeekViewProps) {
+export function CalendarWeekView({ currentDate, itemsByDate, onDayClick, onItemClick, clients = [] }: CalendarWeekViewProps) {
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentDate, { locale: ptBR });
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -34,10 +35,11 @@ export function CalendarWeekView({ currentDate, itemsByDate, onDayClick, clients
       {/* Header */}
       <div className="grid grid-cols-7 border-b border-border bg-muted/30">
         {weekDays.map((day) => (
-          <div
+          <button
             key={day.toISOString()}
+            onClick={() => onDayClick(day)}
             className={cn(
-              "text-center py-3 border-r border-border last:border-r-0",
+              "text-center py-3 border-r border-border last:border-r-0 hover:bg-accent/30 transition-colors",
               isToday(day) && "bg-primary/10"
             )}
           >
@@ -52,7 +54,7 @@ export function CalendarWeekView({ currentDate, itemsByDate, onDayClick, clients
             >
               {format(day, "d")}
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -64,9 +66,8 @@ export function CalendarWeekView({ currentDate, itemsByDate, onDayClick, clients
           return (
             <div
               key={key}
-              onClick={() => onDayClick(day)}
               className={cn(
-                "border-r border-border last:border-r-0 p-1.5 cursor-pointer hover:bg-accent/30 transition-colors",
+                "border-r border-border last:border-r-0 p-1.5",
                 isToday(day) && "bg-primary/5"
               )}
             >
@@ -75,9 +76,13 @@ export function CalendarWeekView({ currentDate, itemsByDate, onDayClick, clients
                   const clientColor = item.clientName ? clientColorMap[item.clientName] : null;
                   const clientLogo = item.clientName ? clientLogoMap[item.clientName] : null;
                   return (
-                    <div
+                    <button
                       key={item.id}
-                      className="rounded-md px-2 py-1.5 text-xs font-medium border cursor-pointer transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onItemClick?.(item);
+                      }}
+                      className="w-full text-left rounded-md px-2 py-1.5 text-xs font-medium border cursor-pointer transition-colors hover:shadow-sm"
                       style={clientColor ? {
                         backgroundColor: `${clientColor}20`,
                         borderColor: `${clientColor}40`,
@@ -94,7 +99,7 @@ export function CalendarWeekView({ currentDate, itemsByDate, onDayClick, clients
                       {item.clientName && !clientLogo && (
                         <div className="text-[10px] opacity-70 truncate mt-0.5">{item.clientName}</div>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
