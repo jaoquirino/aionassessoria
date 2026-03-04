@@ -70,6 +70,7 @@ export function CollapsibleFilters({
     filters.type !== "all",
     filters.assignee !== "all",
     filters.client !== "all",
+    !!filters.dateFrom || !!filters.dateTo,
   ].filter(Boolean).length;
 
   return (
