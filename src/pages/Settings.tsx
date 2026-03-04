@@ -1107,6 +1107,11 @@ export default function Settings() {
               <ClientDataExportTab />
             </TabsContent>
           )}
+          {isAdmin && (
+            <TabsContent value="modules">
+              <ModulesManagementTab />
+            </TabsContent>
+          )}
         </Tabs>
       </motion.div>
 
