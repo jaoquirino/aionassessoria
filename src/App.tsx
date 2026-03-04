@@ -18,6 +18,7 @@ import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
 import Modules from "./pages/Modules";
 import Settings from "./pages/Settings";
+import Calendar from "./pages/Calendar";
 
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
