@@ -222,10 +222,12 @@ export type Database = {
       clients: {
         Row: {
           cnpj: string | null
+          color: string | null
           created_at: string
           email: string | null
           id: string
           is_internal: boolean
+          logo_url: string | null
           name: string
           phone: string | null
           status: Database["public"]["Enums"]["client_status"]
@@ -233,10 +235,12 @@ export type Database = {
         }
         Insert: {
           cnpj?: string | null
+          color?: string | null
           created_at?: string
           email?: string | null
           id?: string
           is_internal?: boolean
+          logo_url?: string | null
           name: string
           phone?: string | null
           status?: Database["public"]["Enums"]["client_status"]
@@ -244,10 +248,12 @@ export type Database = {
         }
         Update: {
           cnpj?: string | null
+          color?: string | null
           created_at?: string
           email?: string | null
           id?: string
           is_internal?: boolean
+          logo_url?: string | null
           name?: string
           phone?: string | null
           status?: Database["public"]["Enums"]["client_status"]

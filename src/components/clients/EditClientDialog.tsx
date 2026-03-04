@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,7 +6,9 @@ import { EditDialog } from "@/components/ui/edit-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList, Eye, Play } from "lucide-react";
+import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList, Eye, Play, Upload, Palette } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
 import { useClientContractsWithModules, useDeleteContract, type ContractWithModules } from "@/hooks/useContracts";
 import { ContractDialog } from "./ContractDialog";
@@ -68,6 +70,10 @@ export function EditClientDialog({
   const [editingContract, setEditingContract] = useState<ContractWithModules | null>(null);
   const [deleteClientOpen, setDeleteClientOpen] = useState(false);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+  const [clientColor, setClientColor] = useState("");
+  const [clientLogoUrl, setClientLogoUrl] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [onboardingDialogOpen, setOnboardingDialogOpen] = useState(false);
   const [selectedOnboardingModule, setSelectedOnboardingModule] = useState<{
     contractModuleId: string;
@@ -90,6 +96,8 @@ export function EditClientDialog({
       setCnpj(client.cnpj || "");
       setPhone(client.phone || "");
       setEmail(client.email || "");
+      setClientColor((client as any).color || "");
+      setClientLogoUrl((client as any).logo_url || "");
     }
   }, [client]);
 
@@ -113,6 +121,8 @@ export function EditClientDialog({
         cnpj: cnpj || undefined,
         phone: phone || undefined,
         email: email || undefined,
+        color: clientColor || null,
+        logo_url: clientLogoUrl || null,
       });
       onClientUpdated?.();
     } catch (error) {
@@ -147,7 +157,30 @@ export function EditClientDialog({
       setCnpj(client.cnpj || "");
       setPhone(client.phone || "");
       setEmail(client.email || "");
+      setClientColor((client as any).color || "");
+      setClientLogoUrl((client as any).logo_url || "");
     }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length || !client) return;
+    const file = e.target.files[0];
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const filePath = `logos/${client.id}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      setClientLogoUrl(urlData.publicUrl);
+      toast.success("Logo enviada");
+    } catch {
+      toast.error("Erro ao enviar logo");
+    }
+    setUploadingLogo(false);
+    e.target.value = "";
   };
 
   const handleOpenOnboarding = (module: typeof selectedOnboardingModule) => {
@@ -241,6 +274,75 @@ export function EditClientDialog({
               onPhoneChange={setPhone}
               onEmailChange={setEmail}
             />
+          </div>
+
+          <Separator />
+
+          {/* Color & Logo */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Aparência
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Cor do cliente</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={clientColor || "#ffc000"}
+                    onChange={(e) => setClientColor(e.target.value)}
+                    className="w-10 h-10 rounded-md border border-border cursor-pointer bg-transparent"
+                  />
+                  <Input
+                    value={clientColor}
+                    onChange={(e) => setClientColor(e.target.value)}
+                    placeholder="#ffc000"
+                    className="flex-1"
+                  />
+                  {clientColor && (
+                    <Button variant="ghost" size="sm" onClick={() => setClientColor("")}>
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Logo</Label>
+                <div className="flex items-center gap-3">
+                  {clientLogoUrl ? (
+                    <div className="relative group">
+                      <img src={clientLogoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-border" />
+                      <button
+                        onClick={() => setClientLogoUrl("")}
+                        className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground">
+                      <Upload className="h-4 w-4" />
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                  >
+                    {uploadingLogo ? "Enviando..." : "Enviar logo"}
+                  </Button>
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <Separator />

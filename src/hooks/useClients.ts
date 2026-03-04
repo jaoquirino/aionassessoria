@@ -11,6 +11,8 @@ export interface Client {
   cnpj: string | null;
   phone: string | null;
   email: string | null;
+  color: string | null;
+  logo_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +43,8 @@ export interface UpdateClientInput {
   cnpj?: string;
   phone?: string;
   email?: string;
+  color?: string | null;
+  logo_url?: string | null;
 }
 
 // Fetch all clients
@@ -117,6 +121,8 @@ export function useCreateClient() {
         cnpj: input.cnpj || null,
         phone: input.phone || null,
         email: input.email || null,
+        color: null,
+        logo_url: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         is_internal: false,
