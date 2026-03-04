@@ -358,9 +358,16 @@ export default function Clients() {
                     onClick={() => setEditingClient(client)}
                   >
                     <td className="px-6 py-4">
-                      <span className="font-medium text-foreground">
-                        {client.name}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        {client.logo_url ? (
+                          <img src={client.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover border border-border shrink-0" />
+                        ) : client.color ? (
+                          <div className="w-8 h-8 rounded-lg shrink-0 border border-border" style={{ backgroundColor: client.color }} />
+                        ) : null}
+                        <span className="font-medium text-foreground">
+                          {client.name}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <Badge

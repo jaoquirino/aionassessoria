@@ -108,13 +108,19 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, onUpdateStatus
                       clients={clients}
                       onSelect={(clientId) => onUpdateField?.(task.id, "client_id", clientId)}
                     >
-                      <button
+                       <button
                         type="button"
                         onClick={handleFieldClick}
                         onPointerDown={handleFieldClick}
-                        className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
                       >
-                        <Building2 className="h-3 w-3" />
+                        {task.client?.logo_url ? (
+                          <img src={task.client.logo_url} alt="" className="w-4 h-4 rounded object-cover shrink-0" />
+                        ) : task.client?.color ? (
+                          <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: task.client.color }} />
+                        ) : (
+                          <Building2 className="h-3 w-3" />
+                        )}
                         <span className="truncate max-w-[220px]">{task.client?.name || "Sem cliente"}</span>
                       </button>
                     </ClientPopover>
