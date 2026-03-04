@@ -43,6 +43,8 @@ export interface UpdateClientInput {
   cnpj?: string;
   phone?: string;
   email?: string;
+  color?: string | null;
+  logo_url?: string | null;
 }
 
 // Fetch all clients
