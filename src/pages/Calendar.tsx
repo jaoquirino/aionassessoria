@@ -116,7 +116,7 @@ export default function Calendar() {
 
   const handleDayClick = (date: Date) => {
     setSelectedDate(date);
-    setDaySheetOpen(true);
+    setDayDialogOpen(true);
   };
 
   const handleEditPost = (id: string) => {
