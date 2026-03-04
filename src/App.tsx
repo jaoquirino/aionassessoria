@@ -16,7 +16,7 @@ import Clients from "./pages/Clients";
 import ClientOnboarding from "./pages/ClientOnboarding";
 import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
-import Modules from "./pages/Modules";
+
 import Settings from "./pages/Settings";
 import Calendar from "./pages/Calendar";
 
