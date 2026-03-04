@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Users,
   CheckSquare,
+  CalendarDays,
   UserCircle,
   Puzzle,
   ChevronLeft,
@@ -28,6 +29,7 @@ const allNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Clientes", href: "/clientes", icon: Users, adminOnly: true },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
+  { name: "Calendário", href: "/calendario", icon: CalendarDays },
   { name: "Equipe", href: "/equipe", icon: UserCircle, adminOnly: true },
   { name: "Módulos", href: "/modulos", icon: Puzzle, adminOnly: true },
 ];

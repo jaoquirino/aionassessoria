@@ -18,6 +18,7 @@ import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
 import Modules from "./pages/Modules";
 import Settings from "./pages/Settings";
+import Calendar from "./pages/Calendar";
 
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -90,6 +91,7 @@ const App = () => (
             <Route path="/clientes" element={<AdminRoute><Clients /></AdminRoute>} />
             <Route path="/clientes/:clientId/onboarding" element={<ClientOnboarding />} />
             <Route path="/tarefas" element={<Tasks />} />
+            <Route path="/calendario" element={<Calendar />} />
             <Route path="/equipe" element={<AdminRoute><Team /></AdminRoute>} />
             <Route path="/modulos" element={<AdminRoute><Modules /></AdminRoute>} />
             <Route path="/configuracoes" element={<Settings />} />
