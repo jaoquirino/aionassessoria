@@ -126,12 +126,10 @@ export default function Calendar() {
       if (post) {
         setEditingPost(post);
         setPostDialogOpen(true);
-        setDayDialogOpen(false);
       }
     } else if (item.type === "task") {
       setSelectedTaskId(item.id);
       setTaskDialogOpen(true);
-      setDayDialogOpen(false);
     }
   };
 
@@ -249,7 +247,9 @@ export default function Calendar() {
         open={taskDialogOpen}
         onOpenChange={(open) => {
           setTaskDialogOpen(open);
-          if (!open) setSelectedTaskId(null);
+          if (!open) {
+            setSelectedTaskId(null);
+          }
         }}
       />
     </div>
