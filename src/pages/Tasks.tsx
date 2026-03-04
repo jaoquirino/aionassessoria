@@ -100,7 +100,29 @@ export default function Tasks() {
   }, [tasks, isRestricted, currentMemberId, assigneesByTask]);
 
   const filteredTasks = useMemo(() => {
+    const hasDateFilter = !!filters.dateFrom || !!filters.dateTo;
+    const sevenDaysAgo = subDays(new Date(), 7);
+
     return operationalTasks.filter((task) => {
+      // Hide done tasks older than 7 days when no date filter is active
+      if (!hasDateFilter && task.status === "done") {
+        const updatedAt = new Date(task.updated_at);
+        if (updatedAt < sevenDaysAgo) return false;
+      }
+
+      // Date range filter (by due_date)
+      if (hasDateFilter) {
+        const dueDate = parseLocalDate(task.due_date);
+        if (filters.dateFrom) {
+          const from = parseLocalDate(filters.dateFrom);
+          if (dueDate < from) return false;
+        }
+        if (filters.dateTo) {
+          const to = parseLocalDate(filters.dateTo);
+          if (dueDate > to) return false;
+        }
+      }
+
       const matchesSearch =
         filters.search === "" ||
         task.title.toLowerCase().includes(filters.search.toLowerCase()) ||
