@@ -256,8 +256,18 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                )}
              </>
            )}
-         </div>
-       </DialogContent>
-     </Dialog>
-   );
- }
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <TaskEditDialog
+        taskId={selectedTaskId}
+        open={taskDialogOpen}
+        onOpenChange={(o) => {
+          setTaskDialogOpen(o);
+          if (!o) setSelectedTaskId(null);
+        }}
+      />
+    </>
+  );
+}
