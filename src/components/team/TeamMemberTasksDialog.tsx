@@ -49,10 +49,11 @@ const typeConfig: Record<string, { label: string; color: string }> = {
 };
 
 export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMemberTasksDialogProps) {
-  const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodOption>("30d");
   const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
   const [activeTab, setActiveTab] = useState("active");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   const { data: allTasks = [], isLoading: tasksLoading } = useTasks();
   const { data: clients = [] } = useAllClients();
@@ -63,8 +64,8 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
   const { data: subtaskCounts = {} } = useTasksSubtaskCounts(taskIds);
 
   const handleTaskClick = (taskId: string) => {
-    onOpenChange(false);
-    navigate(`/tarefas?task=${taskId}`);
+    setSelectedTaskId(taskId);
+    setTaskDialogOpen(true);
   };
 
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
