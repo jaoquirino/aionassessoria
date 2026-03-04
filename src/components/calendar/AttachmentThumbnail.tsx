@@ -199,6 +199,9 @@ export function AttachmentThumbnail({ fileUrl, fileName, fileType, onDelete, siz
                   {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
                 </button>
                 <div className="flex-1" />
+                <button onClick={handleDownload} className="text-white hover:text-primary transition-colors">
+                  <Download className="h-5 w-5" />
+                </button>
                 <button onClick={toggleExpand} className="text-white hover:text-primary transition-colors">
                   <X className="h-5 w-5" />
                 </button>
