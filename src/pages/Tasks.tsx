@@ -104,23 +104,29 @@ export default function Tasks() {
     const sevenDaysAgo = subDays(new Date(), 7);
 
     return operationalTasks.filter((task) => {
-      // Hide done tasks older than 7 days when no date filter is active
-      if (!hasDateFilter && task.status === "done") {
-        const updatedAt = new Date(task.updated_at);
-        if (updatedAt < sevenDaysAgo) return false;
-      }
+      try {
+        // Hide done tasks older than 7 days when no date filter is active
+        if (!hasDateFilter && task.status === "done") {
+          const updatedAt = task.updated_at ? new Date(task.updated_at) : null;
+          if (updatedAt && !isNaN(updatedAt.getTime()) && updatedAt < sevenDaysAgo) return false;
+        }
 
-      // Date range filter (by due_date)
-      if (hasDateFilter) {
-        const dueDate = parseLocalDate(task.due_date);
-        if (filters.dateFrom) {
-          const from = parseLocalDate(filters.dateFrom);
-          if (dueDate < from) return false;
+        // Date range filter (by due_date)
+        if (hasDateFilter && task.due_date) {
+          const dueDate = parseLocalDate(task.due_date);
+          if (isNaN(dueDate.getTime())) return true; // skip filter if date is invalid
+          if (filters.dateFrom) {
+            const from = parseLocalDate(filters.dateFrom);
+            if (!isNaN(from.getTime()) && dueDate < from) return false;
+          }
+          if (filters.dateTo) {
+            const to = parseLocalDate(filters.dateTo);
+            if (!isNaN(to.getTime()) && dueDate > to) return false;
+          }
         }
-        if (filters.dateTo) {
-          const to = parseLocalDate(filters.dateTo);
-          if (dueDate > to) return false;
-        }
+      } catch {
+        // If date parsing fails, don't filter out the task
+        return true;
       }
 
       const matchesSearch =
