@@ -96,6 +96,8 @@ export function EditClientDialog({
       setCnpj(client.cnpj || "");
       setPhone(client.phone || "");
       setEmail(client.email || "");
+      setClientColor((client as any).color || "");
+      setClientLogoUrl((client as any).logo_url || "");
     }
   }, [client]);
 
