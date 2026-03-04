@@ -33,6 +33,8 @@ export interface Client {
   id: string;
   name: string;
   status: string;
+  color: string | null;
+  logo_url: string | null;
   created_at: string;
   updated_at: string;
 }

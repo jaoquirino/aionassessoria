@@ -380,8 +380,13 @@ interface TaskCardProps {
               type="button"
               onClick={handleFieldClick} 
               onPointerDown={handleFieldClick}
-              className="block w-full text-left"
+              className="flex items-center gap-1.5 w-full text-left"
             >
+              {task.client?.logo_url ? (
+                <img src={task.client.logo_url} alt="" className="w-4 h-4 rounded object-cover shrink-0" />
+              ) : task.client?.color ? (
+                <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: task.client.color }} />
+              ) : null}
               <p className="text-xs leading-tight text-muted-foreground truncate font-medium cursor-pointer hover:text-foreground transition-colors">
                 {task.client?.name || "Sem cliente"}
               </p>
