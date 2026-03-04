@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign, Briefcase } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign, Briefcase, Puzzle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
