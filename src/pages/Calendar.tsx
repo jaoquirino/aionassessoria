@@ -136,6 +136,12 @@ export default function Calendar() {
 
   const handleToday = () => setCurrentDate(new Date());
 
+  const handleItemClick = (item: CalendarItem) => {
+    if (item.type === "editorial") {
+      handleEditPost(item.id);
+    }
+  };
+
   const handleMonthClickFromYear = (date: Date) => {
     setCurrentDate(date);
     setView("month");
