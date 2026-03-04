@@ -154,7 +154,10 @@ export function EditorialPostDialog({ open, onOpenChange, post, clients, teamMem
             </div>
             <div>
               <Label>Data *</Label>
-              <DatePicker date={date} onDateChange={setDate} />
+              <DatePicker
+                value={date ? `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}` : ""}
+                onChange={(v) => setDate(v ? new Date(v + "T12:00:00") : undefined)}
+              />
             </div>
           </div>
 
