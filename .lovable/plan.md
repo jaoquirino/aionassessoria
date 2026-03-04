@@ -1,46 +1,101 @@
 
-# Plano de Correções: Cards da Equipe, Aba de Cargos e Saúde dos Clientes
 
-## Problema 1: Layout dos cards da Equipe
-O card atual mostra todos os cargos diretamente, ficando visualmente poluído. O novo layout solicitado:
-- **Linha 1**: Foto + Nome + (Admin/Operacional) + botoes editar/deletar no final
-- **Cargos**: Nao mostrar no card, apenas ao abrir o funcionario
-- **Barra de carga**: Sempre alinhada ao final do card
+## Plano: Página de Calendário com Tarefas e Calendário Editorial
 
-### Alteracao
-- **src/pages/Team.tsx**: Reestruturar o card para usar `flex flex-col h-full` com a barra de capacidade em `mt-auto`, remover os badges de cargo do card, e colocar o badge Admin/Operacional ao lado do nome na primeira linha.
+### Escopo
+Criar uma nova página "Calendário" no sistema com duas visualizações integradas: tarefas existentes por data e postagens do calendário editorial (novo). Inclui filtros por empresa, pessoa e tipo.
 
----
+### 1. Banco de Dados — Nova tabela `editorial_posts`
 
-## Problema 2: Aba de Cargos nao aparece nas Configuracoes
-A aba existe no codigo (linha 477-482 de Settings.tsx), mas com muitas abas na TabsList, ela pode estar sendo cortada visualmente em telas menores ou o scroll nao esta funcionando. 
+```sql
+CREATE TABLE public.editorial_posts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id uuid NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
+  scheduled_date date NOT NULL,
+  status text NOT NULL DEFAULT 'planned', -- planned, approved, published
+  social_network text NOT NULL, -- instagram, facebook, tiktok, linkedin, etc.
+  content_type text NOT NULL, -- post, story, reel, carousel, video
+  title text NOT NULL,
+  caption text,
+  notes text,
+  created_by uuid REFERENCES public.team_members(id),
+  assigned_to uuid REFERENCES public.team_members(id),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 
-### Alteracao
-- **src/pages/Settings.tsx**: Garantir que a TabsList tenha `overflow-x-auto` e `flex-nowrap` para que todas as abas fiquem visiveis com scroll horizontal. Tambem reorganizar a ordem das abas para que "Cargos" fique mais acessivel.
-
----
-
-## Problema 3: Tabela "Saude dos Clientes" sempre mostra "Critico"
-O bug esta na logica de calculo do `healthStatus` em `src/hooks/useDashboard.ts` (linha 220):
-
-```text
-const ratio = revenue > 0 && stats.weight > 0 ? revenue / stats.weight : 1;
+ALTER TABLE public.editorial_posts ENABLE ROW LEVEL SECURITY;
+-- RLS: team members can CRUD
 ```
 
-Quando o peso operacional e 0 (sem tarefas ativas), o ratio cai para 1, que e menor que 200 e portanto "critico". O correto e: se nao ha peso operacional, o cliente esta saudavel (sem carga = sem problema).
+Nova tabela `editorial_post_attachments` para imagens/vídeos (usando Storage bucket `editorial`).
 
-### Alteracao
-- **src/hooks/useDashboard.ts**: Corrigir a logica para que `stats.weight === 0` resulte em status "normal" em vez de "critico":
+```sql
+CREATE TABLE public.editorial_post_attachments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id uuid NOT NULL REFERENCES public.editorial_posts(id) ON DELETE CASCADE,
+  file_name text NOT NULL,
+  file_url text NOT NULL,
+  file_type text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-```text
-if (stats.weight === 0) healthStatus = "normal"
-else if (ratio < 200) healthStatus = "critical"
-else if (ratio < 400) healthStatus = "attention"
+-- Storage bucket
+INSERT INTO storage.buckets (id, name, public) VALUES ('editorial', 'editorial', true);
 ```
 
----
+### 2. Frontend — Nova página `/calendario`
 
-## Resumo dos arquivos a editar
-1. `src/pages/Team.tsx` - Redesign do card (foto+nome+permissao na linha 1, sem cargos, carga no final)
-2. `src/pages/Settings.tsx` - Corrigir visibilidade da aba Cargos com scroll horizontal
-3. `src/hooks/useDashboard.ts` - Corrigir logica de saude quando peso = 0
+**Rota e navegação:**
+- Adicionar rota `/calendario` em `App.tsx`
+- Adicionar item "Calendário" com ícone `CalendarDays` no Sidebar (visível para todos)
+
+**Página `src/pages/Calendar.tsx`:**
+- Visualização mensal em grid (7 colunas x semanas)
+- Cada dia mostra cards coloridos: tarefas (azul) e postagens editoriais (roxo/verde por rede social)
+- Navegação mês anterior/próximo
+- Click no dia abre lista lateral ou modal com detalhes
+
+**Filtros (topo da página):**
+- Por empresa (cliente) — Select com todos os clientes
+- Por pessoa (responsável) — Select com team members
+- Por tipo — "Todos", "Tarefas", "Calendário Editorial"
+
+**Dialog de criação/edição de postagem:**
+- Campos: título, cliente, data, rede social, tipo de conteúdo, legenda/texto, notas, responsável, status
+- Upload de imagem/vídeo (Storage bucket `editorial`)
+- Botão de salvar/editar
+
+### 3. Hooks
+
+- `src/hooks/useEditorialPosts.ts` — CRUD para `editorial_posts` e `editorial_post_attachments`
+- Reutilizar `useClients` e `useTeamMembers` existentes para filtros
+
+### 4. Componentes
+
+```text
+src/pages/Calendar.tsx              — Página principal
+src/components/calendar/
+  CalendarGrid.tsx                  — Grid mensal
+  CalendarDayCell.tsx               — Célula do dia com cards
+  EditorialPostDialog.tsx           — Modal criar/editar postagem
+  CalendarFilters.tsx               — Filtros (cliente, pessoa, tipo)
+```
+
+### 5. Navegação atualizada
+
+```typescript
+const allNavigation = [
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Clientes", href: "/clientes", icon: Users, adminOnly: true },
+  { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
+  { name: "Calendário", href: "/calendario", icon: CalendarDays },
+  { name: "Equipe", href: "/equipe", icon: UserCircle, adminOnly: true },
+  { name: "Módulos", href: "/modulos", icon: Puzzle, adminOnly: true },
+];
+```
+
+### Fora do escopo (próxima etapa)
+- Visibilidade configurável por funcionário (módulos do sistema)
+- Reorganização de "Módulos" (produto) para dentro de Configurações
+
