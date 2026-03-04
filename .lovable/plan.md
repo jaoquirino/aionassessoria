@@ -1,46 +1,26 @@
 
-# Plano de Correções: Cards da Equipe, Aba de Cargos e Saúde dos Clientes
 
-## Problema 1: Layout dos cards da Equipe
-O card atual mostra todos os cargos diretamente, ficando visualmente poluído. O novo layout solicitado:
-- **Linha 1**: Foto + Nome + (Admin/Operacional) + botoes editar/deletar no final
-- **Cargos**: Nao mostrar no card, apenas ao abrir o funcionario
-- **Barra de carga**: Sempre alinhada ao final do card
+## Plano: Ocultar tarefas concluídas há +7 dias na aba Tarefas
 
-### Alteracao
-- **src/pages/Team.tsx**: Reestruturar o card para usar `flex flex-col h-full` com a barra de capacidade em `mt-auto`, remover os badges de cargo do card, e colocar o badge Admin/Operacional ao lado do nome na primeira linha.
+Alterações **somente** em `src/pages/Tasks.tsx` e `src/components/tasks/CollapsibleFilters.tsx`. Nenhuma mudança no Dashboard, Entregáveis ou Equipe.
 
----
+### Comportamento
+- Tarefas `done` com `updated_at` anterior a 7 dias ficam ocultas por padrão
+- Quando um filtro de período (dateFrom/dateTo) estiver ativo, todas as tarefas (incluindo concluídas antigas) dentro do range são exibidas
+- Stats (Total Ativas, Atrasadas, etc.) continuam calculados sobre `operationalTasks` sem alteração
 
-## Problema 2: Aba de Cargos nao aparece nas Configuracoes
-A aba existe no codigo (linha 477-482 de Settings.tsx), mas com muitas abas na TabsList, ela pode estar sendo cortada visualmente em telas menores ou o scroll nao esta funcionando. 
+### Alterações
 
-### Alteracao
-- **src/pages/Settings.tsx**: Garantir que a TabsList tenha `overflow-x-auto` e `flex-nowrap` para que todas as abas fiquem visiveis com scroll horizontal. Tambem reorganizar a ordem das abas para que "Cargos" fique mais acessivel.
+**1. `src/components/tasks/CollapsibleFilters.tsx`**
+- Adicionar `dateFrom?: string` e `dateTo?: string` ao `FiltersState`
+- Adicionar no popover de filtros uma seção "Período" com dois `DatePicker` (De / Até)
+- Contar período ativo no badge de filtros
+- `clearFilters` reseta também `dateFrom` e `dateTo`
 
----
+**2. `src/pages/Tasks.tsx`**
+- Atualizar estado inicial de `filters` com `dateFrom: undefined, dateTo: undefined`
+- Na lógica de `filteredTasks`:
+  - Se **nenhum filtro de período** ativo: excluir tarefas `done` cuja `updated_at < 7 dias atrás`
+  - Se **período ativo**: filtrar todas as tarefas pela `due_date` dentro do range (incluindo concluídas antigas)
+- Nenhuma alteração nos hooks (`useTasks`, `useDashboard`, `useDeliveriesDashboard`) nem em outras páginas
 
-## Problema 3: Tabela "Saude dos Clientes" sempre mostra "Critico"
-O bug esta na logica de calculo do `healthStatus` em `src/hooks/useDashboard.ts` (linha 220):
-
-```text
-const ratio = revenue > 0 && stats.weight > 0 ? revenue / stats.weight : 1;
-```
-
-Quando o peso operacional e 0 (sem tarefas ativas), o ratio cai para 1, que e menor que 200 e portanto "critico". O correto e: se nao ha peso operacional, o cliente esta saudavel (sem carga = sem problema).
-
-### Alteracao
-- **src/hooks/useDashboard.ts**: Corrigir a logica para que `stats.weight === 0` resulte em status "normal" em vez de "critico":
-
-```text
-if (stats.weight === 0) healthStatus = "normal"
-else if (ratio < 200) healthStatus = "critical"
-else if (ratio < 400) healthStatus = "attention"
-```
-
----
-
-## Resumo dos arquivos a editar
-1. `src/pages/Team.tsx` - Redesign do card (foto+nome+permissao na linha 1, sem cargos, carga no final)
-2. `src/pages/Settings.tsx` - Corrigir visibilidade da aba Cargos com scroll horizontal
-3. `src/hooks/useDashboard.ts` - Corrigir logica de saude quando peso = 0
