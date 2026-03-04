@@ -11,6 +11,8 @@ export interface Client {
   cnpj: string | null;
   phone: string | null;
   email: string | null;
+  color: string | null;
+  logo_url: string | null;
   created_at: string;
   updated_at: string;
 }
