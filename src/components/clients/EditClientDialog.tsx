@@ -157,7 +157,30 @@ export function EditClientDialog({
       setCnpj(client.cnpj || "");
       setPhone(client.phone || "");
       setEmail(client.email || "");
+      setClientColor((client as any).color || "");
+      setClientLogoUrl((client as any).logo_url || "");
     }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length || !client) return;
+    const file = e.target.files[0];
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const filePath = `logos/${client.id}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      setClientLogoUrl(urlData.publicUrl);
+      toast.success("Logo enviada");
+    } catch {
+      toast.error("Erro ao enviar logo");
+    }
+    setUploadingLogo(false);
+    e.target.value = "";
   };
 
   const handleOpenOnboarding = (module: typeof selectedOnboardingModule) => {
