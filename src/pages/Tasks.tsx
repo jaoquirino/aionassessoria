@@ -105,27 +105,30 @@ export default function Tasks() {
 
     return operationalTasks.filter((task) => {
       try {
-        // Hide done tasks older than 7 days when no date filter is active
-        if (!hasDateFilter && task.status === "done") {
-          const updatedAt = task.updated_at ? new Date(task.updated_at) : null;
-          if (updatedAt && !isNaN(updatedAt.getTime()) && updatedAt < sevenDaysAgo) return false;
-        }
-
-        // Date range filter (by due_date)
-        if (hasDateFilter && task.due_date) {
-          const dueDate = parseLocalDate(task.due_date);
-          if (isNaN(dueDate.getTime())) return true; // skip filter if date is invalid
-          if (filters.dateFrom) {
-            const from = parseLocalDate(filters.dateFrom);
-            if (!isNaN(from.getTime()) && dueDate < from) return false;
-          }
-          if (filters.dateTo) {
-            const to = parseLocalDate(filters.dateTo);
-            if (!isNaN(to.getTime()) && dueDate > to) return false;
+        // Only "done" tasks can be auto-hidden or filtered by date
+        if (task.status === "done") {
+          if (hasDateFilter) {
+            // When date filter active, show done tasks within range
+            if (task.due_date) {
+              const dueDate = parseLocalDate(task.due_date);
+              if (!isNaN(dueDate.getTime())) {
+                if (filters.dateFrom) {
+                  const from = parseLocalDate(filters.dateFrom);
+                  if (!isNaN(from.getTime()) && dueDate < from) return false;
+                }
+                if (filters.dateTo) {
+                  const to = parseLocalDate(filters.dateTo);
+                  if (!isNaN(to.getTime()) && dueDate > to) return false;
+                }
+              }
+            }
+          } else {
+            // No date filter: hide done tasks older than 7 days
+            const updatedAt = task.updated_at ? new Date(task.updated_at) : null;
+            if (updatedAt && !isNaN(updatedAt.getTime()) && updatedAt < sevenDaysAgo) return false;
           }
         }
       } catch {
-        // If date parsing fails, don't filter out the task
         return true;
       }
 
