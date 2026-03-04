@@ -168,6 +168,11 @@ export function EditClientDialog({
     const file = e.target.files[0];
     setUploadingLogo(true);
     try {
+      // Extract dominant color from local file BEFORE uploading (avoids CORS)
+      const localUrl = URL.createObjectURL(file);
+      const detectedColor = await extractDominantColor(localUrl);
+      URL.revokeObjectURL(localUrl);
+
       const fileExt = file.name.split(".").pop();
       const filePath = `logos/${client.id}/${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
@@ -176,8 +181,7 @@ export function EditClientDialog({
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
       setClientLogoUrl(urlData.publicUrl);
-      // Auto-detect dominant color from logo
-      const detectedColor = await extractDominantColor(urlData.publicUrl);
+
       if (detectedColor && !clientColor) {
         setClientColor(detectedColor);
         toast.success("Logo enviada e cor detectada automaticamente");

@@ -16,7 +16,7 @@ import Clients from "./pages/Clients";
 import ClientOnboarding from "./pages/ClientOnboarding";
 import Tasks from "./pages/Tasks";
 import Team from "./pages/Team";
-import Modules from "./pages/Modules";
+
 import Settings from "./pages/Settings";
 import Calendar from "./pages/Calendar";
 
@@ -93,7 +93,7 @@ const App = () => (
             <Route path="/tarefas" element={<Tasks />} />
             <Route path="/calendario" element={<Calendar />} />
             <Route path="/equipe" element={<AdminRoute><Team /></AdminRoute>} />
-            <Route path="/modulos" element={<AdminRoute><Modules /></AdminRoute>} />
+            <Route path="/modulos" element={<Navigate to="/configuracoes" replace />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/onboarding-templates" element={<Navigate to="/configuracoes" replace />} />
             {/* Redirect old routes */}
