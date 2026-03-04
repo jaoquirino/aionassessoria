@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Users,
   CheckSquare,
+  CalendarDays,
   UserCircle,
   Puzzle,
   ChevronLeft,
