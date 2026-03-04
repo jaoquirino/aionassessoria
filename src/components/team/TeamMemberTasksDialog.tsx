@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -49,10 +49,11 @@ const typeConfig: Record<string, { label: string; color: string }> = {
 };
 
 export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMemberTasksDialogProps) {
-  const navigate = useNavigate();
   const [period, setPeriod] = useState<PeriodOption>("30d");
   const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
   const [activeTab, setActiveTab] = useState("active");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   const { data: allTasks = [], isLoading: tasksLoading } = useTasks();
   const { data: clients = [] } = useAllClients();
@@ -63,8 +64,8 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
   const { data: subtaskCounts = {} } = useTasksSubtaskCounts(taskIds);
 
   const handleTaskClick = (taskId: string) => {
-    onOpenChange(false);
-    navigate(`/tarefas?task=${taskId}`);
+    setSelectedTaskId(taskId);
+    setTaskDialogOpen(true);
   };
 
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
@@ -97,7 +98,8 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
    if (!member) return null;
  
    return (
-     <Dialog open={open} onOpenChange={onOpenChange}>
+     <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
          <DialogHeader className="flex-shrink-0">
            <div className="flex items-center gap-4">
@@ -255,8 +257,18 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                )}
              </>
            )}
-         </div>
-       </DialogContent>
-     </Dialog>
-   );
- }
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <TaskEditDialog
+        taskId={selectedTaskId}
+        open={taskDialogOpen}
+        onOpenChange={(o) => {
+          setTaskDialogOpen(o);
+          if (!o) setSelectedTaskId(null);
+        }}
+      />
+    </>
+  );
+}
