@@ -11,7 +11,7 @@ import { CalendarWeekView } from "@/components/calendar/CalendarWeekView";
 import { CalendarDayView } from "@/components/calendar/CalendarDayView";
 import { CalendarYearView } from "@/components/calendar/CalendarYearView";
 import { EditorialPostDialog } from "@/components/calendar/EditorialPostDialog";
-import { DayDetailSheet } from "@/components/calendar/DayDetailSheet";
+import { DayDetailDialog } from "@/components/calendar/DayDetailDialog";
 import { useEditorialPosts, EditorialPost } from "@/hooks/useEditorialPosts";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
