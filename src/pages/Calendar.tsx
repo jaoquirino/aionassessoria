@@ -219,12 +219,13 @@ export default function Calendar() {
         />
       )}
 
-      <DayDetailSheet
-        open={daySheetOpen}
-        onOpenChange={setDaySheetOpen}
+      <DayDetailDialog
+        open={dayDialogOpen}
+        onOpenChange={setDayDialogOpen}
         date={selectedDate}
         items={selectedDayItems}
         onEditPost={handleEditPost}
+        clients={clients}
       />
 
       <EditorialPostDialog
