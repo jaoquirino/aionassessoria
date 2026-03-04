@@ -12,6 +12,7 @@ import { CalendarDayView } from "@/components/calendar/CalendarDayView";
 import { CalendarYearView } from "@/components/calendar/CalendarYearView";
 import { EditorialPostDialog } from "@/components/calendar/EditorialPostDialog";
 import { DayDetailDialog } from "@/components/calendar/DayDetailDialog";
+import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { useEditorialPosts, EditorialPost } from "@/hooks/useEditorialPosts";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
@@ -28,6 +29,8 @@ export default function Calendar() {
   const [dayDialogOpen, setDayDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [newPostDate, setNewPostDate] = useState<Date | undefined>();
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   const { data: editorialPosts = [] } = useEditorialPosts(currentDate);
   const { data: tasks = [] } = useTasks();
@@ -46,7 +49,6 @@ export default function Calendar() {
       map[dateStr].push(item);
     };
 
-    // Tasks (exclude onboarding)
     if (typeFilter !== "editorial") {
       tasks
         .filter((t) => t.type !== "onboarding" && !t.archived_at)
@@ -63,7 +65,6 @@ export default function Calendar() {
         });
     }
 
-    // Editorial posts
     if (typeFilter !== "tasks") {
       editorialPosts
         .filter((p) => clientFilter === "all" || p.client_id === clientFilter)
@@ -119,11 +120,17 @@ export default function Calendar() {
     setDayDialogOpen(true);
   };
 
-  const handleEditPost = (id: string) => {
-    const post = editorialPosts.find((p) => p.id === id);
-    if (post) {
-      setEditingPost(post);
-      setPostDialogOpen(true);
+  const handleItemClick = (item: CalendarItem) => {
+    if (item.type === "editorial") {
+      const post = editorialPosts.find((p) => p.id === item.id);
+      if (post) {
+        setEditingPost(post);
+        setPostDialogOpen(true);
+        setDayDialogOpen(false);
+      }
+    } else if (item.type === "task") {
+      setSelectedTaskId(item.id);
+      setTaskDialogOpen(true);
       setDayDialogOpen(false);
     }
   };
@@ -134,12 +141,8 @@ export default function Calendar() {
     setPostDialogOpen(true);
   };
 
-  const handleToday = () => setCurrentDate(new Date());
-
-  const handleItemClick = (item: CalendarItem) => {
-    if (item.type === "editorial") {
-      handleEditPost(item.id);
-    }
+  const handleToday = () => {
+    setCurrentDate(new Date());
   };
 
   const handleMonthClickFromYear = (date: Date) => {
@@ -212,9 +215,7 @@ export default function Calendar() {
           currentDate={currentDate}
           itemsByDate={itemsByDate}
           clients={clients}
-          onItemClick={(item) => {
-            if (item.type === "editorial") handleEditPost(item.id);
-          }}
+          onItemClick={handleItemClick}
         />
       )}
       {view === "year" && (
@@ -230,7 +231,7 @@ export default function Calendar() {
         onOpenChange={setDayDialogOpen}
         date={selectedDate}
         items={selectedDayItems}
-        onEditPost={handleEditPost}
+        onItemClick={handleItemClick}
         clients={clients}
       />
 
@@ -241,6 +242,15 @@ export default function Calendar() {
         clients={clients}
         teamMembers={teamMembers}
         defaultDate={newPostDate}
+      />
+
+      <TaskEditDialog
+        taskId={selectedTaskId}
+        open={taskDialogOpen}
+        onOpenChange={(open) => {
+          setTaskDialogOpen(open);
+          if (!open) setSelectedTaskId(null);
+        }}
       />
     </div>
   );
