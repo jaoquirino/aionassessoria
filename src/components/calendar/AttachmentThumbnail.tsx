@@ -148,14 +148,22 @@ export function AttachmentThumbnail({ fileUrl, fileName, fileType, onDelete, siz
               </div>
             )}
           </div>
-          {onDelete && (
+          <div className="absolute -top-1 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
             <button
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              onClick={handleDownload}
+              className="bg-primary text-primary-foreground rounded-full p-0.5"
             >
-              <X className="h-3 w-3" />
+              <Download className="h-3 w-3" />
             </button>
-          )}
+            {onDelete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="bg-destructive text-destructive-foreground rounded-full p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Expanded video overlay */}
