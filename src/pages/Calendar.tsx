@@ -247,7 +247,9 @@ export default function Calendar() {
         open={taskDialogOpen}
         onOpenChange={(open) => {
           setTaskDialogOpen(open);
-          if (!open) setSelectedTaskId(null);
+          if (!open) {
+            setSelectedTaskId(null);
+          }
         }}
       />
     </div>

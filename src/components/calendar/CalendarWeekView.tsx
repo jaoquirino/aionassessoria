@@ -82,7 +82,7 @@ export function CalendarWeekView({ currentDate, itemsByDate, onDayClick, onItemC
                         e.stopPropagation();
                         onItemClick?.(item);
                       }}
-                      className="w-full text-left rounded-md px-2 py-1.5 text-xs font-medium border cursor-pointer transition-colors hover:shadow-sm"
+                      className="w-full text-left rounded-md px-2 py-1.5 text-xs font-medium border cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] hover:brightness-95"
                       style={clientColor ? {
                         backgroundColor: `${clientColor}20`,
                         borderColor: `${clientColor}40`,

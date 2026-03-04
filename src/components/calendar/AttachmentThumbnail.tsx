@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { X, Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { X, Play, Pause, Volume2, VolumeX, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AttachmentThumbnailProps {
