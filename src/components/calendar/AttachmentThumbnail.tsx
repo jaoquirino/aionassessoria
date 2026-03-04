@@ -75,6 +75,18 @@ export function AttachmentThumbnail({ fileUrl, fileName, fileType, onDelete, siz
     });
   }, []);
 
+  const handleDownload = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    const a = document.createElement("a");
+    a.href = fileUrl;
+    a.download = fileName;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, [fileUrl, fileName]);
+
   if (isImage) {
     return (
       <div className="relative group">
@@ -84,14 +96,22 @@ export function AttachmentThumbnail({ fileUrl, fileName, fileType, onDelete, siz
           className={cn(sizeClass, "object-cover rounded-lg border border-border cursor-pointer hover:shadow-md transition-shadow")}
           onClick={() => window.open(fileUrl, "_blank")}
         />
-        {onDelete && (
+        <div className="absolute -top-1 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleDownload}
+            className="bg-primary text-primary-foreground rounded-full p-0.5"
           >
-            <X className="h-3 w-3" />
+            <Download className="h-3 w-3" />
           </button>
-        )}
+          {onDelete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="bg-destructive text-destructive-foreground rounded-full p-0.5"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
       </div>
     );
   }
