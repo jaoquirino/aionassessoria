@@ -43,6 +43,8 @@ export default function Tasks() {
     type: "all",
     assignee: "all",
     client: "all",
+    dateFrom: undefined,
+    dateTo: undefined,
   });
 
   const { data: tasks = [], isLoading, isFetching } = useTasks();

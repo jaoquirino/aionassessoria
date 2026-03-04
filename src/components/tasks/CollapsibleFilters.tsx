@@ -16,6 +16,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
+import { CalendarRange } from "lucide-react";
 
 export interface FiltersState {
   search: string;
@@ -23,6 +25,8 @@ export interface FiltersState {
   type: string;
   assignee: string;
   client: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 interface CollapsibleFiltersProps {
