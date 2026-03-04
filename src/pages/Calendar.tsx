@@ -124,7 +124,7 @@ export default function Calendar() {
     if (post) {
       setEditingPost(post);
       setPostDialogOpen(true);
-      setDaySheetOpen(false);
+      setDayDialogOpen(false);
     }
   };
 
