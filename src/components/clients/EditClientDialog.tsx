@@ -121,6 +121,8 @@ export function EditClientDialog({
         cnpj: cnpj || undefined,
         phone: phone || undefined,
         email: email || undefined,
+        color: clientColor || null,
+        logo_url: clientLogoUrl || null,
       });
       onClientUpdated?.();
     } catch (error) {
