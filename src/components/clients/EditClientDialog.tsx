@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList, Eye, Play, Upload, Palette } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
 import { useClientContractsWithModules, useDeleteContract, type ContractWithModules } from "@/hooks/useContracts";
 import { ContractDialog } from "./ContractDialog";
