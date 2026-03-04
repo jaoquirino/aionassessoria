@@ -691,7 +691,14 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         <SelectContent>
                           {clients.map((client) => (
                             <SelectItem key={client.id} value={client.id}>
-                              {client.name}
+                              <span className="flex items-center gap-2">
+                                {client.logo_url ? (
+                                  <img src={client.logo_url} alt="" className="w-4 h-4 object-contain shrink-0" />
+                                ) : (
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                )}
+                                {client.name}
+                              </span>
                             </SelectItem>
                           ))}
                         </SelectContent>

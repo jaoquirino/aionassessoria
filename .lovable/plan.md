@@ -1,21 +1,46 @@
 
+# Plano de Correções: Cards da Equipe, Aba de Cargos e Saúde dos Clientes
 
-## Plano: Ajustar exibição da logo do cliente
+## Problema 1: Layout dos cards da Equipe
+O card atual mostra todos os cargos diretamente, ficando visualmente poluído. O novo layout solicitado:
+- **Linha 1**: Foto + Nome + (Admin/Operacional) + botoes editar/deletar no final
+- **Cargos**: Nao mostrar no card, apenas ao abrir o funcionario
+- **Barra de carga**: Sempre alinhada ao final do card
 
-O problema é que as logos estão com `rounded` / `rounded-lg` + `object-cover` em tamanhos pequenos (w-4 h-4, w-8 h-8), o que corta a imagem. A solução é usar `object-contain` e remover o arredondamento excessivo, mantendo a logo legível.
+### Alteracao
+- **src/pages/Team.tsx**: Reestruturar o card para usar `flex flex-col h-full` com a barra de capacidade em `mt-auto`, remover os badges de cargo do card, e colocar o badge Admin/Operacional ao lado do nome na primeira linha.
 
-### Alterações
+---
 
-**3 arquivos** — trocar `object-cover` por `object-contain` e remover `rounded`/`rounded-lg` das imagens de logo:
+## Problema 2: Aba de Cargos nao aparece nas Configuracoes
+A aba existe no codigo (linha 477-482 de Settings.tsx), mas com muitas abas na TabsList, ela pode estar sendo cortada visualmente em telas menores ou o scroll nao esta funcionando. 
 
-1. **`src/components/tasks/TaskKanbanBoard.tsx`** (linha ~386)
-   - `w-4 h-4 rounded object-cover` → `w-4 h-4 object-contain`
+### Alteracao
+- **src/pages/Settings.tsx**: Garantir que a TabsList tenha `overflow-x-auto` e `flex-nowrap` para que todas as abas fiquem visiveis com scroll horizontal. Tambem reorganizar a ordem das abas para que "Cargos" fique mais acessivel.
 
-2. **`src/components/tasks/TaskListView.tsx`** (linha ~118)
-   - `w-4 h-4 rounded object-cover` → `w-4 h-4 object-contain`
+---
 
-3. **`src/pages/Clients.tsx`** (linha ~363)
-   - `w-8 h-8 rounded-lg object-cover border` → `w-8 h-8 object-contain`
+## Problema 3: Tabela "Saude dos Clientes" sempre mostra "Critico"
+O bug esta na logica de calculo do `healthStatus` em `src/hooks/useDashboard.ts` (linha 220):
 
-Também remover os fallbacks de cor (div colorida) já que o usuário disse "pode deixar a logo do cliente e pronto" — manter apenas a logo quando existir, e nada quando não existir.
+```text
+const ratio = revenue > 0 && stats.weight > 0 ? revenue / stats.weight : 1;
+```
 
+Quando o peso operacional e 0 (sem tarefas ativas), o ratio cai para 1, que e menor que 200 e portanto "critico". O correto e: se nao ha peso operacional, o cliente esta saudavel (sem carga = sem problema).
+
+### Alteracao
+- **src/hooks/useDashboard.ts**: Corrigir a logica para que `stats.weight === 0` resulte em status "normal" em vez de "critico":
+
+```text
+if (stats.weight === 0) healthStatus = "normal"
+else if (ratio < 200) healthStatus = "critical"
+else if (ratio < 400) healthStatus = "attention"
+```
+
+---
+
+## Resumo dos arquivos a editar
+1. `src/pages/Team.tsx` - Redesign do card (foto+nome+permissao na linha 1, sem cargos, carga no final)
+2. `src/pages/Settings.tsx` - Corrigir visibilidade da aba Cargos com scroll horizontal
+3. `src/hooks/useDashboard.ts` - Corrigir logica de saude quando peso = 0

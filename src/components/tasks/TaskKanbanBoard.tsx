@@ -383,7 +383,7 @@ interface TaskCardProps {
               className="flex items-center gap-1.5 w-full text-left"
             >
               {task.client?.logo_url ? (
-                <img src={task.client.logo_url} alt="" className="w-4 h-4 rounded object-cover shrink-0" />
+                <img src={task.client.logo_url} alt="" className="w-4 h-4 object-contain shrink-0" />
               ) : task.client?.color ? (
                 <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: task.client.color }} />
               ) : null}
