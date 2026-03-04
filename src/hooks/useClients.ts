@@ -121,6 +121,8 @@ export function useCreateClient() {
         cnpj: input.cnpj || null,
         phone: input.phone || null,
         email: input.email || null,
+        color: null,
+        logo_url: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         is_internal: false,
