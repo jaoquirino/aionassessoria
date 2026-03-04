@@ -58,7 +58,7 @@ export function useAllClients() {
           *,
           contracts(id, monthly_value, start_date, renewal_date, status)
         `)
-        .order("created_at", { ascending: false });
+        .order("name", { ascending: true });
 
       if (error) throw error;
       return data as ClientWithContracts[];
