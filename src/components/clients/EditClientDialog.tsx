@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,7 +6,7 @@ import { EditDialog } from "@/components/ui/edit-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList, Eye, Play } from "lucide-react";
+import { Plus, FileText, Calendar, Trash2, Pencil, ClipboardList, Eye, Play, Upload, Palette } from "lucide-react";
 import { useUpdateClient, useDeleteClient, type ClientStatus, type ClientWithContracts } from "@/hooks/useClients";
 import { useClientContractsWithModules, useDeleteContract, type ContractWithModules } from "@/hooks/useContracts";
 import { ContractDialog } from "./ContractDialog";
