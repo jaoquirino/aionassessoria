@@ -7,7 +7,6 @@ import {
   CheckSquare,
   CalendarDays,
   UserCircle,
-  Puzzle,
   ChevronLeft,
   Sun,
   Moon,

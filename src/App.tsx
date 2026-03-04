@@ -93,7 +93,7 @@ const App = () => (
             <Route path="/tarefas" element={<Tasks />} />
             <Route path="/calendario" element={<Calendar />} />
             <Route path="/equipe" element={<AdminRoute><Team /></AdminRoute>} />
-            <Route path="/modulos" element={<AdminRoute><Modules /></AdminRoute>} />
+            <Route path="/modulos" element={<Navigate to="/configuracoes" replace />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/onboarding-templates" element={<Navigate to="/configuracoes" replace />} />
             {/* Redirect old routes */}
