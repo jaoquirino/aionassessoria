@@ -278,6 +278,75 @@ export function EditClientDialog({
 
           <Separator />
 
+          {/* Color & Logo */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Aparência
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Cor do cliente</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={clientColor || "#ffc000"}
+                    onChange={(e) => setClientColor(e.target.value)}
+                    className="w-10 h-10 rounded-md border border-border cursor-pointer bg-transparent"
+                  />
+                  <Input
+                    value={clientColor}
+                    onChange={(e) => setClientColor(e.target.value)}
+                    placeholder="#ffc000"
+                    className="flex-1"
+                  />
+                  {clientColor && (
+                    <Button variant="ghost" size="sm" onClick={() => setClientColor("")}>
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Logo</Label>
+                <div className="flex items-center gap-3">
+                  {clientLogoUrl ? (
+                    <div className="relative group">
+                      <img src={clientLogoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-border" />
+                      <button
+                        onClick={() => setClientLogoUrl("")}
+                        className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg border border-dashed border-border flex items-center justify-center text-muted-foreground">
+                      <Upload className="h-4 w-4" />
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                  >
+                    {uploadingLogo ? "Enviando..." : "Enviar logo"}
+                  </Button>
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
           {/* Contracts Section */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
