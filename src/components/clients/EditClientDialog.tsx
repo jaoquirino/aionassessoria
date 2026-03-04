@@ -168,11 +168,7 @@ export function EditClientDialog({
     const file = e.target.files[0];
     setUploadingLogo(true);
     try {
-      // Extract dominant color from local file BEFORE uploading (avoids CORS)
-      const localUrl = URL.createObjectURL(file);
-      const detectedColor = await extractDominantColor(localUrl);
-      URL.revokeObjectURL(localUrl);
-
+      // Upload file first
       const fileExt = file.name.split(".").pop();
       const filePath = `logos/${client.id}/${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
@@ -182,14 +178,23 @@ export function EditClientDialog({
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
       setClientLogoUrl(urlData.publicUrl);
 
-      if (detectedColor && !clientColor) {
-        setClientColor(detectedColor);
-        toast.success("Logo enviada e cor detectada automaticamente");
-      } else {
+      // Try to extract color (non-blocking)
+      try {
+        const localUrl = URL.createObjectURL(file);
+        const detectedColor = await extractDominantColor(localUrl);
+        URL.revokeObjectURL(localUrl);
+        if (detectedColor && !clientColor) {
+          setClientColor(detectedColor);
+          toast.success("Logo enviada e cor detectada automaticamente");
+        } else {
+          toast.success("Logo enviada");
+        }
+      } catch {
         toast.success("Logo enviada");
       }
-    } catch {
-      toast.error("Erro ao enviar logo");
+    } catch (err: any) {
+      console.error("Logo upload error:", err);
+      toast.error("Erro ao enviar logo: " + (err?.message || "erro desconhecido"));
     }
     setUploadingLogo(false);
     e.target.value = "";
