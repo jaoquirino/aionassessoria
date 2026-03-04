@@ -197,6 +197,7 @@ export default function Calendar() {
           currentDate={currentDate}
           itemsByDate={itemsByDate}
           onDayClick={handleDayClick}
+          onItemClick={handleItemClick}
           clients={clients}
         />
       )}
