@@ -25,7 +25,7 @@ export default function Calendar() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<EditorialPost | null>(null);
-  const [daySheetOpen, setDaySheetOpen] = useState(false);
+  const [dayDialogOpen, setDayDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [newPostDate, setNewPostDate] = useState<Date | undefined>();
 
