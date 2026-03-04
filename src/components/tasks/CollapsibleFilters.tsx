@@ -59,6 +59,8 @@ export function CollapsibleFilters({
       type: "all",
       assignee: "all",
       client: "all",
+      dateFrom: undefined,
+      dateTo: undefined,
     });
     setOpen(false);
   };
