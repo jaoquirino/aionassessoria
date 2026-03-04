@@ -331,7 +331,11 @@ export function ClientPopover({
                 currentClient?.id === client.id && "bg-muted"
               )}
             >
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+              {client.logo_url ? (
+                <img src={client.logo_url} alt="" className="w-4 h-4 object-contain shrink-0" />
+              ) : (
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              )}
               <span className="truncate">{client.name}</span>
             </button>
           ))}
