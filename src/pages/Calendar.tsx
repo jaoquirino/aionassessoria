@@ -126,12 +126,10 @@ export default function Calendar() {
       if (post) {
         setEditingPost(post);
         setPostDialogOpen(true);
-        setDayDialogOpen(false);
       }
     } else if (item.type === "task") {
       setSelectedTaskId(item.id);
       setTaskDialogOpen(true);
-      setDayDialogOpen(false);
     }
   };
 
