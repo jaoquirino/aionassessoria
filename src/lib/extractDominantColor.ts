@@ -5,7 +5,10 @@
 export function extractDominantColor(imageUrl: string): Promise<string | null> {
   return new Promise((resolve) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    // Only set crossOrigin for remote URLs, not blob/object URLs
+    if (!imageUrl.startsWith("blob:")) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => {
       try {
         const canvas = document.createElement("canvas");
