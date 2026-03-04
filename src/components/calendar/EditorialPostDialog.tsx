@@ -93,6 +93,7 @@ export function EditorialPostDialog({ open, onOpenChange, post, clients, teamMem
   }, [post, open, defaultDate, clients]);
 
   const isSaving = create.isPending || update.isPending;
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   const handleSave = async () => {
     if (!title || !clientId || !date) return;
@@ -111,7 +112,14 @@ export function EditorialPostDialog({ open, onOpenChange, post, clients, teamMem
     if (isEditing) {
       await update.mutateAsync({ id: post!.id, ...input });
     } else {
-      await create.mutateAsync(input);
+      const created = await create.mutateAsync(input);
+      // Upload pending files after creation
+      if (created && pendingFiles.length > 0) {
+        for (const file of pendingFiles) {
+          await uploadAttachment.mutateAsync({ postId: created.id, file });
+        }
+        setPendingFiles([]);
+      }
     }
     onOpenChange(false);
   };
@@ -123,10 +131,16 @@ export function EditorialPostDialog({ open, onOpenChange, post, clients, teamMem
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!post || !e.target.files?.length) return;
-    for (const file of Array.from(e.target.files)) {
-      await uploadAttachment.mutateAsync({ postId: post.id, file });
+    if (!e.target.files?.length) return;
+    const files = Array.from(e.target.files);
+    if (isEditing && post) {
+      for (const file of files) {
+        await uploadAttachment.mutateAsync({ postId: post.id, file });
+      }
+    } else {
+      setPendingFiles((prev) => [...prev, ...files]);
     }
+    e.target.value = "";
   };
 
   return (
