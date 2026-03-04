@@ -178,6 +178,37 @@ export function CollapsibleFilters({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  <CalendarRange className="h-3.5 w-3.5" />
+                  Período
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <DatePicker
+                    value={filters.dateFrom || ""}
+                    onChange={(v) => updateFilter("dateFrom", v)}
+                    placeholder="De"
+                  />
+                  <DatePicker
+                    value={filters.dateTo || ""}
+                    onChange={(v) => updateFilter("dateTo", v)}
+                    placeholder="Até"
+                  />
+                </div>
+                {(filters.dateFrom || filters.dateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs w-full"
+                    onClick={() => {
+                      onFiltersChange({ ...filters, dateFrom: undefined, dateTo: undefined });
+                    }}
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Limpar período
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </PopoverContent>
