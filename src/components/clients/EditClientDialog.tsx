@@ -369,9 +369,21 @@ export function EditClientDialog({
                     type="file"
                     className="hidden"
                     accept="image/*"
-                    onChange={handleLogoUpload}
+                    onChange={handleLogoFileSelect}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Logo Crop Dialog */}
+          <LogoCropDialog
+            open={cropDialogOpen}
+            onOpenChange={setCropDialogOpen}
+            imageSrc={cropImageSrc}
+            onCropComplete={handleCroppedLogo}
+            isSaving={uploadingLogo}
+          />
               </div>
             </div>
           </div>
