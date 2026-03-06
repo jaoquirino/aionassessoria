@@ -428,7 +428,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                  ref={titleInputRef}
                  value={title} 
                  onChange={(e) => { setTitle(e.target.value); markDirty(); }}
-                 className="text-[28px] leading-tight font-bold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 mb-3"
+                 className="text-[48px] leading-tight font-bold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 mb-3"
                  placeholder="Título da tarefa"
                  autoFocus
                />
