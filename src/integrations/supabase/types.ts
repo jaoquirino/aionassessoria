@@ -314,6 +314,7 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          is_recurring: boolean
           minimum_duration_months: number
           monthly_value: number
           notes: string | null
@@ -328,6 +329,7 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          is_recurring?: boolean
           minimum_duration_months?: number
           monthly_value: number
           notes?: string | null
@@ -342,6 +344,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          is_recurring?: boolean
           minimum_duration_months?: number
           monthly_value?: number
           notes?: string | null
