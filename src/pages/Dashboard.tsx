@@ -603,7 +603,12 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground">Peso</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <p className="text-lg font-bold text-foreground">{selectedClientHealth.deliveriesThisMonth}</p>
+                    <p className="text-lg font-bold text-foreground">
+                      {selectedClientHealth.deliveriesThisMonth}
+                      {selectedClientHealth.designLimit != null && (
+                        <span className="text-sm font-normal text-muted-foreground"> / {selectedClientHealth.designLimit}</span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">Entregas</p>
                   </div>
                 </div>
