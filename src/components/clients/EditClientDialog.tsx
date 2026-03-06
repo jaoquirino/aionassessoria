@@ -76,6 +76,9 @@ export function EditClientDialog({
   const [clientLogoUrl, setClientLogoUrl] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string>("");
+  const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
   const [onboardingDialogOpen, setOnboardingDialogOpen] = useState(false);
   const [selectedOnboardingModule, setSelectedOnboardingModule] = useState<{
     contractModuleId: string;
