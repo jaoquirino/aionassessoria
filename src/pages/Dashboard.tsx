@@ -29,6 +29,7 @@ import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/d
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
+import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
