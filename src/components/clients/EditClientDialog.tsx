@@ -384,9 +384,6 @@ export function EditClientDialog({
             onCropComplete={handleCroppedLogo}
             isSaving={uploadingLogo}
           />
-              </div>
-            </div>
-          </div>
 
           <Separator />
 
