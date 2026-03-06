@@ -52,44 +52,18 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
 
   const isLoading = clientsLoading || deliveriesLoading;
 
-  // Filter deliveries by period or custom dates
+  // Filter deliveries by period
   const filteredDeliveries = useMemo(() => {
     if (!deliveries) return [];
     
-    let start: Date, end: Date;
-    
-    if (useCustomDates && dateRange.from && dateRange.to) {
-      start = dateRange.from;
-      end = dateRange.to;
-    } else {
-      const periodDates = getPeriodDates(period);
-      start = periodDates.start;
-      end = periodDates.end;
-    }
+    const periodDates = getPeriodDates(period, customRange);
+    const { start, end } = periodDates;
     
     return deliveries.filter(d => {
       const dueDate = new Date(d.dueDate);
       return dueDate >= start && dueDate <= end;
     });
-  }, [deliveries, period, useCustomDates, dateRange]);
-
-  // Group deliveries by status
-  const groupedDeliveries = {
-    done: filteredDeliveries.filter(d => d.status === "done"),
-    pending: filteredDeliveries.filter(d => d.status !== "done"),
-  };
-
-  const handleClearCustomDates = () => {
-    setDateRange({});
-    setUseCustomDates(false);
-  };
-
-  const handleApplyRange = () => {
-    if (dateRange.from && dateRange.to) {
-      setUseCustomDates(true);
-      setRangePickerOpen(false);
-    }
-  };
+  }, [deliveries, period, customRange]);
 
   if (isLoading) {
     return (
