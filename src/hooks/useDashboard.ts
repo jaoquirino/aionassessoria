@@ -143,7 +143,7 @@ export function useDashboardData() {
 
       // Calculate stats (excluding onboarding tasks)
       // For overdue/delivery counts, include all tasks (parents + subtasks)
-      const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < now && t.status !== "done").length;
+      const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < todayMidnight && t.status !== "done").length;
       const todayDeliveries = operationalTasks.filter(t => {
         const due = parseLocalDate(t.due_date);
         return due.toDateString() === today.toDateString();
