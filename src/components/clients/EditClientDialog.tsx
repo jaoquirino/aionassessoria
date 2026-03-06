@@ -118,6 +118,20 @@ export function EditClientDialog({
     }
   }, [open]);
 
+  // Scroll to section when dialog opens with initialSection
+  useEffect(() => {
+    if (open && initialSection) {
+      const timer = setTimeout(() => {
+        if (initialSection === "status" && statusRef.current) {
+          statusRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else if ((initialSection === "contracts" || initialSection === "value") && contractsRef.current) {
+          contractsRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [open, initialSection]);
+
   const handleSave = async () => {
     if (!client) return;
 
