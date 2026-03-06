@@ -327,7 +327,6 @@ interface TaskCardProps {
                {isOverdue && (
                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                )}
-             <div className="flex items-center gap-1 shrink-0">
                {/* Quick status action button */}
                {task.status === "done" ? (
                  <button
