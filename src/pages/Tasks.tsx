@@ -269,38 +269,6 @@ export default function Tasks() {
         </motion.div>
       )}
 
-      {/* Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-2 gap-4 lg:grid-cols-5"
-      >
-        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Total Ativas</p>
-          <p className="text-2xl font-bold text-foreground">
-            {operationalTasks.filter((t) => t.status !== "done").length}
-          </p>
-        </div>
-        <div className="glass rounded-xl p-4 border-destructive/20 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Atrasadas</p>
-          <p className="text-2xl font-bold text-destructive">{overdueTasks.length}</p>
-        </div>
-        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Em Revisão</p>
-          <p className="text-2xl font-bold text-warning">
-            {operationalTasks.filter((t) => t.status === "review").length}
-          </p>
-        </div>
-        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Aguardando</p>
-          <p className="text-2xl font-bold text-info">{waitingClientTasks.length}</p>
-        </div>
-        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Peso Total</p>
-          <p className="text-2xl font-bold text-foreground">{totalWeight}</p>
-        </div>
-      </motion.div>
 
       {/* Tasks View with Integrated Filters */}
       <motion.div
