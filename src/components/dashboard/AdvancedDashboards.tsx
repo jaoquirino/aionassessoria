@@ -32,7 +32,7 @@ interface DeliveriesDashboardProps {
 }
 
 export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashboardProps) {
-  const [period, setPeriod] = useState<PeriodOption>("30d");
+  const [period, setPeriod] = useState<PeriodOption>("current_month");
   const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
