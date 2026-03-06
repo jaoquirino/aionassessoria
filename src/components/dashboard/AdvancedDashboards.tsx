@@ -292,7 +292,12 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                               delivery.status === "done" ? "text-success" : "text-muted-foreground"
                             )} />
                             <div>
-                              <p className="font-medium text-sm">{delivery.title}</p>
+                              <p className="font-medium text-sm flex items-center gap-1.5">
+                                {delivery.isSubtask && (
+                                  <CornerDownRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                                )}
+                                {delivery.title}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {delivery.clientName}
                                 {delivery.moduleName && ` · ${delivery.moduleName}`}
