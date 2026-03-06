@@ -326,8 +326,8 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                     </div>
                   </div>
                 );
-              })
-            )}
+              });
+            })()}
           </div>
         </CardContent>
       </Card>
