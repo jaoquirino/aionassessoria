@@ -591,6 +591,9 @@ export default function Dashboard() {
                     selectedClientHealth.healthStatus === "attention" && "bg-warning",
                     selectedClientHealth.healthStatus === "critical" && "bg-destructive"
                   )} />
+                  {selectedClientHealth.logo_url && (
+                    <img src={selectedClientHealth.logo_url} alt="" className="h-7 w-7 rounded object-contain shrink-0" />
+                  )}
                   {selectedClientHealth.name}
                 </>
               )}
