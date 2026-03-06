@@ -176,13 +176,6 @@ export function useDashboardData() {
       const memberMap = new Map(teamMembers.map(m => [m.id, m.name]));
       const clientMap = new Map(clients.map(c => [c.id, c.name]));
 
-      // Helper: check if a task is assigned to a specific member (via assigned_to OR task_assignees)
-      const isAssignedTo = (task: any, memberId: string) => {
-        if (task.assigned_to === memberId) return true;
-        const assigneeIds = taskAssigneeMap.get(task.id);
-        return assigneeIds ? assigneeIds.includes(memberId) : false;
-      };
-
       // Get all assignee names for a task
       const getAssigneeName = (task: any) => {
         const assigneeIds = taskAssigneeMap.get(task.id) || [];
