@@ -561,11 +561,9 @@ export default function Dashboard() {
           <TabsList className="glass">
             <TabsTrigger value="overview" className="gap-2"><Clock className="h-4 w-4" />Visão Geral</TabsTrigger>
             <TabsTrigger value="deliveries" className="gap-2"><Package className="h-4 w-4" />Entregas</TabsTrigger>
-            <TabsTrigger value="financial" className="gap-2"><TrendingUp className="h-4 w-4" />Evolução Financeira</TabsTrigger>
           </TabsList>
           <TabsContent value="overview" className="space-y-6">{overviewContent}</TabsContent>
           <TabsContent value="deliveries" className="space-y-6"><DeliveriesDashboard /></TabsContent>
-          <TabsContent value="financial" className="space-y-6"><FinancialEvolutionDashboard /></TabsContent>
         </Tabs>
       ) : (
         <div className="space-y-6">{overviewContent}</div>
