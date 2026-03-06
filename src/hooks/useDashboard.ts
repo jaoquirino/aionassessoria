@@ -281,14 +281,16 @@ export function useDashboardData() {
       });
 
       const dashboardClients: (DashboardClientHealth & { tasks: ClientTask[] })[] = clients
-        .filter((c: { status: string; is_internal?: boolean }) => c.status === "active" && !c.is_internal)
+        .filter((c: { status: string; is_internal?: boolean; id: string }) => 
+          c.status === "active" && !c.is_internal && clientDesignLimitMap.has(c.id)
+        )
         .map(c => {
           const stats = clientTaskStats2.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
           const revenue = clientRevenueMap.get(c.id) || 0;
           let healthStatus: "normal" | "attention" | "critical" = "normal";
           const designLimit = clientDesignLimitMap.get(c.id) || null;
           if (designLimit && designLimit > 0) {
-            const percentage = (stats.delivered / designLimit) * 100;
+            const percentage = (stats.designDeliverables / designLimit) * 100;
             if (percentage >= 100) healthStatus = "critical";
             else if (percentage >= 81) healthStatus = "attention";
           }
@@ -299,7 +301,7 @@ export function useDashboardData() {
             logo_url: c.logo_url || null,
             monthlyValue: revenue,
             operationalWeight: stats.weight,
-            deliveriesThisMonth: stats.delivered,
+            deliveriesThisMonth: stats.designDeliverables,
             pendingTasks: stats.pending,
             healthStatus,
             designDeliverables: stats.designDeliverables,
