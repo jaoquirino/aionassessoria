@@ -394,18 +394,7 @@ export default function Clients() {
                   </div>
                 </div>
 
-                {/* Edit Button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openClientWithSection(client, null);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
+                </div>
               </div>
 
               {/* Mobile: show info below */}
