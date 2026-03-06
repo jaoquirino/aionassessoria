@@ -191,28 +191,43 @@ export function useTasksAssignees(taskIds: string[]) {
    });
  }
  
- // Set multiple assignees (replace all)
- export function useSetTaskAssignees() {
-   const queryClient = useQueryClient();
- 
-   return useMutation({
-     mutationFn: async ({ taskId, memberIds }: { taskId: string; memberIds: string[] }) => {
-       await supabase
-         .from("task_assignees")
-         .delete()
-         .eq("task_id", taskId);
- 
-       if (memberIds.length > 0) {
-         const { error } = await supabase
-           .from("task_assignees")
-           .insert(memberIds.map(memberId => ({
-             task_id: taskId,
-             team_member_id: memberId,
-           })));
- 
-         if (error) throw error;
-       }
-     },
+  // Set multiple assignees (diff-based to avoid false INSERT events)
+  export function useSetTaskAssignees() {
+    const queryClient = useQueryClient();
+  
+    return useMutation({
+      mutationFn: async ({ taskId, memberIds }: { taskId: string; memberIds: string[] }) => {
+        // Fetch current assignees
+        const { data: current } = await supabase
+          .from("task_assignees")
+          .select("team_member_id")
+          .eq("task_id", taskId);
+        
+        const currentIds = new Set((current || []).map(r => r.team_member_id));
+        const desiredIds = new Set(memberIds);
+        
+        // Only delete removed assignees
+        const toRemove = [...currentIds].filter(id => !desiredIds.has(id));
+        if (toRemove.length > 0) {
+          await supabase
+            .from("task_assignees")
+            .delete()
+            .eq("task_id", taskId)
+            .in("team_member_id", toRemove);
+        }
+        
+        // Only insert truly new assignees
+        const toAdd = memberIds.filter(id => !currentIds.has(id));
+        if (toAdd.length > 0) {
+          const { error } = await supabase
+            .from("task_assignees")
+            .insert(toAdd.map(memberId => ({
+              task_id: taskId,
+              team_member_id: memberId,
+            })));
+          if (error) throw error;
+        }
+      },
      onMutate: async ({ taskId, memberIds }) => {
        await queryClient.cancelQueries({ queryKey: ["task_assignees"] });
        const prev = queryClient.getQueriesData({ queryKey: ["task_assignees"] });
