@@ -79,28 +79,32 @@ export function Sidebar({ isCollapsed, onCollapsedChange }: SidebarProps) {
 
   const footerContent = (collapsed: boolean) => (
     <div className="border-t border-sidebar-border p-3 space-y-1">
-      <Button
-        variant="ghost"
-        size={collapsed ? "icon" : "default"}
-        onClick={toggleTheme}
-        className={cn(
-          "w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground",
-          collapsed && "justify-center"
-        )}
-      >
-        {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        {!collapsed && <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>}
-      </Button>
       {collapsed ? (
         <div className="flex flex-col items-center gap-1">
-          <NotificationBell compact />
           <UserProfileDropdown isCollapsed={collapsed} />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          >
+            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+          <NotificationBell compact />
         </div>
       ) : (
         <div className="flex items-center gap-1">
           <div className="flex-1 min-w-0">
             <UserProfileDropdown isCollapsed={collapsed} />
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground shrink-0"
+          >
+            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
           <NotificationBell compact />
         </div>
       )}
