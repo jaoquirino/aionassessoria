@@ -90,9 +90,8 @@ export function UserProfileDropdown({ isCollapsed = false }: UserProfileDropdown
   };
 
   const getDisplayName = () => {
-    if (profile.full_name) return profile.full_name;
-    if (profile.username) return profile.username;
-    return user?.email?.split("@")[0] || "Usuário";
+    const full = profile.full_name || profile.username || user?.email?.split("@")[0] || "Usuário";
+    return full.split(" ")[0];
   };
 
   const getInitials = (name: string) => {
