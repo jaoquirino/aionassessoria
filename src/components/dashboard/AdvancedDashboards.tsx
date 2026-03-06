@@ -39,7 +39,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
   const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video">("all");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
+  
   
   const { data: clients, isLoading: clientsLoading } = useAllClients();
   const { data: deliveries, isLoading: deliveriesLoading } = useDeliveriesByClient(
