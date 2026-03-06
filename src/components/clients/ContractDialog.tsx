@@ -424,7 +424,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || (!noValue && monthlyValue <= 0)}>
+          <Button onClick={handleSave} disabled={isSaving || (!isInternal && !noValue && monthlyValue <= 0)}>
             {isSaving ? "Salvando..." : isEditing ? "Salvar" : "Criar Contrato"}
           </Button>
         </div>
