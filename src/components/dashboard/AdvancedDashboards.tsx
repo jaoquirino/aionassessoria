@@ -12,7 +12,7 @@ import { useDeliveriesByClient, useFinancialEvolution } from "@/hooks/useDeliver
 import { useAllClients } from "@/hooks/useClients";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
-import { type PeriodOption, getPeriodDates } from "./PeriodSelector";
+import { PeriodSelector, type PeriodOption, type CustomDateRange, getPeriodDates } from "./PeriodSelector";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
