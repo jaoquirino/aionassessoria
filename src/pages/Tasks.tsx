@@ -24,12 +24,6 @@ const statusOptions = [
   { value: "done", label: "Entregue" },
 ];
 
-const typeOptions = [
-  { value: "recurring", label: "Entrega recorrente" },
-  { value: "planning", label: "Planejamento" },
-  { value: "project", label: "Projeto" },
-  { value: "extra", label: "Extra" },
-];
 
 export default function Tasks() {
   const [searchParams, setSearchParams] = useSearchParams();

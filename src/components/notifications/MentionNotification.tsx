@@ -138,6 +138,14 @@ export function MentionNotificationContainer() {
           const a = payload.new as any;
           if (a.team_member_id !== teamMemberId) return;
 
+          // Skip if user was already assigned (re-save scenario)
+          const { count } = await supabase
+            .from("task_assignees")
+            .select("id", { count: "exact", head: true })
+            .eq("task_id", a.task_id)
+            .eq("team_member_id", teamMemberId);
+          if ((count ?? 0) > 1) return;
+
           const { data: task } = await supabase
             .from("tasks")
             .select("title")
