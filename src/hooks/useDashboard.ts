@@ -139,14 +139,13 @@ export function useDashboardData() {
 
       // Subtasks inherit weight from parent, so only count parent-level tasks for weight
 
-      // Calculate stats (excluding onboarding tasks)
-      // For overdue/delivery counts, include all tasks (parents + subtasks)
-      const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < todayMidnight && t.status !== "done").length;
-      const todayDeliveries = operationalTasks.filter(t => {
+      // Calculate stats (excluding onboarding tasks AND internal clients)
+      const overdueTasks = operationalTasksForWeight.filter(t => parseLocalDate(t.due_date) < todayMidnight && t.status !== "done").length;
+      const todayDeliveries = operationalTasksForWeight.filter(t => {
         const due = parseLocalDate(t.due_date);
         return due.toDateString() === today.toDateString();
       }).length;
-      const weekTasks = operationalTasks.filter(t => {
+      const weekTasks = operationalTasksForWeight.filter(t => {
         const due = parseLocalDate(t.due_date);
         return due >= startOfWeek && due <= endOfWeek;
       });
@@ -165,11 +164,9 @@ export function useDashboardData() {
         .filter((c: { client_id: string }) => !internalClientIds.has(c.client_id))
         .reduce((sum: number, c: { monthly_value: number }) => sum + Number(c.monthly_value), 0);
 
-      // For weight: exclude subtasks that have a parent (parent already carries the weight)
-      // But if parent has subtasks, only count the parent's weight once
+      // Weight: include all tasks (parents + subtasks) since DB trigger assigns weight to all
       const activeTasks = operationalTasksForWeight.filter(t => t.status !== "done");
-      const activeTasksForWeight = activeTasks.filter(t => !t.parent_task_id);
-      const totalWeight = activeTasksForWeight.reduce((sum, t) => sum + t.weight, 0);
+      const totalWeight = activeTasks.reduce((sum, t) => sum + t.weight, 0);
       const totalCapacity = teamMembers.reduce((sum, m) => sum + (m.capacity_limit || 0), 0);
 
       // Map tasks for display
