@@ -61,7 +61,8 @@ export function EditClientDialog({
   open, 
   onOpenChange, 
   onClientUpdated,
-  openContractDialogOnMount = false 
+  openContractDialogOnMount = false,
+  initialSection = null,
 }: EditClientDialogProps) {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ClientStatus>("active");
