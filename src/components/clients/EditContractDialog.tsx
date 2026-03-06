@@ -91,6 +91,14 @@ export function EditContractDialog({
     ));
   };
 
+  const handleInternalToggle = (checked: boolean) => {
+    setIsInternal(checked);
+    if (checked) {
+      setMonthlyValue(0);
+      setIsRecurring(false);
+      setModuleConfigs(prev => prev.map(config => ({ ...config, selected: true })));
+    }
+  };
   const handleDeliverableLimitChange = (moduleId: string, value: string) => {
     const limit = value === "" ? null : parseInt(value);
     setModuleConfigs(prev => prev.map(config => 
