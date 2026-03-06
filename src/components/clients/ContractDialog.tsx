@@ -19,7 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, RotateCcw } from "lucide-react";
+import { Package, RotateCcw, Building2 } from "lucide-react";
 
 interface ContractDialogProps {
   clientId: string;
