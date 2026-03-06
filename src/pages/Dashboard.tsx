@@ -657,6 +657,13 @@ export default function Dashboard() {
         open={!!selectedTaskId}
         onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
       />
+
+      {/* Team Member Tasks Dialog */}
+      <TeamMemberTasksDialog
+        member={selectedTeamMember}
+        open={!!selectedTeamMember}
+        onOpenChange={(open) => { if (!open) setSelectedTeamMember(null); }}
+      />
     </div>
   );
 }
