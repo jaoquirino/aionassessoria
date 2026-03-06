@@ -290,7 +290,15 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                       return (
                         <div
                           key={delivery.id}
-                          onClick={() => setSelectedTaskId(delivery.id)}
+                          onClick={() => {
+                            if (delivery.isSubtask && delivery.parentTaskId) {
+                              setSelectedTaskId(delivery.parentTaskId);
+                              setSelectedSubtaskId(delivery.id);
+                            } else {
+                              setSelectedTaskId(delivery.id);
+                              setSelectedSubtaskId(null);
+                            }
+                          }}
                           className={cn(
                             "flex items-center justify-between p-3 rounded-lg border-l-4 border hover:bg-muted/50 transition-colors cursor-pointer",
                             delivery.status === "done" ? "border-l-success" :
