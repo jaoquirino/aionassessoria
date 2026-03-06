@@ -138,12 +138,8 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         const arteCount = filteredDeliveries.filter(d => d.deliverableType === "arte").length;
         const videoCount = filteredDeliveries.filter(d => d.deliverableType === "video").length;
 
-        const typeOptions = [
-          { value: "recurring", label: "Recorrente" },
-          { value: "planning", label: "Planejamento" },
-          { value: "project", label: "Projeto" },
-          { value: "extra", label: "Extra" },
-        ];
+
+
 
         // Apply all filters
         let displayDeliveries = filteredDeliveries;
