@@ -8,11 +8,11 @@ export interface DashboardStats {
   todayDeliveries: number;
   weekDeliveries: number;
   weekCompleted: number;
-  contractsInAlert: number;
   activeClients: number;
   monthlyRevenue: number;
   totalWeight: number;
   totalCapacity: number;
+  activeTasks: number;
 }
 
 export interface DashboardTask {
@@ -41,15 +41,6 @@ export interface DashboardTeamMember {
   overdueTasks: number;
 }
 
-export interface DashboardContract {
-  id: string;
-  clientName: string;
-  monthlyValue: number;
-  renewalDate: string;
-  daysUntilRenewal: number;
-  status: string;
-}
-
 export interface DashboardClientHealth {
   id: string;
   name: string;
@@ -60,6 +51,17 @@ export interface DashboardClientHealth {
   healthStatus: "normal" | "attention" | "critical";
   designDeliverables: number;
   designLimit: number | null;
+}
+
+export interface ClientTask {
+  id: string;
+  title: string;
+  status: string;
+  dueDate: string;
+  type: string;
+  isSubtask: boolean;
+  parentTaskId: string | null;
+  assigneeName: string;
 }
 
 export function useDashboardData() {
@@ -77,8 +79,8 @@ export function useDashboardData() {
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-      // Parallel fetch for all data - much faster
       // Fetch all non-archived tasks (use range to bypass 1000 row limit)
       const fetchAllTasks = async () => {
         const allTasks: any[] = [];
@@ -115,7 +117,7 @@ export function useDashboardData() {
       const contractModules = contractModulesRes.data || [];
       const taskAssignees = taskAssigneesRes.data || [];
 
-      // Build a map of task_id -> team_member_ids for multi-assignee lookup
+      // Build a map of task_id -> team_member_ids
       const taskAssigneeMap = new Map<string, string[]>();
       taskAssignees.forEach((ta: { task_id: string; team_member_id: string }) => {
         const existing = taskAssigneeMap.get(ta.task_id) || [];
@@ -123,23 +125,19 @@ export function useDashboardData() {
         taskAssigneeMap.set(ta.task_id, existing);
       });
 
-      // Create internal client IDs set for filtering
+      // Create internal client IDs set
       const internalClientIds = new Set(
         clients.filter((c: { is_internal?: boolean }) => c.is_internal).map((c: { id: string }) => c.id)
       );
 
       const now = new Date();
-      // Strip time for date-only comparisons (overdue = due date strictly before today)
       const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-      // Filter out onboarding tasks from general stats
-      // Also filter out tasks from internal clients for weight calculations
+      // Filter tasks
       const operationalTasks = tasks.filter(t => t.type !== "onboarding");
       const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
 
-      // Subtasks inherit weight from parent, so only count parent-level tasks for weight
-
-      // Calculate stats (excluding onboarding tasks AND internal clients)
+      // Stats: exclude internal clients and onboarding
       const overdueTasks = operationalTasksForWeight.filter(t => parseLocalDate(t.due_date) < todayMidnight && t.status !== "done").length;
       const todayDeliveries = operationalTasksForWeight.filter(t => {
         const due = parseLocalDate(t.due_date);
@@ -151,60 +149,17 @@ export function useDashboardData() {
       });
       const weekDeliveries = weekTasks.length;
       const weekCompleted = weekTasks.filter(t => t.status === "done").length;
-
-      const contractsInAlert = contracts.filter(c => {
-        if (!c.renewal_date) return false;
-        const days = Math.ceil((new Date(c.renewal_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        return days > 0 && days <= 30;
-      }).length;
+      const activeTasksCount = operationalTasksForWeight.filter(t => t.status !== "done").length;
 
       const activeClients = clients.filter(c => c.status === "active").length;
-      // Exclude internal clients from revenue calculation
       const monthlyRevenue = contracts
         .filter((c: { client_id: string }) => !internalClientIds.has(c.client_id))
         .reduce((sum: number, c: { monthly_value: number }) => sum + Number(c.monthly_value), 0);
 
-      // Weight: include all tasks (parents + subtasks) since DB trigger assigns weight to all
-      const activeTasks = operationalTasksForWeight.filter(t => t.status !== "done");
-      const totalWeight = activeTasks.reduce((sum, t) => sum + t.weight, 0);
-      const totalCapacity = teamMembers.reduce((sum, m) => sum + (m.capacity_limit || 0), 0);
-
-      // Map tasks for display
-      const memberMap = new Map(teamMembers.map(m => [m.id, m.name]));
-      const clientMap = new Map(clients.map(c => [c.id, c.name]));
-
-      // Get all assignee names for a task
-      const getAssigneeName = (task: any) => {
-        const assigneeIds = taskAssigneeMap.get(task.id) || [];
-        if (task.assigned_to) assigneeIds.push(task.assigned_to);
-        const uniqueIds = [...new Set(assigneeIds)];
-        if (uniqueIds.length === 0) return "Não atribuído";
-        const names = uniqueIds.map(id => memberMap.get(id)).filter(Boolean);
-        return names.length > 0 ? names.join(", ") : "Não atribuído";
-      };
-
-      const dashboardTasks: DashboardTask[] = activeTasks.map(t => ({
-        id: t.id,
-        title: t.title,
-        clientName: clientMap.get(t.client_id) || "—",
-        assigneeName: getAssigneeName(t),
-        assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
-        dueDate: t.due_date,
-        status: t.status,
-        isOverdue: parseLocalDate(t.due_date) < todayMidnight && t.status !== "done",
-        weight: t.weight,
-        type: t.type,
-        isSubtask: !!t.parent_task_id,
-        parentTaskId: t.parent_task_id || null,
-      }));
-
-      // Map team capacity (using operational tasks only)
-      // Also exclude internal client tasks from weight calculation
-      // Use task_assignees for multi-assignee support
+      // Member weights: match Team page logic exactly (exclude project type, include all clients, include subtask weights)
+      const memberWeightTasks = operationalTasks.filter(t => t.type !== "project" && t.status !== "done");
       const memberTaskStats = new Map<string, { weight: number; count: number; overdue: number }>();
-      // Only count parent-level tasks for weight; subtasks don't add extra weight
-      operationalTasksForWeight.filter(t => t.status !== "done" && !t.parent_task_id).forEach(t => {
-        // Get all assigned members for this task
+      memberWeightTasks.forEach(t => {
         const assignedMembers = new Set<string>();
         if (t.assigned_to) assignedMembers.add(t.assigned_to);
         const extraAssignees = taskAssigneeMap.get(t.id);
@@ -213,20 +168,6 @@ export function useDashboardData() {
         assignedMembers.forEach(memberId => {
           const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
-          curr.count += 1;
-          if (parseLocalDate(t.due_date) < todayMidnight) curr.overdue += 1;
-          memberTaskStats.set(memberId, curr);
-        });
-      });
-      // Also count subtasks for task count and overdue, but NOT weight
-      operationalTasksForWeight.filter(t => t.status !== "done" && t.parent_task_id).forEach(t => {
-        const assignedMembers = new Set<string>();
-        if (t.assigned_to) assignedMembers.add(t.assigned_to);
-        const extraAssignees = taskAssigneeMap.get(t.id);
-        if (extraAssignees) extraAssignees.forEach(id => assignedMembers.add(id));
-
-        assignedMembers.forEach(memberId => {
-          const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.count += 1;
           if (parseLocalDate(t.due_date) < todayMidnight) curr.overdue += 1;
           memberTaskStats.set(memberId, curr);
@@ -247,68 +188,98 @@ export function useDashboardData() {
         };
       });
 
-      // Contracts needing attention
-      const dashboardContracts: DashboardContract[] = contracts
-        .filter(c => {
-          if (!c.renewal_date) return false;
-          const days = Math.ceil((new Date(c.renewal_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          return days > 0 && days <= 30;
-        })
-        .map(c => {
-          const days = Math.ceil((new Date(c.renewal_date!).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          return {
-            id: c.id,
-            clientName: c.client?.name || "—",
-            monthlyValue: Number(c.monthly_value),
-            renewalDate: c.renewal_date!,
-            daysUntilRenewal: days,
-            status: days <= 7 ? "renewing" : "expiring_soon",
-          };
-        })
-        .sort((a, b) => a.daysUntilRenewal - b.daysUntilRenewal)
-        .slice(0, 4);
+      // totalWeight = sum of member weights (matches Team page)
+      const totalWeight = dashboardTeam.reduce((sum, m) => sum + m.currentWeight, 0);
+      const totalCapacity = teamMembers.reduce((sum, m) => sum + (m.capacity_limit || 0), 0);
 
-      // Client health (using operational tasks only)
-      const clientTaskStats = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number }>();
+      // Map tasks for display
+      const memberMap = new Map(teamMembers.map(m => [m.id, m.name]));
+      const clientMap = new Map(clients.map(c => [c.id, c.name]));
+
+      const getAssigneeName = (task: any) => {
+        const assigneeIds = taskAssigneeMap.get(task.id) || [];
+        if (task.assigned_to) assigneeIds.push(task.assigned_to);
+        const uniqueIds = [...new Set(assigneeIds)];
+        if (uniqueIds.length === 0) return "Não atribuído";
+        const names = uniqueIds.map(id => memberMap.get(id)).filter(Boolean);
+        return names.length > 0 ? names.join(", ") : "Não atribuído";
+      };
+
+      const activeTasks = operationalTasksForWeight.filter(t => t.status !== "done");
+      const dashboardTasks: DashboardTask[] = activeTasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        clientName: clientMap.get(t.client_id) || "—",
+        assigneeName: getAssigneeName(t),
+        assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
+        dueDate: t.due_date,
+        status: t.status,
+        isOverdue: parseLocalDate(t.due_date) < todayMidnight && t.status !== "done",
+        weight: t.weight,
+        type: t.type,
+        isSubtask: !!t.parent_task_id,
+        parentTaskId: t.parent_task_id || null,
+      }));
+
+      // Client health - current month only
+      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; tasks: ClientTask[] }>();
       operationalTasksForWeight.forEach(t => {
-        // Only count weight for parent-level tasks (not subtasks)
-        const curr = clientTaskStats.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0 };
+        const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
+        const taskDue = parseLocalDate(t.due_date);
+        const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
+
         if (t.status !== "done") {
-          // Only add weight for parent-level tasks
-          if (!t.parent_task_id) {
-            curr.weight += t.weight;
-          }
+          curr.weight += t.weight;
           curr.pending += 1;
         } else {
           const doneDate = new Date(t.updated_at);
           if (doneDate >= startOfMonth) {
             curr.delivered += 1;
-            if ((t as any).deliverable_type === "arte" || (t as any).deliverable_type === "video") {
+            if (t.deliverable_type === "arte" || t.deliverable_type === "video") {
               curr.designDeliverables += 1;
             }
           }
         }
-        // Also count non-done design deliverables this month
-        if (t.status !== "done" && ((t as any).deliverable_type === "arte" || (t as any).deliverable_type === "video")) {
-          const taskDate = parseLocalDate(t.due_date);
-          if (taskDate >= startOfMonth) {
-            curr.designDeliverables += 1;
-          }
+
+        // Collect current month tasks for drill-down
+        if (isCurrentMonth || (t.status !== "done" && taskDue < todayMidnight)) {
+          curr.tasks.push({
+            id: t.id,
+            title: t.title,
+            status: t.status,
+            dueDate: t.due_date,
+            type: t.type,
+            isSubtask: !!t.parent_task_id,
+            parentTaskId: t.parent_task_id || null,
+            assigneeName: getAssigneeName(t),
+          });
         }
-        clientTaskStats.set(t.client_id, curr);
+
+        clientTaskStats2.set(t.client_id, curr);
       });
 
       const clientRevenueMap = new Map<string, number>();
-      // Exclude internal clients from revenue map
       contracts.filter((c: { client_id: string }) => !internalClientIds.has(c.client_id)).forEach((c: { client_id: string; monthly_value: number }) => {
         const curr = clientRevenueMap.get(c.client_id) || 0;
         clientRevenueMap.set(c.client_id, curr + Number(c.monthly_value));
       });
 
-      const dashboardClients: DashboardClientHealth[] = clients
+      // Design limits
+      const clientDesignLimitMap = new Map<string, number>();
+      contractModules.forEach((cm: any) => {
+        if (cm.contract?.status === "active" && cm.service_module?.name?.toLowerCase().includes("design")) {
+          const clientId = cm.contract?.client_id;
+          if (clientId) {
+            const curr = clientDesignLimitMap.get(clientId) || 0;
+            clientDesignLimitMap.set(clientId, curr + (cm.deliverable_limit || 0));
+          }
+        }
+      });
+
+      const dashboardClients: (DashboardClientHealth & { tasks: ClientTask[] })[] = clients
         .filter((c: { status: string; is_internal?: boolean }) => c.status === "active" && !c.is_internal)
         .map(c => {
-          const stats = clientTaskStats.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0 };
+          const stats = clientTaskStats2.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
           const revenue = clientRevenueMap.get(c.id) || 0;
           let healthStatus: "normal" | "attention" | "critical" = "normal";
           if (stats.weight === 0) {
@@ -318,15 +289,7 @@ export function useDashboardData() {
             if (ratio < 200) healthStatus = "critical";
             else if (ratio < 400) healthStatus = "attention";
           }
-          
-          // Find design deliverable limit for this client
-          const clientDesignModules = contractModules.filter((cm: any) => 
-            cm.contract?.client_id === c.id && 
-            cm.contract?.status === "active" &&
-            cm.service_module?.name?.toLowerCase().includes("design")
-          );
-          const designLimit = clientDesignModules.reduce((sum: number, cm: any) => sum + (cm.deliverable_limit || 0), 0) || null;
-          
+          const designLimit = clientDesignLimitMap.get(c.id) || null;
           return {
             id: c.id,
             name: c.name,
@@ -337,13 +300,13 @@ export function useDashboardData() {
             healthStatus,
             designDeliverables: stats.designDeliverables,
             designLimit,
+            tasks: stats.tasks,
           };
         })
         .sort((a, b) => {
           const order = { critical: 0, attention: 1, normal: 2 };
           return order[a.healthStatus] - order[b.healthStatus];
-        })
-        .slice(0, 5);
+        });
 
       return {
         stats: {
@@ -351,15 +314,14 @@ export function useDashboardData() {
           todayDeliveries,
           weekDeliveries,
           weekCompleted,
-          contractsInAlert,
           activeClients,
           monthlyRevenue,
           totalWeight,
           totalCapacity,
+          activeTasks: activeTasksCount,
         } as DashboardStats,
         tasks: dashboardTasks,
         team: dashboardTeam,
-        contracts: dashboardContracts,
         clients: dashboardClients,
         isAdmin,
         taskAssigneeMap,
