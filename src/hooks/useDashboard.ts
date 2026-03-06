@@ -280,7 +280,10 @@ export function useDashboardData() {
         // Only count weight for parent-level tasks (not subtasks)
         const curr = clientTaskStats.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0 };
         if (t.status !== "done") {
-          curr.weight += t.weight;
+          // Only add weight for parent-level tasks
+          if (!t.parent_task_id) {
+            curr.weight += t.weight;
+          }
           curr.pending += 1;
         } else {
           const doneDate = new Date(t.updated_at);
