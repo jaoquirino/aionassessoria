@@ -138,13 +138,14 @@ export function MentionNotificationContainer() {
           const a = payload.new as any;
           if (a.team_member_id !== teamMemberId) return;
 
-          // Skip if user was already assigned (re-save scenario)
+          // Skip if user already received an assignment notification for this task
           const { count } = await supabase
-            .from("task_assignees")
+            .from("notifications")
             .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
             .eq("task_id", a.task_id)
-            .eq("team_member_id", teamMemberId);
-          if ((count ?? 0) > 1) return;
+            .eq("type", "assignment");
+          if ((count ?? 0) > 0) return;
 
           const { data: task } = await supabase
             .from("tasks")
