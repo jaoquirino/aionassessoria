@@ -80,6 +80,7 @@ export default function Dashboard() {
   
   const [selectedClientHealth, setSelectedClientHealth] = useState<any>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [selectedTeamMember, setSelectedTeamMember] = useState<any>(null);
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   const hasAnimated = useRef(false);
