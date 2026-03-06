@@ -273,15 +273,24 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
 
       {/* Deliveries List */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Lista de Entregas</CardTitle>
+          {designFilter !== "all" && (
+            <Badge variant="outline" className="cursor-pointer gap-1" onClick={() => setDesignFilter("all")}>
+              {designFilter === "arte" ? "🎨 Artes" : "🎬 Vídeos"} ✕
+            </Badge>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {filteredDeliveries.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nenhuma entrega encontrada no período</p>
-            ) : (
-              filteredDeliveries.map((delivery) => {
+            {(() => {
+              const displayDeliveries = designFilter === "all"
+                ? filteredDeliveries
+                : filteredDeliveries.filter(d => d.deliverableType === designFilter);
+              if (displayDeliveries.length === 0) return (
+                <p className="text-center text-muted-foreground py-8">Nenhuma entrega encontrada</p>
+              );
+              return displayDeliveries.map((delivery) => {
                 const StatusIcon = statusConfig[delivery.status]?.icon || Clock;
                 return (
                   <div
