@@ -39,6 +39,7 @@ interface EditClientDialogProps {
   onOpenChange: (open: boolean) => void;
   onClientUpdated?: () => void;
   openContractDialogOnMount?: boolean;
+  initialSection?: "status" | "contracts" | "value" | null;
 }
 
 const statusOptions: { value: ClientStatus; label: string }[] = [
