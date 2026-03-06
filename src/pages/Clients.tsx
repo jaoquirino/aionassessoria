@@ -354,24 +354,28 @@ export default function Clients() {
                     <TooltipContent>Dia de pagamento</TooltipContent>
                   </Tooltip>
 
-                  {/* Renewal - only when close */}
+                  {/* Renewal */}
                   <div className="w-28 flex justify-center">
-                    {showRenewal ? (
+                    {nearestRenewal ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Badge 
                             variant="outline"
                             className={cn(
                               "text-xs gap-1 cursor-pointer",
-                              nearestRenewal.days <= 30
+                              isRenewalClose && nearestRenewal.days <= 30
                                 ? "bg-destructive/10 text-destructive border-destructive/30"
-                                : "bg-warning/10 text-warning border-warning/30"
+                                : isRenewalClose
+                                ? "bg-warning/10 text-warning border-warning/30"
+                                : "text-muted-foreground"
                             )}
                             onClick={(e) => { e.stopPropagation(); openClientWithSection(client, "contracts"); }}
                           >
                             <Calendar className="h-3 w-3" />
-                            {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                            <span className="font-semibold">{nearestRenewal.days}d</span>
+                            {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                            {isRenewalClose && (
+                              <span className="font-semibold">{nearestRenewal.days}d</span>
+                            )}
                           </Badge>
                         </TooltipTrigger>
                         <TooltipContent>Vencimento do contrato</TooltipContent>
