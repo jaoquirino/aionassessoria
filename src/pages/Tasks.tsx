@@ -3,11 +3,9 @@ import { parseLocalDate } from "@/lib/utils";
 import { subDays } from "date-fns";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { AlertTriangle, LayoutGrid, List, Clock, Plus } from "lucide-react";
+import { AlertTriangle, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TaskKanbanBoard } from "@/components/tasks/TaskKanbanBoard";
-import { TaskListView } from "@/components/tasks/TaskListView";
 import { CollapsibleFilters, type FiltersState } from "@/components/tasks/CollapsibleFilters";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { useTasks, useUpdateTaskStatus, useUpdateTaskField, useTeamMembers, useClients, useCreateTask, useArchiveTask } from "@/hooks/useTasks";
@@ -35,7 +33,7 @@ const typeOptions = [
 
 export default function Tasks() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const [viewMode] = useState<"kanban">("kanban");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTaskTab, setSelectedTaskTab] = useState<string>("details");
   const [filters, setFilters] = useState<FiltersState>({
@@ -192,15 +190,9 @@ export default function Tasks() {
   const operationalTaskIds = useMemo(() => operationalTasks.map(t => t.id), [operationalTasks]);
   const { data: subtaskCounts = {} } = useTasksSubtaskCounts(operationalTaskIds);
 
-  // Calculate subtask total weight
-  const subtaskTotalWeight = useMemo(() => {
-    return Object.values(subtaskCounts).reduce((acc, c) => acc + c.weight, 0);
-  }, [subtaskCounts]);
-
-  // Use operationalTasks for stats (excludes project/onboarding tasks)
+  // Use operationalTasks for alerts
   const overdueTasks = operationalTasks.filter((t) => parseLocalDate(t.due_date) < new Date() && t.status !== "done");
   const waitingClientTasks = operationalTasks.filter((t) => t.status === "waiting_client");
-  const totalWeight = operationalTasks.filter((t) => t.status !== "done" && t.status !== "waiting_client").reduce((acc, t) => acc + t.weight, 0) + subtaskTotalWeight;
 
   // Show content immediately with cached data (no loading skeleton)
   const showContent = operationalTasks.length > 0 || !isLoading;
@@ -217,30 +209,15 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold text-foreground">Tarefas</h1>
           <p className="text-muted-foreground">Motor de entregas e produção</p>
         </div>
-        <div className="flex items-center gap-3">
-          {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground animate-pulse">Atualizando...</span>
-          )}
-          <Button onClick={() => handleQuickAddTask("todo")} className="gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nova Tarefa</span>
-          </Button>
-          <ToggleGroup
-            type="single"
-            value={viewMode}
-            onValueChange={(v) => v && setViewMode(v as "kanban" | "list")}
-            className="bg-muted rounded-lg p-1"
-          >
-            <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="gap-1.5 data-[state=on]:bg-background">
-              <LayoutGrid className="h-4 w-4" />
-              <span className="hidden sm:inline">Kanban</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="list" aria-label="Visualização Lista" className="gap-1.5 data-[state=on]:bg-background">
-              <List className="h-4 w-4" />
-              <span className="hidden sm:inline">Lista</span>
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
+         <div className="flex items-center gap-3">
+           {isFetching && !isLoading && (
+             <span className="text-xs text-muted-foreground animate-pulse">Atualizando...</span>
+           )}
+           <Button onClick={() => handleQuickAddTask("todo")} className="gap-2">
+             <Plus className="h-4 w-4" />
+             <span className="hidden sm:inline">Nova Tarefa</span>
+           </Button>
+         </div>
       </motion.div>
 
       {/* Alerts */}
@@ -286,38 +263,6 @@ export default function Tasks() {
         </motion.div>
       )}
 
-      {/* Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-2 gap-4 lg:grid-cols-5"
-      >
-        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Total Ativas</p>
-          <p className="text-2xl font-bold text-foreground">
-            {operationalTasks.filter((t) => t.status !== "done").length}
-          </p>
-        </div>
-        <div className="glass rounded-xl p-4 border-destructive/20 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Atrasadas</p>
-          <p className="text-2xl font-bold text-destructive">{overdueTasks.length}</p>
-        </div>
-        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Em Revisão</p>
-          <p className="text-2xl font-bold text-warning">
-            {operationalTasks.filter((t) => t.status === "review").length}
-          </p>
-        </div>
-        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Aguardando</p>
-          <p className="text-2xl font-bold text-info">{waitingClientTasks.length}</p>
-        </div>
-        <div className="glass rounded-xl p-4 flex flex-col items-center justify-center text-center">
-          <p className="text-sm text-muted-foreground">Peso Total</p>
-          <p className="text-2xl font-bold text-foreground">{totalWeight}</p>
-        </div>
-      </motion.div>
 
       {/* Tasks View with Integrated Filters */}
       <motion.div
@@ -337,7 +282,6 @@ export default function Tasks() {
           />
         </div>
         {showContent && (
-          viewMode === "kanban" ? (
             <TaskKanbanBoard 
               tasks={filteredTasks} 
               onTaskMove={handleTaskMove} 
@@ -349,16 +293,6 @@ export default function Tasks() {
               teamMembers={teamMembers}
               clients={clients}
             />
-          ) : (
-            <TaskListView 
-              tasks={filteredTasks} 
-              onTaskClick={handleTaskClick}
-              onUpdateField={handleUpdateField}
-              onUpdateStatus={(taskId, status) => updateStatus.mutate({ taskId, status })}
-              teamMembers={teamMembers}
-              clients={clients}
-            />
-          )
         )}
       </motion.div>
 
