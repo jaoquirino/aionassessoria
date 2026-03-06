@@ -190,15 +190,9 @@ export default function Tasks() {
   const operationalTaskIds = useMemo(() => operationalTasks.map(t => t.id), [operationalTasks]);
   const { data: subtaskCounts = {} } = useTasksSubtaskCounts(operationalTaskIds);
 
-  // Calculate subtask total weight
-  const subtaskTotalWeight = useMemo(() => {
-    return Object.values(subtaskCounts).reduce((acc, c) => acc + c.weight, 0);
-  }, [subtaskCounts]);
-
-  // Use operationalTasks for stats (excludes project/onboarding tasks)
+  // Use operationalTasks for alerts
   const overdueTasks = operationalTasks.filter((t) => parseLocalDate(t.due_date) < new Date() && t.status !== "done");
   const waitingClientTasks = operationalTasks.filter((t) => t.status === "waiting_client");
-  const totalWeight = operationalTasks.filter((t) => t.status !== "done" && t.status !== "waiting_client").reduce((acc, t) => acc + t.weight, 0) + subtaskTotalWeight;
 
   // Show content immediately with cached data (no loading skeleton)
   const showContent = operationalTasks.length > 0 || !isLoading;
