@@ -33,7 +33,7 @@ import { useDashboardData, type ClientTask } from "@/hooks/useDashboard";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
 import { useHideValues } from "@/hooks/useHideValues";
-import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
+import { DeliveriesDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
@@ -507,7 +507,12 @@ export default function Dashboard() {
                           client.operationalWeight > 10 ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
                         )}>{client.operationalWeight}</span>
                       </td>
-                      <td className="py-4"><span className="text-sm text-muted-foreground">{client.deliveriesThisMonth}</span></td>
+                      <td className="py-4">
+                        <span className="text-sm text-foreground">{client.deliveriesThisMonth}</span>
+                        {client.designLimit != null && (
+                          <span className="text-xs text-muted-foreground"> / {client.designLimit}</span>
+                        )}
+                      </td>
                       <td className="py-4">
                         <span className={cn("text-xs font-medium capitalize",
                           client.healthStatus === "normal" && "text-success",
@@ -556,11 +561,9 @@ export default function Dashboard() {
           <TabsList className="glass">
             <TabsTrigger value="overview" className="gap-2"><Clock className="h-4 w-4" />Visão Geral</TabsTrigger>
             <TabsTrigger value="deliveries" className="gap-2"><Package className="h-4 w-4" />Entregas</TabsTrigger>
-            <TabsTrigger value="financial" className="gap-2"><TrendingUp className="h-4 w-4" />Evolução Financeira</TabsTrigger>
           </TabsList>
           <TabsContent value="overview" className="space-y-6">{overviewContent}</TabsContent>
           <TabsContent value="deliveries" className="space-y-6"><DeliveriesDashboard /></TabsContent>
-          <TabsContent value="financial" className="space-y-6"><FinancialEvolutionDashboard /></TabsContent>
         </Tabs>
       ) : (
         <div className="space-y-6">{overviewContent}</div>
@@ -600,7 +603,12 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground">Peso</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <p className="text-lg font-bold text-foreground">{selectedClientHealth.deliveriesThisMonth}</p>
+                    <p className="text-lg font-bold text-foreground">
+                      {selectedClientHealth.deliveriesThisMonth}
+                      {selectedClientHealth.designLimit != null && (
+                        <span className="text-sm font-normal text-muted-foreground"> / {selectedClientHealth.designLimit}</span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">Entregas</p>
                   </div>
                 </div>
