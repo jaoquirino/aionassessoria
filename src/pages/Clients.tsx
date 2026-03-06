@@ -263,8 +263,7 @@ export default function Clients() {
           const nearestRenewal = renewalDates.length > 0 
             ? renewalDates.reduce((a, b) => a.days < b.days ? a : b) 
             : null;
-          // Only show renewal when within 60 days
-          const showRenewal = nearestRenewal && nearestRenewal.days <= 60 && nearestRenewal.days > 0;
+          const isRenewalClose = nearestRenewal && nearestRenewal.days <= 60 && nearestRenewal.days > 0;
 
           // Payment day - get from first active contract
           const paymentDay = activeContracts.length > 0 ? (activeContracts[0].payment_due_day ?? 10) : null;
