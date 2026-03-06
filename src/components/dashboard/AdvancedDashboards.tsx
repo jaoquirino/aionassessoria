@@ -39,7 +39,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
   const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video">("all");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
+  
   
   const { data: clients, isLoading: clientsLoading } = useAllClients();
   const { data: deliveries, isLoading: deliveriesLoading } = useDeliveriesByClient(
@@ -138,12 +138,8 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         const arteCount = filteredDeliveries.filter(d => d.deliverableType === "arte").length;
         const videoCount = filteredDeliveries.filter(d => d.deliverableType === "video").length;
 
-        const typeOptions = [
-          { value: "recurring", label: "Recorrente" },
-          { value: "planning", label: "Planejamento" },
-          { value: "project", label: "Projeto" },
-          { value: "extra", label: "Extra" },
-        ];
+
+
 
         // Apply all filters
         let displayDeliveries = filteredDeliveries;
@@ -151,9 +147,9 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         else if (statusFilter === "pending") displayDeliveries = displayDeliveries.filter(d => d.status !== "done");
         else if (statusFilter === "overdue") displayDeliveries = displayDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
         if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.deliverableType === designFilter);
-        if (typeFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.type === typeFilter);
+        
 
-        const hasActiveFilter = statusFilter !== "all" || designFilter !== "all" || typeFilter !== "all";
+        const hasActiveFilter = statusFilter !== "all" || designFilter !== "all";
 
         return (
           <>
@@ -248,24 +244,12 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                 </button>
               )}
 
-              <div className="w-px h-6 bg-border mx-1" />
 
-              {/* Type filter */}
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[160px] h-8 text-sm">
-                  <SelectValue placeholder="Tipo de tarefa" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
-                  {typeOptions.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
 
               {hasActiveFilter && (
                 <button
-                  onClick={() => { setStatusFilter("all"); setDesignFilter("all"); setTypeFilter("all"); }}
+                  onClick={() => { setStatusFilter("all"); setDesignFilter("all"); }}
                   className="px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
                   <X className="h-3 w-3" /> Limpar filtros
