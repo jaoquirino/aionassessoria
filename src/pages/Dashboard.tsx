@@ -130,121 +130,140 @@ export default function Dashboard() {
 
   const OverviewContent = () => (
     <>
-      {/* ROW 1: Task Numbers */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Tarefas Atrasadas"
-          value={displayStats.overdueTasks}
-          subtitle="Requer atenção"
-          icon={AlertTriangle}
-          status={displayStats.overdueTasks > 0 ? "critical" : "normal"}
-          delay={0}
-          onClick={() => navigate("/tarefas?filter=overdue")}
-        />
-        <MetricCard
-          title="Entregas Hoje"
-          value={displayStats.todayDeliveries}
-          subtitle="Prazo para hoje"
-          icon={CheckCircle}
-          status="normal"
-          delay={1}
-          onClick={() => navigate("/tarefas?filter=today")}
-        />
-        <MetricCard
-          title="Entregas da Semana"
-          value={displayStats.weekDeliveries}
-          subtitle={`${displayStats.weekCompleted} concluídas`}
-          icon={Clock}
-          status={displayStats.weekDeliveries - displayStats.weekCompleted > 5 ? "attention" : "normal"}
-          delay={2}
-          onClick={() => navigate("/tarefas?filter=week")}
-        />
-        <MetricCard
-          title="Tarefas Ativas"
-          value={displayStats.activeTasks}
-          subtitle="Em andamento"
-          icon={Package}
-          status="normal"
-          delay={3}
-          onClick={() => navigate("/tarefas")}
-        />
-      </div>
+      {/* ROW 1: Unified Task Metrics Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass rounded-xl p-6"
+      >
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <Package className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Tarefas</h3>
+            <p className="text-sm text-muted-foreground">Resumo operacional</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div
+            onClick={() => navigate("/tarefas?filter=overdue")}
+            className={cn(
+              "flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all hover:scale-105",
+              displayStats.overdueTasks > 0
+                ? "bg-destructive/10 border border-destructive/20"
+                : "bg-muted/50 border border-border"
+            )}
+          >
+            <AlertTriangle className={cn("h-5 w-5 mb-1", displayStats.overdueTasks > 0 ? "text-destructive" : "text-muted-foreground")} />
+            <span className={cn("text-2xl font-bold", displayStats.overdueTasks > 0 ? "text-destructive" : "text-foreground")}>
+              {displayStats.overdueTasks}
+            </span>
+            <span className="text-xs text-muted-foreground">Atrasadas</span>
+          </div>
+          <div
+            onClick={() => navigate("/tarefas?filter=today")}
+            className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/50 border border-border cursor-pointer transition-all hover:scale-105"
+          >
+            <CheckCircle className="h-5 w-5 mb-1 text-success" />
+            <span className="text-2xl font-bold text-foreground">{displayStats.todayDeliveries}</span>
+            <span className="text-xs text-muted-foreground">Entregas Hoje</span>
+          </div>
+          <div
+            onClick={() => navigate("/tarefas?filter=week")}
+            className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/50 border border-border cursor-pointer transition-all hover:scale-105"
+          >
+            <Clock className="h-5 w-5 mb-1 text-primary" />
+            <span className="text-2xl font-bold text-foreground">{displayStats.weekDeliveries}</span>
+            <span className="text-xs text-muted-foreground">Da Semana</span>
+            <span className="text-[10px] text-muted-foreground">{displayStats.weekCompleted} concluídas</span>
+          </div>
+          <div
+            onClick={() => navigate("/tarefas")}
+            className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/50 border border-border cursor-pointer transition-all hover:scale-105"
+          >
+            <Package className="h-5 w-5 mb-1 text-primary" />
+            <span className="text-2xl font-bold text-foreground">{displayStats.activeTasks}</span>
+            <span className="text-xs text-muted-foreground">Ativas</span>
+          </div>
+        </div>
+      </motion.div>
 
-      {/* ROW 2: Team Capacity & Operations */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Capacity Summary */}
+      {/* ROW 2: Capacity + Weight (left) | Revenue + Clients (right) */}
+      <div className="grid gap-6 lg:grid-cols-5">
+        {/* Team Capacity + Weight */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass rounded-xl p-6"
+          className="glass rounded-xl p-6 lg:col-span-3"
         >
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Activity className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Operação</h3>
-              <p className="text-sm text-muted-foreground">Peso × Capacidade</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Peso Total</span>
-                <span className={cn(
-                  "text-lg font-bold",
-                  displayStats.totalWeight > displayStats.totalCapacity ? "text-destructive" :
-                  displayStats.totalWeight > displayStats.totalCapacity * 0.8 ? "text-warning" : "text-success"
-                )}>
-                  {displayStats.totalWeight} / {displayStats.totalCapacity}
-                </span>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <Activity className="h-5 w-5 text-primary" />
               </div>
-              <Progress
-                value={Math.min((displayStats.totalWeight / (displayStats.totalCapacity || 1)) * 100, 100)}
-                className={cn(
-                  "h-3",
-                  displayStats.totalWeight > displayStats.totalCapacity && "[&>div]:bg-destructive",
-                  displayStats.totalWeight > displayStats.totalCapacity * 0.8 && displayStats.totalWeight <= displayStats.totalCapacity && "[&>div]:bg-warning",
-                  displayStats.totalWeight <= displayStats.totalCapacity * 0.8 && "[&>div]:bg-success"
-                )}
-              />
-            </div>
-
-            {isAdmin && (
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="text-center p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-foreground">{stats.activeClients}</p>
-                  <p className="text-xs text-muted-foreground">Clientes Ativos</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.monthlyRevenue)}</p>
-                  <p className="text-xs text-muted-foreground">Receita Mensal</p>
-                </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Capacidade da Equipe</h3>
+                <p className="text-sm text-muted-foreground">Peso × Capacidade</p>
               </div>
+            </div>
+            {!isRestricted && (
+              <button
+                onClick={() => navigate("/equipe")}
+                className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+              >
+                Ver equipe
+                <ArrowRight className="h-4 w-4" />
+              </button>
             )}
           </div>
-        </motion.div>
 
-        {/* Team Capacity */}
-        {isRestricted ? (
-          filteredTeam.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="glass rounded-xl p-6 lg:col-span-2"
-            >
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-foreground">Minha Capacidade</h3>
-                <p className="text-sm text-muted-foreground">Sua carga operacional</p>
-              </div>
-              {filteredTeam.map((member) => {
+          {/* Weight summary bar */}
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Peso Total</span>
+              <span className={cn(
+                "text-lg font-bold",
+                displayStats.totalWeight > displayStats.totalCapacity ? "text-destructive" :
+                displayStats.totalWeight > displayStats.totalCapacity * 0.8 ? "text-warning" : "text-success"
+              )}>
+                {displayStats.totalWeight} / {displayStats.totalCapacity}
+              </span>
+            </div>
+            <Progress
+              value={Math.min((displayStats.totalWeight / (displayStats.totalCapacity || 1)) * 100, 100)}
+              className={cn(
+                "h-3",
+                displayStats.totalWeight > displayStats.totalCapacity && "[&>div]:bg-destructive",
+                displayStats.totalWeight > displayStats.totalCapacity * 0.8 && displayStats.totalWeight <= displayStats.totalCapacity && "[&>div]:bg-warning",
+                displayStats.totalWeight <= displayStats.totalCapacity * 0.8 && "[&>div]:bg-success"
+              )}
+            />
+          </div>
+
+          {/* Team members list */}
+          <div className="space-y-4">
+            {(isRestricted ? filteredTeam : team).length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">Nenhum membro</p>
+            ) : (
+              (isRestricted ? filteredTeam : team).map((member, index) => {
                 const status = getCapacityStatus(member.currentWeight, member.maxWeight);
                 const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
                 return (
-                  <div key={member.id} className="space-y-3">
+                  <motion.div
+                    key={member.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.05 * index }}
+                    className="space-y-2 cursor-pointer rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50"
+                    onClick={() => setSelectedTeamMember({
+                      id: member.id,
+                      name: member.name,
+                      role: member.role,
+                      avatar_url: member.avatar_url,
+                    })}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
@@ -282,88 +301,49 @@ export default function Dashboard() {
                         </span>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 );
-              })}
-            </motion.div>
-          )
-        ) : (
+              })
+            )}
+          </div>
+        </motion.div>
+
+        {/* Revenue + Active Clients */}
+        {isAdmin && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="glass rounded-xl p-6 lg:col-span-2"
+            className="lg:col-span-2 flex flex-col gap-6"
           >
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Capacidade da Equipe</h3>
-                <p className="text-sm text-muted-foreground">Distribuição de carga</p>
+            {/* Revenue Card */}
+            <div className="glass rounded-xl p-6 flex-1 flex flex-col justify-center">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
+                  <DollarSign className="h-6 w-6 text-success" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Receita Mensal</p>
+                  <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.monthlyRevenue)}</p>
+                </div>
+              </div>
+              <div className="h-px bg-border my-2" />
+              <div className="flex items-center gap-3 mt-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Clientes Ativos</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.activeClients}</p>
+                </div>
               </div>
               <button
-                onClick={() => navigate("/equipe")}
-                className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                onClick={() => navigate("/clientes")}
+                className="mt-6 flex items-center gap-1 text-sm font-medium text-primary hover:underline self-end"
               >
-                Ver equipe
+                Ver clientes
                 <ArrowRight className="h-4 w-4" />
               </button>
-            </div>
-
-            <div className="space-y-5">
-              {team.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Nenhum membro</p>
-              ) : (
-                team.map((member, index) => {
-                  const status = getCapacityStatus(member.currentWeight, member.maxWeight);
-                  const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
-                  return (
-                    <motion.div
-                      key={member.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 * index }}
-                      className="space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={member.avatar_url || undefined} />
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                              {member.name.split(" ").map(n => n[0]).join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{member.name}</p>
-                            <p className="text-xs text-muted-foreground">{member.role}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={cn("status-indicator", `status-${status}`)} />
-                          <span className="text-sm font-medium text-foreground">
-                            {member.currentWeight}/{member.maxWeight}
-                          </span>
-                        </div>
-                      </div>
-                      <Progress
-                        value={percentage}
-                        className={cn(
-                          "h-2",
-                          status === "critical" && "[&>div]:bg-destructive",
-                          status === "attention" && "[&>div]:bg-warning",
-                          status === "normal" && "[&>div]:bg-success"
-                        )}
-                      />
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{member.tasksCount} tarefas ativas</span>
-                        {member.overdueTasks > 0 && (
-                          <span className="text-destructive">
-                            {member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}
-                          </span>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })
-              )}
             </div>
           </motion.div>
         )}
