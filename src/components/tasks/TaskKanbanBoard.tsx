@@ -313,11 +313,6 @@ interface TaskCardProps {
         isOverdue && "border-destructive/50 bg-destructive/5"
       )}
     >
-      {isOverdue && (
-        <div className="absolute top-2 right-2 z-10">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
-        </div>
-      )}
       <div className="flex items-start gap-2">
         <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-grab" />
         <div className="flex-1 min-w-0 space-y-2">
@@ -329,6 +324,9 @@ interface TaskCardProps {
               </p>
             </div>
              <div className="flex items-center gap-1 shrink-0">
+               {isOverdue && (
+                 <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+               )}
                {/* Quick status action button */}
                {task.status === "done" ? (
                  <button
