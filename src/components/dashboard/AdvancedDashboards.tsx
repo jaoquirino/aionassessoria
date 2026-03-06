@@ -249,7 +249,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
 
               {hasActiveFilter && (
                 <button
-                  onClick={() => { setStatusFilter("all"); setDesignFilter("all"); setTypeFilter("all"); }}
+                  onClick={() => { setStatusFilter("all"); setDesignFilter("all"); }}
                   className="px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
                 >
                   <X className="h-3 w-3" /> Limpar filtros
