@@ -420,19 +420,23 @@ export default function Clients() {
                     Dia {paymentDay}
                   </Badge>
                 )}
-                {showRenewal && nearestRenewal && (
+                {nearestRenewal && (
                   <Badge 
                     variant="outline" 
                     className={cn(
                       "text-xs gap-1",
-                      nearestRenewal.days <= 30
+                      isRenewalClose && nearestRenewal.days <= 30
                         ? "bg-destructive/10 text-destructive border-destructive/30"
-                        : "bg-warning/10 text-warning border-warning/30"
+                        : isRenewalClose
+                        ? "bg-warning/10 text-warning border-warning/30"
+                        : "text-muted-foreground"
                     )}
                   >
                     <Calendar className="h-3 w-3" />
-                    {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                    <span className="font-semibold">{nearestRenewal.days}d</span>
+                    {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                    {isRenewalClose && (
+                      <span className="font-semibold">{nearestRenewal.days}d</span>
+                    )}
                   </Badge>
                 )}
               </div>
