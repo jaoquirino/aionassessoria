@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -19,6 +19,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Badge } from "@/components/ui/badge";
@@ -29,11 +30,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useDashboardData, type ClientTask } from "@/hooks/useDashboard";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
+import { useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
 import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
+import {
+  AreaChart,
+  Area,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+} from "recharts";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground" },
@@ -57,15 +66,19 @@ function getCapacityStatus(current: number, max: number) {
   return "normal";
 }
 
+type TaskFilter = "all" | "overdue" | "today" | "week" | "active";
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { data, isLoading } = useDashboardData();
   const { data: currentMember } = useCurrentTeamMember();
+  const { data: financialData } = useFinancialEvolution();
   const [activeTab, setActiveTab] = useState("overview");
   const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
   const [selectedClientHealth, setSelectedClientHealth] = useState<any>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTeamMember, setSelectedTeamMember] = useState<any>(null);
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
 
   const isRestricted = currentMember?.restricted_view === true;
 
@@ -93,7 +106,7 @@ export default function Dashboard() {
     return assigneeIds ? assigneeIds.includes(currentMember.id) : false;
   };
 
-  const filteredTasks = isRestricted && currentMember
+  const baseTasks = isRestricted && currentMember
     ? tasks.filter(isTaskAssignedToMe)
     : tasks;
 
@@ -104,18 +117,39 @@ export default function Dashboard() {
   const displayStats = isRestricted && currentMember
     ? {
         ...stats,
-        overdueTasks: filteredTasks.filter(t => t.isOverdue).length,
-        todayDeliveries: filteredTasks.filter(t => {
+        overdueTasks: baseTasks.filter(t => t.isOverdue).length,
+        todayDeliveries: baseTasks.filter(t => {
           const due = new Date(t.dueDate);
           return due.toDateString() === new Date().toDateString();
         }).length,
-        weekDeliveries: filteredTasks.length,
-        weekCompleted: filteredTasks.filter(t => t.status === "done").length,
+        weekDeliveries: baseTasks.length,
+        weekCompleted: baseTasks.filter(t => t.status === "done").length,
         totalWeight: filteredTeam[0]?.currentWeight || 0,
         totalCapacity: filteredTeam[0]?.maxWeight || 0,
-        activeTasks: filteredTasks.length,
+        activeTasks: baseTasks.length,
       }
     : stats;
+
+  // Apply pill filter
+  const filteredTasks = useMemo(() => {
+    const now = new Date();
+    const today = now.toDateString();
+    const weekEnd = new Date(now);
+    weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
+
+    switch (taskFilter) {
+      case "overdue":
+        return baseTasks.filter(t => t.isOverdue);
+      case "today":
+        return baseTasks.filter(t => new Date(t.dueDate).toDateString() === today);
+      case "week":
+        return baseTasks;
+      case "active":
+        return baseTasks.filter(t => t.status !== "done");
+      default:
+        return baseTasks;
+    }
+  }, [baseTasks, taskFilter]);
 
   const handleTaskClick = (task: { id: string; isSubtask: boolean; parentTaskId: string | null }) => {
     if (task.isSubtask && task.parentTaskId) {
@@ -133,6 +167,19 @@ export default function Dashboard() {
     }
   };
 
+  // Mini chart data for revenue
+  const revenueChartData = useMemo(() => {
+    if (!financialData?.data) return [];
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    return financialData.data
+      .filter((_, i) => i <= currentMonth)
+      .map(d => ({
+        name: d.monthName,
+        value: d.currentYearRevenue,
+      }));
+  }, [financialData]);
+
   const OverviewContent = () => (
     <>
       {/* ROW 1: Unified Task Metrics Card */}
@@ -149,7 +196,7 @@ export default function Dashboard() {
             <div>
               <h3 className="text-lg font-semibold text-foreground">{isRestricted ? "Minhas Tarefas" : "Tarefas"}</h3>
               <p className="text-sm text-muted-foreground">
-                {displayStats.overdueTasks} atrasadas · {filteredTasks.length} em andamento
+                {displayStats.overdueTasks} atrasadas · {baseTasks.length} em andamento
               </p>
             </div>
           </div>
@@ -162,34 +209,51 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Pill badges */}
+        {/* Pill badges - now filter inline */}
         <div className="flex flex-wrap gap-2 mb-5">
           <button
-            onClick={() => navigate("/tarefas?filter=overdue")}
+            onClick={() => setTaskFilter(taskFilter === "overdue" ? "all" : "overdue")}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
-              displayStats.overdueTasks > 0
-                ? "bg-destructive/10 text-destructive border border-destructive/20"
-                : "bg-muted/50 text-muted-foreground border border-border"
+              taskFilter === "overdue"
+                ? "bg-destructive text-destructive-foreground border border-destructive shadow-sm"
+                : displayStats.overdueTasks > 0
+                  ? "bg-destructive/10 text-destructive border border-destructive/20"
+                  : "bg-muted/50 text-muted-foreground border border-border"
             )}
           >
             {displayStats.overdueTasks} Atrasadas
           </button>
           <button
-            onClick={() => navigate("/tarefas?filter=today")}
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium bg-success/10 text-success border border-success/20 transition-all hover:scale-105"
+            onClick={() => setTaskFilter(taskFilter === "today" ? "all" : "today")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "today"
+                ? "bg-success text-success-foreground border border-success shadow-sm"
+                : "bg-success/10 text-success border border-success/20"
+            )}
           >
             {displayStats.todayDeliveries} Entregas Hoje
           </button>
           <button
-            onClick={() => navigate("/tarefas?filter=week")}
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium bg-primary/10 text-primary border border-primary/20 transition-all hover:scale-105"
+            onClick={() => setTaskFilter(taskFilter === "week" ? "all" : "week")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "week"
+                ? "bg-primary text-primary-foreground border border-primary shadow-sm"
+                : "bg-primary/10 text-primary border border-primary/20"
+            )}
           >
             {displayStats.weekDeliveries} Da Semana
           </button>
           <button
-            onClick={() => navigate("/tarefas")}
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium bg-muted/50 text-foreground border border-border transition-all hover:scale-105"
+            onClick={() => setTaskFilter(taskFilter === "active" ? "all" : "active")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "active"
+                ? "bg-foreground text-background border border-foreground shadow-sm"
+                : "bg-muted/50 text-foreground border border-border"
+            )}
           >
             {displayStats.activeTasks} Ativas
           </button>
@@ -198,7 +262,9 @@ export default function Dashboard() {
         {/* Tasks list inline */}
         <div className="space-y-2">
           {filteredTasks.length === 0 ? (
-            <p className="text-center text-muted-foreground py-6">Nenhuma tarefa ativa</p>
+            <p className="text-center text-muted-foreground py-6">
+              {taskFilter !== "all" ? "Nenhuma tarefa neste filtro" : "Nenhuma tarefa ativa"}
+            </p>
           ) : (
             filteredTasks.slice(0, 8).map((task, index) => (
               <motion.div
@@ -387,8 +453,8 @@ export default function Dashboard() {
             className="lg:col-span-2 flex flex-col gap-6"
           >
             {/* Revenue Card */}
-            <div className="glass rounded-xl p-6 flex-1 flex flex-col justify-center">
-              <div className="flex items-center gap-3 mb-6">
+            <div className="glass rounded-xl p-6 flex-1 flex flex-col">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
                   <DollarSign className="h-6 w-6 text-success" />
                 </div>
@@ -397,8 +463,49 @@ export default function Dashboard() {
                   <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.monthlyRevenue)}</p>
                 </div>
               </div>
-              <div className="h-px bg-border my-2" />
-              <div className="flex items-center gap-3 mt-4">
+
+              {/* Mini revenue chart */}
+              {revenueChartData.length > 1 && (
+                <div className="flex-1 min-h-0">
+                  <div className="h-24">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={revenueChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                            <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0.05} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          formatter={(value: number) => [formatCurrency(value), "Receita"]}
+                          contentStyle={{
+                            background: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                            fontSize: "12px",
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="value"
+                          stroke="hsl(var(--success))"
+                          strokeWidth={2}
+                          fill="url(#revenueGradient)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              <div className="h-px bg-border my-3" />
+              <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                   <Users className="h-6 w-6 text-primary" />
                 </div>
@@ -409,7 +516,7 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => navigate("/clientes")}
-                className="mt-6 flex items-center gap-1 text-sm font-medium text-primary hover:underline self-end"
+                className="mt-4 flex items-center gap-1 text-sm font-medium text-primary hover:underline self-end"
               >
                 Ver clientes
                 <ArrowRight className="h-4 w-4" />
@@ -480,7 +587,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3">
                           <div
                             className={cn(
-                              "h-2 w-2 rounded-full",
+                              "h-2 w-2 rounded-full shrink-0",
                               client.healthStatus === "normal" && "bg-success",
                               client.healthStatus === "attention" && "bg-warning",
                               client.healthStatus === "critical" && "bg-destructive"
@@ -599,14 +706,14 @@ export default function Dashboard() {
 
       {/* Client Health Modal */}
       <Dialog open={!!selectedClientHealth} onOpenChange={(open) => { if (!open) setSelectedClientHealth(null); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-3">
               {selectedClientHealth && (
                 <>
                   <div
                     className={cn(
-                      "h-3 w-3 rounded-full",
+                      "h-3 w-3 rounded-full shrink-0",
                       selectedClientHealth.healthStatus === "normal" && "bg-success",
                       selectedClientHealth.healthStatus === "attention" && "bg-warning",
                       selectedClientHealth.healthStatus === "critical" && "bg-destructive"
@@ -616,14 +723,17 @@ export default function Dashboard() {
                 </>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Detalhes de saúde do cliente
+            </DialogDescription>
           </DialogHeader>
           {selectedClientHealth && (() => {
             const clientTasks = (selectedClientHealth as any).tasks as ClientTask[] || [];
             return (
-              <div className="space-y-4">
+              <div className="space-y-4 overflow-y-auto min-h-0 flex-1">
                 <div className="grid grid-cols-3 gap-3">
                   <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <p className="text-lg font-bold text-foreground">{formatCurrency(selectedClientHealth.monthlyValue)}</p>
+                    <p className="text-sm font-bold text-foreground">{formatCurrency(selectedClientHealth.monthlyValue)}</p>
                     <p className="text-xs text-muted-foreground">Receita</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
@@ -641,7 +751,7 @@ export default function Dashboard() {
                   {clientTasks.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa no período</p>
                   ) : (
-                    <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                    <div className="space-y-1.5">
                       {clientTasks.map(task => (
                         <div
                           key={task.id}
@@ -651,9 +761,9 @@ export default function Dashboard() {
                           {task.isSubtask && (
                             <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           )}
-                          <span className="text-sm font-medium text-foreground flex-1 truncate">{task.title}</span>
+                          <span className="text-sm font-medium text-foreground flex-1 min-w-0 truncate">{task.title}</span>
                           <span className="text-xs text-muted-foreground shrink-0">{task.assigneeName}</span>
-                          <Badge className={cn("shrink-0 text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
+                          <Badge className={cn("shrink-0 text-[10px] whitespace-nowrap", statusConfig[task.status]?.color || "bg-muted")}>
                             {statusConfig[task.status]?.label || task.status}
                           </Badge>
                         </div>
