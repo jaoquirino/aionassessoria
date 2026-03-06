@@ -15,6 +15,7 @@ import { useClientContractsWithModules, useDeleteContract, type ContractWithModu
 import { ContractDialog } from "./ContractDialog";
 import { EditContractDialog } from "./EditContractDialog";
 import { ClientContactInfo } from "./ClientContactInfo";
+import { LogoCropDialog } from "./LogoCropDialog";
 
 import { OnboardingStepsDialog } from "./OnboardingStepsDialog";
 import { useClientOnboardingProgress } from "@/hooks/useClientModuleOnboarding";
