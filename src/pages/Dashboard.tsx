@@ -59,6 +59,7 @@ export default function Dashboard() {
   const { data: currentMember } = useCurrentTeamMember();
   const [activeTab, setActiveTab] = useState("overview");
   const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
+  const [selectedClientHealth, setSelectedClientHealth] = useState<any>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTeamMember, setSelectedTeamMember] = useState<any>(null);
 
