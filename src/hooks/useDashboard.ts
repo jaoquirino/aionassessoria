@@ -213,6 +213,7 @@ export function useDashboardData() {
         id: t.id,
         title: t.title,
         clientName: clientMap.get(t.client_id) || "—",
+        clientLogo: clientLogoMap.get(t.client_id) || null,
         assigneeName: getAssigneeName(t),
         assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
