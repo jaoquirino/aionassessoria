@@ -77,6 +77,11 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
     );
   }
 
+  const groupedDeliveries = {
+    done: filteredDeliveries.filter(d => d.status === "done"),
+    pending: filteredDeliveries.filter(d => d.status !== "done"),
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with Filters */}
@@ -92,52 +97,13 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
-          {/* Custom Date Range - single popover with range calendar */}
-          <Popover open={rangePickerOpen} onOpenChange={setRangePickerOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className={cn(
-                "gap-2",
-                useCustomDates && dateRange.from && "border-primary"
-              )}>
-                <CalendarIcon className="h-4 w-4" />
-                {useCustomDates && dateRange.from && dateRange.to
-                  ? `${format(dateRange.from, "dd/MM/yy", { locale: ptBR })} — ${format(dateRange.to, "dd/MM/yy", { locale: ptBR })}`
-                  : "Período personalizado"
-                }
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <div className="p-4 space-y-4">
-                <p className="text-sm font-medium">Selecione o período</p>
-                <Calendar
-                  mode="range"
-                  selected={{ from: dateRange.from, to: dateRange.to }}
-                  onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
-                  locale={ptBR}
-                  numberOfMonths={2}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-                <div className="flex justify-end gap-2">
-                  {useCustomDates && (
-                    <Button variant="ghost" size="sm" onClick={handleClearCustomDates}>
-                      Limpar
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" onClick={() => setRangePickerOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleApplyRange}
-                    disabled={!dateRange.from || !dateRange.to}
-                  >
-                    Aplicar
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          {/* Period Selector */}
+          <PeriodSelector
+            value={period}
+            onChange={setPeriod}
+            customRange={customRange}
+            onCustomRangeChange={setCustomRange}
+          />
           
           {/* Client Filter */}
           <div className="flex items-center gap-2">
