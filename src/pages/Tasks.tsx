@@ -275,7 +275,7 @@ export default function Tasks() {
             filters={filters}
             onFiltersChange={setFilters}
             statusOptions={statusOptions}
-            typeOptions={typeOptions}
+            
             assigneeOptions={assigneeOptions}
             clientOptions={clientOptions}
           />

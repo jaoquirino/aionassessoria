@@ -42,7 +42,7 @@ export function CollapsibleFilters({
   filters,
   onFiltersChange,
   statusOptions,
-  typeOptions,
+  
   assigneeOptions,
   clientOptions,
 }: CollapsibleFiltersProps) {
