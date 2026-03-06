@@ -308,20 +308,22 @@ interface TaskCardProps {
       onDragEnd={onDragEnd}
       onClick={() => onClick()}
       className={cn(
-        "glass rounded-lg p-3 cursor-pointer active:cursor-grabbing group transition-all hover:shadow-md overflow-hidden",
+        "glass rounded-lg p-3 cursor-pointer active:cursor-grabbing group transition-all hover:shadow-md overflow-hidden relative",
         isDragging && "opacity-50 scale-95",
         isOverdue && "border-destructive/50 bg-destructive/5"
       )}
     >
+      {isOverdue && (
+        <div className="absolute top-2 right-2 z-10">
+          <AlertTriangle className="h-4 w-4 text-destructive" />
+        </div>
+      )}
       <div className="flex items-start gap-2">
         <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-grab" />
         <div className="flex-1 min-w-0 space-y-2">
-          {/* Título + Warning */}
+          {/* Título */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-1.5 min-w-0 flex-1">
-              {isOverdue && (
-                <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-              )}
               <p className="font-medium text-foreground text-sm line-clamp-2">
                 {task.title}
               </p>
