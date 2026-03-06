@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, CalendarIcon, Image, Video, AlertTriangle } from "lucide-react";
+import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
