@@ -23,8 +23,8 @@ interface PeriodSelectorProps {
 }
 
 const periodLabels: Record<Exclude<PeriodOption, "custom">, string> = {
-  "7d": "Últimos 7 dias",
-  "15d": "Últimos 15 dias",
+  "current_month": "Mês atual",
+  "last_month": "Mês anterior",
   "30d": "Últimos 30 dias",
   "90d": "Últimos 90 dias",
   "year": "Este ano",
