@@ -131,7 +131,7 @@ function useClientModules(clientId: string | null) {
   });
 }
 
-export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "details" }: TaskEditDialogProps) {
+export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "details", initialSubtaskId = null }: TaskEditDialogProps) {
   const { data: task, isLoading: taskLoading } = useTask(taskId);
   // Pre-populate from tasks list cache for instant display
   const queryClient = useQueryClient();
