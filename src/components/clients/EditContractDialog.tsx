@@ -48,6 +48,7 @@ export function EditContractDialog({
   const [notes, setNotes] = useState("");
   const [moduleConfigs, setModuleConfigs] = useState<ModuleConfig[]>([]);
   const [isRecurring, setIsRecurring] = useState(true);
+  const [isInternal, setIsInternal] = useState(false);
 
   const updateContract = useUpdateContract();
   const updateModules = useUpdateContractModules();
