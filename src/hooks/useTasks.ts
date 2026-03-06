@@ -138,6 +138,20 @@ export function useTask(taskId: string | null) {
           performer: entry.performed_by ? membersMap.get(entry.performed_by) || null : null,
         }));
 
+        // Add synthetic "created" entry at the end (oldest)
+        const creatorMember = data.created_by ? membersMap.get(data.created_by) || null : null;
+        enrichedHistory.push({
+          id: `synthetic-created-${taskId}`,
+          task_id: taskId,
+          action_type: "created",
+          old_value: null,
+          new_value: null,
+          comment: null,
+          performed_by: data.created_by,
+          created_at: data.created_at,
+          performer: creatorMember,
+        });
+
         return {
           ...data,
           assignee: data.assigned_to ? membersMap.get(data.assigned_to) || null : null,
