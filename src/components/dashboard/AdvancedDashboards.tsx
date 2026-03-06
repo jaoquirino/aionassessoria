@@ -153,7 +153,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.deliverableType === designFilter);
         
 
-        const hasActiveFilter = statusFilter !== "all" || designFilter !== "all" || typeFilter !== "all";
+        const hasActiveFilter = statusFilter !== "all" || designFilter !== "all";
 
         return (
           <>

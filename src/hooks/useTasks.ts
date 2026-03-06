@@ -132,11 +132,13 @@ export function useTask(taskId: string | null) {
           supabase.from("task_history").select("*").eq("task_id", taskId).order("created_at", { ascending: false }),
         ]);
 
-        // Enrich history entries with performer info
-        const enrichedHistory = (historyRes.data || []).map(entry => ({
-          ...entry,
-          performer: entry.performed_by ? membersMap.get(entry.performed_by) || null : null,
-        }));
+        // Enrich history entries with performer info, exclude any existing "created" entries from DB
+        const enrichedHistory = (historyRes.data || [])
+          .filter(entry => entry.action_type !== "created")
+          .map(entry => ({
+            ...entry,
+            performer: entry.performed_by ? membersMap.get(entry.performed_by) || null : null,
+          }));
 
         // Add synthetic "created" entry at the end (oldest)
         const creatorMember = data.created_by ? membersMap.get(data.created_by) || null : null;
