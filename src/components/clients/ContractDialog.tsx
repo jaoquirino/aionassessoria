@@ -42,6 +42,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   const [moduleDeliverableLimits, setModuleDeliverableLimits] = useState<Record<string, number | null>>({});
   const [requiresOnboarding, setRequiresOnboarding] = useState(true);
   const [isRecurring, setIsRecurring] = useState(true);
+  const [isInternal, setIsInternal] = useState(false);
 
   const { data: modules = [] } = useAllModules();
   const createContract = useCreateContract();
