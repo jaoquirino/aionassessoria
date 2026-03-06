@@ -7,7 +7,7 @@ import { CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export type PeriodOption = "7d" | "15d" | "30d" | "90d" | "year" | "all" | "custom";
+export type PeriodOption = "current_month" | "last_month" | "30d" | "90d" | "year" | "all" | "custom";
 
 export interface CustomDateRange {
   start: Date;
