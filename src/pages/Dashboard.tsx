@@ -616,6 +616,76 @@ export default function Dashboard() {
         open={!!selectedTeamMember}
         onOpenChange={(open) => { if (!open) setSelectedTeamMember(null); }}
       />
+
+      {/* Client Health Modal */}
+      <Dialog open={!!selectedClientHealth} onOpenChange={(open) => { if (!open) setSelectedClientHealth(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {selectedClientHealth && (
+                <>
+                  <div
+                    className={cn(
+                      "h-3 w-3 rounded-full",
+                      selectedClientHealth.healthStatus === "normal" && "bg-success",
+                      selectedClientHealth.healthStatus === "attention" && "bg-warning",
+                      selectedClientHealth.healthStatus === "critical" && "bg-destructive"
+                    )}
+                  />
+                  {selectedClientHealth.name}
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedClientHealth && (() => {
+            const clientTasks = (selectedClientHealth as any).tasks as ClientTask[] || [];
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(selectedClientHealth.monthlyValue)}</p>
+                    <p className="text-xs text-muted-foreground">Receita</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-lg font-bold text-foreground">{selectedClientHealth.operationalWeight}</p>
+                    <p className="text-xs text-muted-foreground">Peso</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-lg font-bold text-foreground">{selectedClientHealth.deliveriesThisMonth}</p>
+                    <p className="text-xs text-muted-foreground">Entregas</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium text-foreground mb-2">Tarefas do mês</h4>
+                  {clientTasks.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa no período</p>
+                  ) : (
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                      {clientTasks.map(task => (
+                        <div
+                          key={task.id}
+                          onClick={() => { setSelectedClientHealth(null); handleClientTaskClick(task); }}
+                          className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-muted/50 border border-transparent hover:border-border"
+                        >
+                          {task.isSubtask && (
+                            <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          )}
+                          <span className="text-sm font-medium text-foreground flex-1 truncate">{task.title}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">{task.assigneeName}</span>
+                          <Badge className={cn("shrink-0 text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
+                            {statusConfig[task.status]?.label || task.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
