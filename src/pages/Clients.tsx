@@ -37,7 +37,7 @@ export default function Clients() {
   const [openContractOnEdit, setOpenContractOnEdit] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<string | null>(null);
   const [initialSection, setInitialSection] = useState<"status" | "contracts" | "value" | null>(null);
-
+  const { hidden: hideValues, toggle: toggleHideValues, mask: maskCurrency } = useHideValues();
   const { data: clients = [], isLoading, refetch } = useAllClients();
 
   useEffect(() => {
