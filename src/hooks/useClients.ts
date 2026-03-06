@@ -24,6 +24,8 @@ export interface ClientWithContracts extends Client {
     start_date: string;
     renewal_date: string | null;
     status: string;
+    payment_due_day: number | null;
+    is_recurring: boolean;
   }>;
 }
 
