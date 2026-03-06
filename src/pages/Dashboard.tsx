@@ -644,7 +644,7 @@ export default function Dashboard() {
               </TabsTrigger>
             </TabsList>
             
-            {activeTab !== "financial" && (
+            {activeTab === "overview" && (
               <PeriodSelector value={period} onChange={setPeriod} customRange={customRange} onCustomRangeChange={setCustomRange} />
             )}
           </div>
