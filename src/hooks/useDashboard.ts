@@ -133,7 +133,12 @@ export function useDashboardData() {
       const operationalTasks = tasks.filter(t => t.type !== "onboarding");
       const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
 
+      // Separate parent tasks (no parent_task_id) from subtasks for weight calculation
+      // Subtasks inherit weight from parent, so only count parent-level tasks for weight
+      const parentTaskIds = new Set(tasks.filter(t => t.parent_task_id).map(t => t.parent_task_id));
+
       // Calculate stats (excluding onboarding tasks)
+      // For overdue/delivery counts, include all tasks (parents + subtasks)
       const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < now && t.status !== "done").length;
       const todayDeliveries = operationalTasks.filter(t => {
         const due = parseLocalDate(t.due_date);
@@ -158,8 +163,11 @@ export function useDashboardData() {
         .filter((c: { client_id: string }) => !internalClientIds.has(c.client_id))
         .reduce((sum: number, c: { monthly_value: number }) => sum + Number(c.monthly_value), 0);
 
+      // For weight: exclude subtasks that have a parent (parent already carries the weight)
+      // But if parent has subtasks, only count the parent's weight once
       const activeTasks = operationalTasksForWeight.filter(t => t.status !== "done");
-      const totalWeight = activeTasks.reduce((sum, t) => sum + t.weight, 0);
+      const activeTasksForWeight = activeTasks.filter(t => !t.parent_task_id);
+      const totalWeight = activeTasksForWeight.reduce((sum, t) => sum + t.weight, 0);
       const totalCapacity = teamMembers.reduce((sum, m) => sum + (m.capacity_limit || 0), 0);
 
       // Map tasks for display
