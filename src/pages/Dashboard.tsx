@@ -60,6 +60,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTeamMember, setSelectedTeamMember] = useState<any>(null);
 
   const isRestricted = currentMember?.restricted_view === true;
 
