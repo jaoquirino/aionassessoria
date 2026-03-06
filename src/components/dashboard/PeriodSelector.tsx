@@ -139,6 +139,9 @@ export function getPeriodDates(period: PeriodOption, customRange?: CustomDateRan
     case "7d":
       setWindow(7);
       break;
+    case "15d":
+      setWindow(15);
+      break;
     case "30d":
       setWindow(30);
       break;
