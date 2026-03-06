@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import {
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -10,11 +11,15 @@ import { useNavigate } from "react-router-dom";
   Package,
   TrendingUp,
   CornerDownRight,
-  ChevronDown,
-  ChevronUp,
   Activity,
   Heart,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
