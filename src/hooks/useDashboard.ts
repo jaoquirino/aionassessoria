@@ -77,8 +77,29 @@ export function useDashboardData() {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // Parallel fetch for all data - much faster
-      const [tasksRes, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes] = await Promise.all([
-        supabase.from("tasks").select("*").order("due_date"),
+      // Fetch all non-archived tasks (use range to bypass 1000 row limit)
+      const fetchAllTasks = async () => {
+        const allTasks: any[] = [];
+        let from = 0;
+        const batchSize = 1000;
+        while (true) {
+          const { data, error } = await supabase
+            .from("tasks")
+            .select("*")
+            .is("archived_at", null)
+            .order("due_date")
+            .range(from, from + batchSize - 1);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          allTasks.push(...data);
+          if (data.length < batchSize) break;
+          from += batchSize;
+        }
+        return allTasks;
+      };
+
+      const [tasks, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes] = await Promise.all([
+        fetchAllTasks(),
         supabase.from("clients").select("*, is_internal"),
         supabase.from("contracts").select("*, client:clients(name)").eq("status", "active"),
         supabase.from("team_members_public").select("*").eq("is_active", true),
