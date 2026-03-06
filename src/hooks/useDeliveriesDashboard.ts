@@ -12,6 +12,7 @@ export interface DeliveryItem {
   moduleName: string | null;
   weight: number;
   deliverableType: string | null;
+  type: string;
 }
 
 export interface FinancialComparison {
