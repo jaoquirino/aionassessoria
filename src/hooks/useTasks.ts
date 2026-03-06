@@ -141,7 +141,10 @@ export function useTask(taskId: string | null) {
           }));
 
         // Add synthetic "created" entry at the end (oldest)
-        const creatorMember = data.created_by ? membersMap.get(data.created_by) || null : null;
+        // Use created_by if available, otherwise infer from the earliest history entry
+        const earliestEntry = enrichedHistory.length > 0 ? enrichedHistory[enrichedHistory.length - 1] : null;
+        const creatorId = data.created_by || earliestEntry?.performed_by || null;
+        const creatorMember = creatorId ? membersMap.get(creatorId) || null : null;
         enrichedHistory.push({
           id: `synthetic-created-${taskId}`,
           task_id: taskId,
@@ -149,7 +152,7 @@ export function useTask(taskId: string | null) {
           old_value: null,
           new_value: null,
           comment: null,
-          performed_by: data.created_by,
+          performed_by: creatorId,
           created_at: data.created_at,
           performer: creatorMember,
         });
