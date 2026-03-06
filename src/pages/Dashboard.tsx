@@ -582,7 +582,7 @@ export default function Dashboard() {
         <div className="space-y-6">{overviewContent}</div>
       )}
 
-      <TaskEditDialog taskId={selectedTaskId} open={!!selectedTaskId} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} />
+      <TaskEditDialog taskId={selectedTaskId} open={!!selectedTaskId} onOpenChange={(open) => { if (!open) { setSelectedTaskId(null); setSelectedSubtaskId(null); } }} initialSubtaskId={selectedSubtaskId} />
       <TeamMemberTasksDialog member={selectedTeamMember} open={!!selectedTeamMember} onOpenChange={(open) => { if (!open) setSelectedTeamMember(null); }} />
 
       <Dialog open={!!selectedClientHealth} onOpenChange={(open) => { if (!open) setSelectedClientHealth(null); }}>
