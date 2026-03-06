@@ -37,11 +37,11 @@ interface DeliveriesDashboardProps {
 }
 
 export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
-  const navigate = useNavigate();
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [useCustomDates, setUseCustomDates] = useState(false);
   const [rangePickerOpen, setRangePickerOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   
   const { data: clients, isLoading: clientsLoading } = useAllClients();
   const { data: deliveries, isLoading: deliveriesLoading } = useDeliveriesByClient(
