@@ -341,7 +341,7 @@ export default function Clients() {
                       >
                         <DollarSign className="h-3.5 w-3.5 text-success" />
                         <span className={cn("text-sm font-medium", mrr > 0 ? "text-success" : "text-muted-foreground")}>
-                          {mrr > 0 ? formatCurrency(mrr).replace("R$", "").trim() : "—"}
+                          {mrr > 0 ? maskCurrency(formatCurrency(mrr).replace("R$", "").trim()) : "—"}
                         </span>
                       </div>
                     </TooltipTrigger>
