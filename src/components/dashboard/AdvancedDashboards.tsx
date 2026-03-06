@@ -300,6 +300,11 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
           </div>
         </CardContent>
       </Card>
+      <TaskEditDialog
+        taskId={selectedTaskId}
+        open={!!selectedTaskId}
+        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+      />
     </div>
   );
 }
