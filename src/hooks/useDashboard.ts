@@ -19,6 +19,7 @@ export interface DashboardTask {
   id: string;
   title: string;
   clientName: string;
+  clientLogo: string | null;
   assigneeName: string;
   assigneeAvatar: string | null;
   dueDate: string;
