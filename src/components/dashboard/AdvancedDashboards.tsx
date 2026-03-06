@@ -304,7 +304,10 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                                 )}
                                 {delivery.title}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                {clientLogoMap.get(delivery.clientId) && (
+                                  <img src={clientLogoMap.get(delivery.clientId)!} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                                )}
                                 {delivery.clientName}
                                 {delivery.moduleName && ` · ${delivery.moduleName}`}
                               </p>
