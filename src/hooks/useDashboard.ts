@@ -137,9 +137,7 @@ export function useDashboardData() {
       const operationalTasks = tasks.filter(t => t.type !== "onboarding");
       const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
 
-      // Separate parent tasks (no parent_task_id) from subtasks for weight calculation
       // Subtasks inherit weight from parent, so only count parent-level tasks for weight
-      const parentTaskIds = new Set(tasks.filter(t => t.parent_task_id).map(t => t.parent_task_id));
 
       // Calculate stats (excluding onboarding tasks)
       // For overdue/delivery counts, include all tasks (parents + subtasks)
