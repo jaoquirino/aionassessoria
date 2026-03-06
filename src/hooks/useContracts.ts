@@ -44,6 +44,7 @@ export interface CreateContractInput {
   renewal_date?: string;
   notes?: string;
   modules?: string[]; // module IDs
+  is_recurring?: boolean;
 }
 
 export interface UpdateContractInput {
