@@ -107,7 +107,6 @@ export function useDashboardData() {
         supabase.from("task_assignees").select("task_id, team_member_id"),
       ]);
 
-      const tasks = tasksRes.data || [];
       const clients = clientsRes.data || [];
       const contracts = contractsRes.data || [];
       const teamMembers = teamMembersRes.data || [];
