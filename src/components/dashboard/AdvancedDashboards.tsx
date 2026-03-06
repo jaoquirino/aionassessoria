@@ -355,7 +355,8 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
       <TaskEditDialog
         taskId={selectedTaskId}
         open={!!selectedTaskId}
-        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+        onOpenChange={(open) => { if (!open) { setSelectedTaskId(null); setSelectedSubtaskId(null); } }}
+        initialSubtaskId={selectedSubtaskId}
       />
     </div>
   );
