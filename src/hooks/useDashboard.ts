@@ -286,12 +286,11 @@ export function useDashboardData() {
           const stats = clientTaskStats2.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
           const revenue = clientRevenueMap.get(c.id) || 0;
           let healthStatus: "normal" | "attention" | "critical" = "normal";
-          if (stats.weight === 0) {
-            healthStatus = "normal";
-          } else {
-            const ratio = revenue > 0 ? revenue / stats.weight : 0;
-            if (ratio < 200) healthStatus = "critical";
-            else if (ratio < 400) healthStatus = "attention";
+          const designLimit = clientDesignLimitMap.get(c.id) || null;
+          if (designLimit && designLimit > 0) {
+            const percentage = (stats.delivered / designLimit) * 100;
+            if (percentage >= 100) healthStatus = "critical";
+            else if (percentage >= 81) healthStatus = "attention";
           }
           const designLimit = clientDesignLimitMap.get(c.id) || null;
           return {
