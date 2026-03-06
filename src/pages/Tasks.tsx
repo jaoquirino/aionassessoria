@@ -56,12 +56,16 @@ export default function Tasks() {
   const createTask = useCreateTask();
   const archiveTask = useArchiveTask();
 
-  // Handle task opening from URL query param (e.g., from notifications)
+  // Handle task opening from URL query param (e.g., from notifications or dashboard)
   useEffect(() => {
     const taskIdFromUrl = searchParams.get("task");
+    const subtaskIdFromUrl = searchParams.get("subtask");
     if (taskIdFromUrl) {
       setSelectedTaskId(taskIdFromUrl);
-      // Remove query param after opening
+      if (subtaskIdFromUrl) {
+        setInitialSubtaskId(subtaskIdFromUrl);
+      }
+      // Remove query params after opening
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
