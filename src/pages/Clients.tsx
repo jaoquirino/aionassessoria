@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Clock, Loader2, AlertTriangle, Calendar, FileText, DollarSign, CreditCard } from "lucide-react";
+import { Search, Clock, Loader2, AlertTriangle, Calendar, FileText, DollarSign, CreditCard, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -20,6 +20,7 @@ import { useAllClients, type ClientWithContracts } from "@/hooks/useClients";
 import { differenceInDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useHideValues } from "@/hooks/useHideValues";
 
 const statusConfig = {
   onboarding: { label: "Onboarding", color: "bg-blue-500/20 text-blue-500 border-blue-500/30" },
@@ -36,7 +37,7 @@ export default function Clients() {
   const [openContractOnEdit, setOpenContractOnEdit] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<string | null>(null);
   const [initialSection, setInitialSection] = useState<"status" | "contracts" | "value" | null>(null);
-
+  const { hidden: hideValues, toggle: toggleHideValues, mask: maskCurrency } = useHideValues();
   const { data: clients = [], isLoading, refetch } = useAllClients();
 
   useEffect(() => {
@@ -138,13 +139,22 @@ export default function Clients() {
             Gerencie clientes e contratos
           </p>
         </div>
-        <AddClientDialog 
-          onClientAdded={() => {}} 
-          onClientCreatedForOnboarding={async (clientId) => {
-            await refetch();
-            setPendingClientId(clientId);
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleHideValues}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={hideValues ? "Mostrar valores" : "Ocultar valores"}
+          >
+            {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+          <AddClientDialog 
+            onClientAdded={() => {}} 
+            onClientCreatedForOnboarding={async (clientId) => {
+              await refetch();
+              setPendingClientId(clientId);
+            }}
+          />
+        </div>
       </motion.div>
 
       {/* Contract Alert */}
@@ -331,7 +341,7 @@ export default function Clients() {
                       >
                         <DollarSign className="h-3.5 w-3.5 text-success" />
                         <span className={cn("text-sm font-medium", mrr > 0 ? "text-success" : "text-muted-foreground")}>
-                          {mrr > 0 ? formatCurrency(mrr).replace("R$", "").trim() : "—"}
+                          {mrr > 0 ? maskCurrency(formatCurrency(mrr).replace("R$", "").trim()) : "—"}
                         </span>
                       </div>
                     </TooltipTrigger>
@@ -405,7 +415,7 @@ export default function Clients() {
                 </Badge>
                 {mrr > 0 && (
                   <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/30">
-                    {formatCurrency(mrr)}
+                    {maskCurrency(formatCurrency(mrr))}
                   </Badge>
                 )}
                 {paymentDay && (

@@ -12,6 +12,8 @@ import {
   CornerDownRight,
   Activity,
   Heart,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Dialog,
@@ -30,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { useDashboardData, type ClientTask } from "@/hooks/useDashboard";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
+import { useHideValues } from "@/hooks/useHideValues";
 import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
@@ -73,6 +76,7 @@ export default function Dashboard() {
   const { data: currentMember } = useCurrentTeamMember();
   const { data: financialData } = useFinancialEvolution();
   const [activeTab, setActiveTab] = useState("overview");
+  const { hidden: hideValues, toggle: toggleHideValues, mask: maskCurrency } = useHideValues();
   
   const [selectedClientHealth, setSelectedClientHealth] = useState<any>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -407,7 +411,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Receita Mensal</p>
-                  <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.monthlyRevenue)}</p>
+                  <p className="text-2xl font-bold text-foreground">{maskCurrency(formatCurrency(stats.monthlyRevenue))}</p>
                 </div>
               </div>
               {revenueChartData.length > 1 && (
@@ -423,7 +427,7 @@ export default function Dashboard() {
                         </defs>
                         <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
                         <Tooltip
-                          formatter={(value: number) => [formatCurrency(value), "Receita"]}
+                          formatter={(value: number) => [maskCurrency(formatCurrency(value)), "Receita"]}
                           contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
                         />
                         <Area type="monotone" dataKey="value" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#revenueGradient)" />
@@ -496,7 +500,7 @@ export default function Dashboard() {
                           <span className="font-medium text-foreground">{client.name}</span>
                         </div>
                       </td>
-                      <td className="py-4 text-sm text-foreground">{formatCurrency(client.monthlyValue)}</td>
+                      <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
                       <td className="py-4">
                         <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
                           client.operationalWeight > 15 ? "bg-destructive/10 text-destructive" :
@@ -531,11 +535,20 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">
-          {isRestricted ? "Suas tarefas e capacidade" : isAdmin ? "Visão geral da operação em tempo real" : "Sua visão operacional"}
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">
+            {isRestricted ? "Suas tarefas e capacidade" : isAdmin ? "Visão geral da operação em tempo real" : "Sua visão operacional"}
+          </p>
+        </div>
+        <button
+          onClick={toggleHideValues}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          title={hideValues ? "Mostrar valores" : "Ocultar valores"}
+        >
+          {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
       </div>
 
       {isAdmin ? (
@@ -579,7 +592,7 @@ export default function Dashboard() {
               <div className="space-y-4 overflow-y-auto min-h-0 flex-1">
                 <div className="grid grid-cols-3 gap-3">
                   <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <p className="text-sm font-bold text-foreground">{formatCurrency(selectedClientHealth.monthlyValue)}</p>
+                    <p className="text-sm font-bold text-foreground">{maskCurrency(formatCurrency(selectedClientHealth.monthlyValue))}</p>
                     <p className="text-xs text-muted-foreground">Receita</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
