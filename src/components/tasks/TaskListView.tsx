@@ -97,9 +97,6 @@ export function TaskListView({ tasks, onTaskClick, onUpdateField, onUpdateStatus
                     <Badge variant="outline" className={cn("text-xs", taskTypeConfig[task.type].color)}>
                       {taskTypeConfig[task.type].label}
                     </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Peso: {task.weight + (subtaskCounts[task.id]?.weight || 0)}
-                    </Badge>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     {/* Cliente - Clicável */}

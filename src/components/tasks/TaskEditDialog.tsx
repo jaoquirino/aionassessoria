@@ -428,45 +428,11 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                  ref={titleInputRef}
                  value={title} 
                  onChange={(e) => { setTitle(e.target.value); markDirty(); }}
-                 className="w-full bg-transparent border-none p-0 h-auto font-bold outline-none placeholder:text-muted-foreground mb-3"
+                 className="w-full bg-transparent border-none p-0 h-auto font-bold outline-none placeholder:text-muted-foreground"
                  style={{ fontSize: '24px', lineHeight: '1.2' }}
                  placeholder="Título da tarefa"
                  autoFocus
                />
-               <div className="flex items-center gap-2 flex-wrap">
-                 {displayTask.is_deliverable && (
-                   <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
-                     <Package className="h-3 w-3 mr-1" />
-                     Entrega
-                   </Badge>
-                 )}
-                 <Badge variant="outline" className={cn("text-xs", taskTypeConfig[taskType].color)}>
-                   {taskTypeConfig[taskType].label}
-                 </Badge>
-                 <Badge variant="outline" className="text-xs">
-                   Peso: {weight + subtasks.filter(s => s.status !== "done").reduce((sum, s) => sum + s.weight, 0)}
-                 </Badge>
-                 {deliverableType && (
-                   <Badge variant="outline" className={cn(
-                     "text-xs",
-                     deliverableType === "arte" ? "border-purple/30 text-purple bg-purple/10" : "border-info/30 text-info bg-info/10"
-                   )}>
-                     {deliverableType === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
-                   </Badge>
-                 )}
-                 {isOverdue && (
-                   <Badge variant="destructive" className="text-xs gap-1">
-                     <AlertTriangle className="h-3 w-3" />
-                     Atrasada
-                   </Badge>
-                 )}
-                 {displayTask.client && (
-                   <Badge variant="secondary" className="text-xs">
-                     <Building2 className="h-3 w-3 mr-1" />
-                     {displayTask.client.name}
-                   </Badge>
-                 )}
-               </div>
              </div>
 
             <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-x-hidden [&>[data-radix-scroll-area-viewport]>div]:!block [&>[data-radix-scroll-area-viewport]>div]:!min-w-0">

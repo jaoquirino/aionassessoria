@@ -170,7 +170,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin">
          {kanbanColumns.map((column) => {
            const columnTasks = tasksByColumn[column.key] || [];
-        const totalWeight = columnTasks.reduce((acc, t) => acc + t.weight + (subtaskCounts[t.id]?.weight || 0), 0);
+        
 
         return (
           <motion.div
@@ -200,9 +200,6 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
                 </Badge>
               </div>
                <div className="flex items-center gap-1">
-                 <span className="text-xs text-muted-foreground">
-                   P{totalWeight}
-                 </span>
                  <KanbanColumnMenu
                    column={column}
                    onEdit={handleEditColumn}
