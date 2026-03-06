@@ -203,10 +203,11 @@ export function useDashboardData() {
         assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
         status: t.status,
-        isOverdue: parseLocalDate(t.due_date) < now && t.status !== "done",
+        isOverdue: parseLocalDate(t.due_date) < todayMidnight && t.status !== "done",
         weight: t.weight,
         type: t.type,
         isSubtask: !!t.parent_task_id,
+        parentTaskId: t.parent_task_id || null,
       }));
 
       // Map team capacity (using operational tasks only)
