@@ -33,7 +33,7 @@ interface CollapsibleFiltersProps {
   filters: FiltersState;
   onFiltersChange: (filters: FiltersState) => void;
   statusOptions: { value: string; label: string }[];
-  typeOptions: { value: string; label: string }[];
+  
   assigneeOptions: { value: string; label: string }[];
   clientOptions: { value: string; label: string }[];
 }
@@ -42,7 +42,7 @@ export function CollapsibleFilters({
   filters,
   onFiltersChange,
   statusOptions,
-  typeOptions,
+  
   assigneeOptions,
   clientOptions,
 }: CollapsibleFiltersProps) {
@@ -128,22 +128,8 @@ export function CollapsibleFilters({
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Tipo</label>
-                <Select value={filters.type} onValueChange={(v) => updateFilter("type", v)}>
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os tipos</SelectItem>
-                    {typeOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
+
 
               <div className="space-y-1.5">
                 <label className="text-sm text-muted-foreground">Responsável</label>
