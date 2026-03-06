@@ -87,6 +87,8 @@ export function EditClientDialog({
     moduleName: string;
     isCompleted: boolean;
   } | null>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const contractsRef = useRef<HTMLDivElement>(null);
 
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
