@@ -263,8 +263,7 @@ export default function Clients() {
           const nearestRenewal = renewalDates.length > 0 
             ? renewalDates.reduce((a, b) => a.days < b.days ? a : b) 
             : null;
-          // Only show renewal when within 60 days
-          const showRenewal = nearestRenewal && nearestRenewal.days <= 60 && nearestRenewal.days > 0;
+          const isRenewalClose = nearestRenewal && nearestRenewal.days <= 60 && nearestRenewal.days > 0;
 
           // Payment day - get from first active contract
           const paymentDay = activeContracts.length > 0 ? (activeContracts[0].payment_due_day ?? 10) : null;
@@ -355,24 +354,28 @@ export default function Clients() {
                     <TooltipContent>Dia de pagamento</TooltipContent>
                   </Tooltip>
 
-                  {/* Renewal - only when close */}
+                  {/* Renewal */}
                   <div className="w-28 flex justify-center">
-                    {showRenewal ? (
+                    {nearestRenewal ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Badge 
                             variant="outline"
                             className={cn(
                               "text-xs gap-1 cursor-pointer",
-                              nearestRenewal.days <= 30
+                              isRenewalClose && nearestRenewal.days <= 30
                                 ? "bg-destructive/10 text-destructive border-destructive/30"
-                                : "bg-warning/10 text-warning border-warning/30"
+                                : isRenewalClose
+                                ? "bg-warning/10 text-warning border-warning/30"
+                                : "text-muted-foreground"
                             )}
                             onClick={(e) => { e.stopPropagation(); openClientWithSection(client, "contracts"); }}
                           >
                             <Calendar className="h-3 w-3" />
-                            {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                            <span className="font-semibold">{nearestRenewal.days}d</span>
+                            {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                            {isRenewalClose && (
+                              <span className="font-semibold">{nearestRenewal.days}d</span>
+                            )}
                           </Badge>
                         </TooltipTrigger>
                         <TooltipContent>Vencimento do contrato</TooltipContent>
@@ -417,19 +420,23 @@ export default function Clients() {
                     Dia {paymentDay}
                   </Badge>
                 )}
-                {showRenewal && nearestRenewal && (
+                {nearestRenewal && (
                   <Badge 
                     variant="outline" 
                     className={cn(
                       "text-xs gap-1",
-                      nearestRenewal.days <= 30
+                      isRenewalClose && nearestRenewal.days <= 30
                         ? "bg-destructive/10 text-destructive border-destructive/30"
-                        : "bg-warning/10 text-warning border-warning/30"
+                        : isRenewalClose
+                        ? "bg-warning/10 text-warning border-warning/30"
+                        : "text-muted-foreground"
                     )}
                   >
                     <Calendar className="h-3 w-3" />
-                    {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                    <span className="font-semibold">{nearestRenewal.days}d</span>
+                    {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                    {isRenewalClose && (
+                      <span className="font-semibold">{nearestRenewal.days}d</span>
+                    )}
                   </Badge>
                 )}
               </div>

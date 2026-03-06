@@ -19,7 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, RotateCcw } from "lucide-react";
+import { Package, RotateCcw, Building2 } from "lucide-react";
 
 interface ContractDialogProps {
   clientId: string;
@@ -42,6 +42,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   const [moduleDeliverableLimits, setModuleDeliverableLimits] = useState<Record<string, number | null>>({});
   const [requiresOnboarding, setRequiresOnboarding] = useState(true);
   const [isRecurring, setIsRecurring] = useState(true);
+  const [isInternal, setIsInternal] = useState(false);
 
   const { data: modules = [] } = useAllModules();
   const createContract = useCreateContract();
@@ -71,6 +72,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
       setModuleDeliverableLimits({});
       setRequiresOnboarding(true);
       setIsRecurring(true);
+      setIsInternal(false);
     }
   }, [contract, open]);
 
@@ -99,8 +101,22 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
     setModuleDeliverableLimits(prev => ({ ...prev, [moduleId]: limit }));
   };
 
+  const handleInternalToggle = (checked: boolean) => {
+    setIsInternal(checked);
+    if (checked) {
+      setMonthlyValue(0);
+      setNoValue(true);
+      setIsRecurring(false);
+      setSelectedModules(activeModules.map(m => m.id));
+    } else {
+      setNoValue(false);
+      setSelectedModules([]);
+    }
+  };
+
   const handleSave = async () => {
-    if (!noValue && monthlyValue <= 0 || !startDate) return;
+    if (!isInternal && !noValue && monthlyValue <= 0) return;
+    if (!isInternal && isRecurring && !startDate) return;
 
     try {
       if (isEditing && contract) {
@@ -174,106 +190,132 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="value">Valor Mensal *</Label>
-            <CurrencyInput
-              id="value"
-              value={monthlyValue}
-              onChange={setMonthlyValue}
-              disabled={noValue}
-            />
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground">
-              <Checkbox
-                checked={noValue}
-                onCheckedChange={(checked) => {
-                  setNoValue(!!checked);
-                  if (checked) setMonthlyValue(0);
-                }}
-              />
-              Sem valor (serviço gratuito ou interno)
-            </label>
-          </div>
-
-          {/* Recurring Toggle */}
-          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-            <div className="flex items-center gap-2">
-              <RotateCcw className="h-4 w-4 text-muted-foreground" />
-              <div className="space-y-0.5">
-                <Label htmlFor="recurring-new" className="text-sm font-medium">
-                  Contrato recorrente
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {isRecurring ? "Com data de início, duração e vencimento" : "Apenas dia de pagamento"}
-                </p>
+          {/* Internal Toggle */}
+          {!isEditing && (
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <div className="space-y-0.5">
+                  <Label htmlFor="internal-contract" className="text-sm font-medium">
+                    Contrato interno
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Seleciona todos os módulos, sem valor ou datas
+                  </p>
+                </div>
               </div>
+              <Switch
+                id="internal-contract"
+                checked={isInternal}
+                onCheckedChange={handleInternalToggle}
+              />
             </div>
-            <Switch
-              id="recurring-new"
-              checked={isRecurring}
-              onCheckedChange={setIsRecurring}
-            />
-          </div>
+          )}
 
-          {isRecurring ? (
-            <div className="grid grid-cols-3 gap-4">
+          {!isInternal && (
+            <>
               <div className="space-y-2">
-                <Label htmlFor="startDate">Data de Entrada *</Label>
-                <DatePicker
-                  id="startDate"
-                  value={startDate}
-                  onChange={setStartDate}
-                  placeholder="Selecionar data"
+                <Label htmlFor="value">Valor Mensal *</Label>
+                <CurrencyInput
+                  id="value"
+                  value={monthlyValue}
+                  onChange={setMonthlyValue}
+                  disabled={noValue}
+                />
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground">
+                  <Checkbox
+                    checked={noValue}
+                    onCheckedChange={(checked) => {
+                      setNoValue(!!checked);
+                      if (checked) setMonthlyValue(0);
+                    }}
+                  />
+                  Sem valor (serviço gratuito ou interno)
+                </label>
+              </div>
+
+              {/* Recurring Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <RotateCcw className="h-4 w-4 text-muted-foreground" />
+                  <div className="space-y-0.5">
+                    <Label htmlFor="recurring-new" className="text-sm font-medium">
+                      Contrato recorrente
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {isRecurring ? "Com data de início, duração e vencimento" : "Apenas dia de pagamento"}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="recurring-new"
+                  checked={isRecurring}
+                  onCheckedChange={setIsRecurring}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duração Total</Label>
-                <Select value={String(minDuration)} onValueChange={(v) => setMinDuration(Number(v))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 mês</SelectItem>
-                    <SelectItem value="2">2 meses</SelectItem>
-                    <SelectItem value="3">3 meses</SelectItem>
-                    <SelectItem value="4">4 meses</SelectItem>
-                    <SelectItem value="5">5 meses</SelectItem>
-                    <SelectItem value="6">6 meses</SelectItem>
-                    <SelectItem value="12">12 meses</SelectItem>
-                    <SelectItem value="24">24 meses</SelectItem>
-                    <SelectItem value="36">36 meses</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {isRecurring ? (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Data de Entrada *</Label>
+                    <DatePicker
+                      id="startDate"
+                      value={startDate}
+                      onChange={setStartDate}
+                      placeholder="Selecionar data"
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="renewalDate">Vencimento</Label>
-                <DatePicker
-                  id="renewalDate"
-                  value={renewalDate}
-                  onChange={setRenewalDate}
-                  placeholder="Selecionar data"
-                  disabled
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="paymentDay">Dia de Pagamento</Label>
-              <Input
-                id="paymentDay"
-                type="number"
-                min={1}
-                max={31}
-                value={paymentDueDay}
-                onChange={(e) => {
-                  const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
-                  setPaymentDueDay(val);
-                }}
-                placeholder="1-31"
-                className="w-24"
-              />
-            </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">Duração Total</Label>
+                    <Select value={String(minDuration)} onValueChange={(v) => setMinDuration(Number(v))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 mês</SelectItem>
+                        <SelectItem value="2">2 meses</SelectItem>
+                        <SelectItem value="3">3 meses</SelectItem>
+                        <SelectItem value="4">4 meses</SelectItem>
+                        <SelectItem value="5">5 meses</SelectItem>
+                        <SelectItem value="6">6 meses</SelectItem>
+                        <SelectItem value="12">12 meses</SelectItem>
+                        <SelectItem value="24">24 meses</SelectItem>
+                        <SelectItem value="36">36 meses</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="renewalDate">Vencimento</Label>
+                    <DatePicker
+                      id="renewalDate"
+                      value={renewalDate}
+                      onChange={setRenewalDate}
+                      placeholder="Selecionar data"
+                      disabled
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="paymentDay">Dia de Pagamento</Label>
+                  <Input
+                    id="paymentDay"
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={paymentDueDay}
+                    onChange={(e) => {
+                      const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
+                      setPaymentDueDay(val);
+                    }}
+                    placeholder="1-31"
+                    className="w-24"
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {!isEditing && activeModules.length > 0 && (
@@ -382,7 +424,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || (!noValue && monthlyValue <= 0)}>
+          <Button onClick={handleSave} disabled={isSaving || (!isInternal && !noValue && monthlyValue <= 0)}>
             {isSaving ? "Salvando..." : isEditing ? "Salvar" : "Criar Contrato"}
           </Button>
         </div>
