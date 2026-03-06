@@ -36,6 +36,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
   const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
   const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -289,7 +290,15 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                       return (
                         <div
                           key={delivery.id}
-                          onClick={() => setSelectedTaskId(delivery.id)}
+                          onClick={() => {
+                            if (delivery.isSubtask && delivery.parentTaskId) {
+                              setSelectedTaskId(delivery.parentTaskId);
+                              setSelectedSubtaskId(delivery.id);
+                            } else {
+                              setSelectedTaskId(delivery.id);
+                              setSelectedSubtaskId(null);
+                            }
+                          }}
                           className={cn(
                             "flex items-center justify-between p-3 rounded-lg border-l-4 border hover:bg-muted/50 transition-colors cursor-pointer",
                             delivery.status === "done" ? "border-l-success" :
@@ -346,7 +355,8 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
       <TaskEditDialog
         taskId={selectedTaskId}
         open={!!selectedTaskId}
-        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+        onOpenChange={(open) => { if (!open) { setSelectedTaskId(null); setSelectedSubtaskId(null); } }}
+        initialSubtaskId={selectedSubtaskId}
       />
     </div>
   );

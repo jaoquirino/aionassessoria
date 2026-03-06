@@ -14,6 +14,7 @@ export interface DeliveryItem {
   deliverableType: string | null;
   type: string;
   isSubtask: boolean;
+  parentTaskId: string | null;
 }
 
 export interface FinancialComparison {
@@ -88,6 +89,7 @@ export function useDeliveriesByClient(clientId?: string) {
         deliverableType: (task as any).deliverable_type || null,
         type: task.type,
         isSubtask: !!task.parent_task_id,
+        parentTaskId: task.parent_task_id || null,
       })) as DeliveryItem[];
     },
   });

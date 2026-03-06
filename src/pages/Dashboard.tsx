@@ -80,6 +80,7 @@ export default function Dashboard() {
   
   const [selectedClientHealth, setSelectedClientHealth] = useState<any>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [selectedTeamMember, setSelectedTeamMember] = useState<any>(null);
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   const hasAnimated = useRef(false);
@@ -173,16 +174,20 @@ export default function Dashboard() {
   const handleTaskClick = (task: { id: string; isSubtask: boolean; parentTaskId: string | null }) => {
     if (task.isSubtask && task.parentTaskId) {
       setSelectedTaskId(task.parentTaskId);
+      setSelectedSubtaskId(task.id);
     } else {
       setSelectedTaskId(task.id);
+      setSelectedSubtaskId(null);
     }
   };
 
   const handleClientTaskClick = (task: ClientTask) => {
     if (task.isSubtask && task.parentTaskId) {
       setSelectedTaskId(task.parentTaskId);
+      setSelectedSubtaskId(task.id);
     } else {
       setSelectedTaskId(task.id);
+      setSelectedSubtaskId(null);
     }
   };
 
@@ -577,7 +582,7 @@ export default function Dashboard() {
         <div className="space-y-6">{overviewContent}</div>
       )}
 
-      <TaskEditDialog taskId={selectedTaskId} open={!!selectedTaskId} onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }} />
+      <TaskEditDialog taskId={selectedTaskId} open={!!selectedTaskId} onOpenChange={(open) => { if (!open) { setSelectedTaskId(null); setSelectedSubtaskId(null); } }} initialSubtaskId={selectedSubtaskId} />
       <TeamMemberTasksDialog member={selectedTeamMember} open={!!selectedTeamMember} onOpenChange={(open) => { if (!open) setSelectedTeamMember(null); }} />
 
       <Dialog open={!!selectedClientHealth} onOpenChange={(open) => { if (!open) setSelectedClientHealth(null); }}>
