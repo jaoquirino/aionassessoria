@@ -1,20 +1,15 @@
 import { useState, useMemo } from "react";
-import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, CalendarIcon, Image, Video, AlertTriangle, X, CornerDownRight } from "lucide-react";
+import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, Image, Video, AlertTriangle, X, CornerDownRight } from "lucide-react";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDeliveriesByClient, useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
 import { useAllClients } from "@/hooks/useClients";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
 import { PeriodSelector, type PeriodOption, type CustomDateRange, getPeriodDates } from "./PeriodSelector";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground", icon: Clock },
