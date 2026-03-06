@@ -45,6 +45,7 @@ export interface DashboardTeamMember {
 export interface DashboardClientHealth {
   id: string;
   name: string;
+  logo_url: string | null;
   monthlyValue: number;
   operationalWeight: number;
   deliveriesThisMonth: number;
