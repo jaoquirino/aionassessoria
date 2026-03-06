@@ -292,7 +292,7 @@ export function useDashboardData() {
             if (percentage >= 100) healthStatus = "critical";
             else if (percentage >= 81) healthStatus = "attention";
           }
-          const designLimit = clientDesignLimitMap.get(c.id) || null;
+          
           return {
             id: c.id,
             name: c.name,

@@ -290,7 +290,14 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                         <div
                           key={delivery.id}
                           onClick={() => setSelectedTaskId(delivery.id)}
-                          className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-lg border-l-4 border hover:bg-muted/50 transition-colors cursor-pointer",
+                            delivery.status === "done" ? "border-l-success" :
+                            delivery.status === "review" ? "border-l-warning" :
+                            delivery.status === "in_progress" ? "border-l-primary" :
+                            delivery.status === "waiting_client" ? "border-l-info" :
+                            "border-l-muted-foreground"
+                          )}
                         >
                           <div className="flex items-center gap-3">
                             <StatusIcon className={cn(
