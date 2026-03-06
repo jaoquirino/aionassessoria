@@ -33,7 +33,7 @@ const typeOptions = [
 
 export default function Tasks() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
+  const [viewMode] = useState<"kanban">("kanban");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTaskTab, setSelectedTaskTab] = useState<string>("details");
   const [filters, setFilters] = useState<FiltersState>({
