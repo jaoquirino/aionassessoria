@@ -14,6 +14,7 @@ export interface DeliveryItem {
   deliverableType: string | null;
   type: string;
   isSubtask: boolean;
+  parentTaskId: string | null;
 }
 
 export interface FinancialComparison {
