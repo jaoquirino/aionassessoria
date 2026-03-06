@@ -277,6 +277,7 @@ export function useDashboardData() {
       // Client health (using operational tasks only)
       const clientTaskStats = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number }>();
       operationalTasksForWeight.forEach(t => {
+        // Only count weight for parent-level tasks (not subtasks)
         const curr = clientTaskStats.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0 };
         if (t.status !== "done") {
           curr.weight += t.weight;
