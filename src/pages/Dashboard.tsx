@@ -86,7 +86,6 @@ export default function Dashboard() {
   const hasAnimated = useRef(false);
   const isRestricted = currentMember?.restricted_view === true;
 
-  // Mini chart data for revenue - show all 12 months
   const revenueChartData = useMemo(() => {
     if (!financialData?.data) return [];
     return financialData.data.map(d => ({
@@ -95,7 +94,6 @@ export default function Dashboard() {
     }));
   }, [financialData]);
 
-  // Derived data (safe even when data is null)
   const derivedData = useMemo(() => {
     if (!data) return null;
     const { stats, tasks, team, clients, isAdmin, taskAssigneeMap } = data;
@@ -191,143 +189,87 @@ export default function Dashboard() {
     }
   };
 
-  // Only animate on first mount
   const shouldAnimate = !hasAnimated.current;
 
   const overviewContent = (
     <>
-      {/* ROW 1: Unified Task Metrics Card */}
-      <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")}>
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Package className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">{isRestricted ? "Minhas Tarefas" : "Tarefas"}</h3>
-              <p className="text-sm text-muted-foreground">
-                {displayStats.overdueTasks} atrasadas · {baseTasks.length} em andamento
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => navigate("/tarefas")}
-            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-          >
-            Ver todas
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="flex flex-wrap gap-2 mb-5">
-          <button
-            onClick={() => setTaskFilter(taskFilter === "overdue" ? "all" : "overdue")}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
-              taskFilter === "overdue"
-                ? "bg-destructive text-destructive-foreground border border-destructive shadow-sm"
-                : displayStats.overdueTasks > 0
-                  ? "bg-destructive/10 text-destructive border border-destructive/20"
-                  : "bg-muted/50 text-muted-foreground border border-border"
-            )}
-          >
-            {displayStats.overdueTasks} Atrasadas
-          </button>
-          <button
-            onClick={() => setTaskFilter(taskFilter === "today" ? "all" : "today")}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
-              taskFilter === "today"
-                ? "bg-success text-success-foreground border border-success shadow-sm"
-                : "bg-success/10 text-success border border-success/20"
-            )}
-          >
-            {displayStats.todayDeliveries} Entregas Hoje
-          </button>
-          <button
-            onClick={() => setTaskFilter(taskFilter === "week" ? "all" : "week")}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
-              taskFilter === "week"
-                ? "bg-primary text-primary-foreground border border-primary shadow-sm"
-                : "bg-primary/10 text-primary border border-primary/20"
-            )}
-          >
-            {displayStats.weekDeliveries} Da Semana
-          </button>
-          <button
-            onClick={() => setTaskFilter(taskFilter === "active" ? "all" : "active")}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
-              taskFilter === "active"
-                ? "bg-foreground text-background border border-foreground shadow-sm"
-                : "bg-muted/50 text-foreground border border-border"
-            )}
-          >
-            {displayStats.activeTasks} Ativas
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          {filteredTasks.length === 0 ? (
-            <p className="text-center text-muted-foreground py-6">
-              {taskFilter !== "all" ? "Nenhuma tarefa neste filtro" : "Nenhuma tarefa ativa"}
-            </p>
-          ) : (
-            filteredTasks.slice(0, 8).map((task) => (
-              <div
-                key={task.id}
-                className={cn(
-                  "group flex items-center gap-4 rounded-lg border p-3 transition-all hover:bg-muted/50 cursor-pointer",
-                  task.isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border"
-                )}
-                onClick={() => handleTaskClick(task)}
-              >
-                <div
-                  className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                    task.isOverdue ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
-                  )}
-                >
-                  {task.isOverdue ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    {task.isSubtask && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                    <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      {task.clientLogo && (
-                        <img src={task.clientLogo} alt="" className="h-4 w-4 rounded object-contain" />
-                      )}
-                      {task.clientName}
-                    </span>
-                    <span>·</span>
-                    <div className="flex items-center gap-1">
-                      {task.assigneeAvatar && (
-                        <Avatar className="h-4 w-4">
-                          <AvatarImage src={task.assigneeAvatar} />
-                          <AvatarFallback className="text-[8px]">
-                            {task.assigneeName.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <span>{task.assigneeName}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={cn("shrink-0 text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
-                    {statusConfig[task.status]?.label || task.status}
-                  </Badge>
-                  {task.isOverdue && <span className="text-xs font-medium text-destructive">Atrasada</span>}
-                </div>
+      {/* ROW 1: Client Health */}
+      {isAdmin && (
+        <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")}>
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                <Heart className="h-5 w-5 text-success" />
               </div>
-            ))
-          )}
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Saúde dos Clientes</h3>
+                <p className="text-sm text-muted-foreground">Mês atual — Entregas de design × limite contratado</p>
+              </div>
+            </div>
+            <button onClick={() => navigate("/clientes")} className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+              Ver todos <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Cliente</th>
+                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Receita</th>
+                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Peso</th>
+                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Entregas</th>
+                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {clients.length === 0 ? (
+                  <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Nenhum cliente ativo</td></tr>
+                ) : (
+                  clients.map((client) => (
+                    <tr key={client.id} className="group cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedClientHealth(client)}>
+                      <td className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("h-2 w-2 rounded-full shrink-0",
+                            client.healthStatus === "normal" && "bg-success",
+                            client.healthStatus === "attention" && "bg-warning",
+                            client.healthStatus === "critical" && "bg-destructive"
+                          )} />
+                          {client.logo_url && (
+                            <img src={client.logo_url} alt="" className="h-6 w-6 rounded object-contain shrink-0" />
+                          )}
+                          <span className="font-medium text-foreground">{client.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
+                      <td className="py-4">
+                        <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
+                          client.operationalWeight > 15 ? "bg-destructive/10 text-destructive" :
+                          client.operationalWeight > 10 ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
+                        )}>{client.operationalWeight}</span>
+                      </td>
+                      <td className="py-4">
+                        <span className="text-sm text-foreground">{client.deliveriesThisMonth}</span>
+                        {client.designLimit != null && (
+                          <span className="text-xs text-muted-foreground"> / {client.designLimit}</span>
+                        )}
+                      </td>
+                      <td className="py-4">
+                        <span className={cn("text-xs font-medium capitalize",
+                          client.healthStatus === "normal" && "text-success",
+                          client.healthStatus === "attention" && "text-warning",
+                          client.healthStatus === "critical" && "text-destructive"
+                        )}>
+                          {client.healthStatus === "normal" ? "Saudável" : client.healthStatus === "attention" ? "Atenção" : "Crítico"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ROW 2: Capacity + Revenue */}
       <div className="grid gap-6 lg:grid-cols-5">
@@ -467,82 +409,138 @@ export default function Dashboard() {
       {isAdmin && <OnboardingOverview />}
       {isAdmin && <OnboardingTasksSection />}
 
-      {isAdmin && (
-        <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.3s", animationFillMode: "both" } : undefined}>
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-                <Heart className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Saúde dos Clientes</h3>
-                <p className="text-sm text-muted-foreground">Mês atual — Relação valor × peso operacional</p>
-              </div>
+      {/* ROW 3: Tasks */}
+      <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.3s", animationFillMode: "both" } : undefined}>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Package className="h-5 w-5 text-primary" />
             </div>
-            <button onClick={() => navigate("/clientes")} className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-              Ver todos <ArrowRight className="h-4 w-4" />
-            </button>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">{isRestricted ? "Minhas Tarefas" : "Tarefas"}</h3>
+              <p className="text-sm text-muted-foreground">
+                {displayStats.overdueTasks} atrasadas · {baseTasks.length} em andamento
+              </p>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Cliente</th>
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Receita</th>
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Peso</th>
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Entregas</th>
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {clients.length === 0 ? (
-                  <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Nenhum cliente ativo</td></tr>
-                ) : (
-                  clients.map((client) => (
-                    <tr key={client.id} className="group cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedClientHealth(client)}>
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={cn("h-2 w-2 rounded-full shrink-0",
-                            client.healthStatus === "normal" && "bg-success",
-                            client.healthStatus === "attention" && "bg-warning",
-                            client.healthStatus === "critical" && "bg-destructive"
-                          )} />
-                          {client.logo_url && (
-                            <img src={client.logo_url} alt="" className="h-6 w-6 rounded object-contain shrink-0" />
-                          )}
-                          <span className="font-medium text-foreground">{client.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
-                      <td className="py-4">
-                        <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                          client.operationalWeight > 15 ? "bg-destructive/10 text-destructive" :
-                          client.operationalWeight > 10 ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
-                        )}>{client.operationalWeight}</span>
-                      </td>
-                      <td className="py-4">
-                        <span className="text-sm text-foreground">{client.deliveriesThisMonth}</span>
-                        {client.designLimit != null && (
-                          <span className="text-xs text-muted-foreground"> / {client.designLimit}</span>
-                        )}
-                      </td>
-                      <td className="py-4">
-                        <span className={cn("text-xs font-medium capitalize",
-                          client.healthStatus === "normal" && "text-success",
-                          client.healthStatus === "attention" && "text-warning",
-                          client.healthStatus === "critical" && "text-destructive"
-                        )}>
-                          {client.healthStatus === "normal" ? "Saudável" : client.healthStatus === "attention" ? "Atenção" : "Crítico"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <button
+            onClick={() => navigate("/tarefas")}
+            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          >
+            Ver todas
+            <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
-      )}
+
+        <div className="flex flex-wrap gap-2 mb-5">
+          <button
+            onClick={() => setTaskFilter(taskFilter === "overdue" ? "all" : "overdue")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "overdue"
+                ? "bg-destructive text-destructive-foreground border border-destructive shadow-sm"
+                : displayStats.overdueTasks > 0
+                  ? "bg-destructive/10 text-destructive border border-destructive/20"
+                  : "bg-muted/50 text-muted-foreground border border-border"
+            )}
+          >
+            {displayStats.overdueTasks} Atrasadas
+          </button>
+          <button
+            onClick={() => setTaskFilter(taskFilter === "today" ? "all" : "today")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "today"
+                ? "bg-success text-success-foreground border border-success shadow-sm"
+                : "bg-success/10 text-success border border-success/20"
+            )}
+          >
+            {displayStats.todayDeliveries} Entregas Hoje
+          </button>
+          <button
+            onClick={() => setTaskFilter(taskFilter === "week" ? "all" : "week")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "week"
+                ? "bg-primary text-primary-foreground border border-primary shadow-sm"
+                : "bg-primary/10 text-primary border border-primary/20"
+            )}
+          >
+            {displayStats.weekDeliveries} Da Semana
+          </button>
+          <button
+            onClick={() => setTaskFilter(taskFilter === "active" ? "all" : "active")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "active"
+                ? "bg-foreground text-background border border-foreground shadow-sm"
+                : "bg-muted/50 text-foreground border border-border"
+            )}
+          >
+            {displayStats.activeTasks} Ativas
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {filteredTasks.length === 0 ? (
+            <p className="text-center text-muted-foreground py-6">
+              {taskFilter !== "all" ? "Nenhuma tarefa neste filtro" : "Nenhuma tarefa ativa"}
+            </p>
+          ) : (
+            filteredTasks.slice(0, 8).map((task) => (
+              <div
+                key={task.id}
+                className={cn(
+                  "group flex items-center gap-4 rounded-lg border p-3 transition-all hover:bg-muted/50 cursor-pointer",
+                  task.isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border"
+                )}
+                onClick={() => handleTaskClick(task)}
+              >
+                <div
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                    task.isOverdue ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                  )}
+                >
+                  {task.isOverdue ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {task.isSubtask && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                    <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      {task.clientLogo && (
+                        <img src={task.clientLogo} alt="" className="h-4 w-4 rounded object-contain" />
+                      )}
+                      {task.clientName}
+                    </span>
+                    <span>·</span>
+                    <div className="flex items-center gap-1">
+                      {task.assigneeAvatar && (
+                        <Avatar className="h-4 w-4">
+                          <AvatarImage src={task.assigneeAvatar} />
+                          <AvatarFallback className="text-[8px]">
+                            {task.assigneeName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <span>{task.assigneeName}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className={cn("shrink-0 text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
+                    {statusConfig[task.status]?.label || task.status}
+                  </Badge>
+                  {task.isOverdue && <span className="text-xs font-medium text-destructive">Atrasada</span>}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </>
   );
 
