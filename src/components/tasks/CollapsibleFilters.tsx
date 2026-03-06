@@ -33,7 +33,7 @@ interface CollapsibleFiltersProps {
   filters: FiltersState;
   onFiltersChange: (filters: FiltersState) => void;
   statusOptions: { value: string; label: string }[];
-  typeOptions: { value: string; label: string }[];
+  
   assigneeOptions: { value: string; label: string }[];
   clientOptions: { value: string; label: string }[];
 }
