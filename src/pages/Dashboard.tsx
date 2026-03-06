@@ -81,17 +81,13 @@ export default function Dashboard() {
 
   const isRestricted = currentMember?.restricted_view === true;
 
-  // Mini chart data for revenue (must be before early return)
+  // Mini chart data for revenue - show all 12 months
   const revenueChartData = useMemo(() => {
     if (!financialData?.data) return [];
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    return financialData.data
-      .filter((_, i) => i <= currentMonth)
-      .map(d => ({
-        name: d.monthName,
-        value: d.currentYearRevenue,
-      }));
+    return financialData.data.map(d => ({
+      name: d.monthName,
+      value: d.currentYearRevenue,
+    }));
   }, [financialData]);
 
   // Derived data (safe even when data is null)
