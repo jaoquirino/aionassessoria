@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, UserCheck, Clock, Loader2, AlertTriangle, Pencil, FileText, CalendarIcon, DollarSign } from "lucide-react";
+import { Search, Clock, Loader2, AlertTriangle, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
