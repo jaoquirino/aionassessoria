@@ -39,6 +39,7 @@ interface EditClientDialogProps {
   onOpenChange: (open: boolean) => void;
   onClientUpdated?: () => void;
   openContractDialogOnMount?: boolean;
+  initialSection?: "status" | "contracts" | "value" | null;
 }
 
 const statusOptions: { value: ClientStatus; label: string }[] = [
@@ -60,7 +61,8 @@ export function EditClientDialog({
   open, 
   onOpenChange, 
   onClientUpdated,
-  openContractDialogOnMount = false 
+  openContractDialogOnMount = false,
+  initialSection = null,
 }: EditClientDialogProps) {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<ClientStatus>("active");
@@ -85,6 +87,8 @@ export function EditClientDialog({
     moduleName: string;
     isCompleted: boolean;
   } | null>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const contractsRef = useRef<HTMLDivElement>(null);
 
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
@@ -113,6 +117,20 @@ export function EditClientDialog({
       setEditingContract(null);
     }
   }, [open]);
+
+  // Scroll to section when dialog opens with initialSection
+  useEffect(() => {
+    if (open && initialSection) {
+      const timer = setTimeout(() => {
+        if (initialSection === "status" && statusRef.current) {
+          statusRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else if ((initialSection === "contracts" || initialSection === "value") && contractsRef.current) {
+          contractsRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [open, initialSection]);
 
   const handleSave = async () => {
     if (!client) return;
@@ -263,7 +281,7 @@ export function EditClientDialog({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div ref={statusRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="client-status">Status</Label>
                 <Select value={status} onValueChange={(v) => setStatus(v as ClientStatus)}>
@@ -388,7 +406,7 @@ export function EditClientDialog({
           <Separator />
 
           {/* Contracts Section */}
-          <div className="space-y-3">
+          <div ref={contractsRef} className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4" />

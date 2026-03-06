@@ -24,6 +24,8 @@ export interface ClientWithContracts extends Client {
     start_date: string;
     renewal_date: string | null;
     status: string;
+    payment_due_day: number | null;
+    is_recurring: boolean;
   }>;
 }
 
@@ -56,7 +58,7 @@ export function useAllClients() {
         .from("clients")
         .select(`
           *,
-          contracts(id, monthly_value, start_date, renewal_date, status)
+          contracts(id, monthly_value, start_date, renewal_date, status, payment_due_day, is_recurring)
         `)
         .order("name", { ascending: true });
 
@@ -77,7 +79,7 @@ export function useClient(clientId: string | null) {
         .from("clients")
         .select(`
           *,
-          contracts(id, monthly_value, start_date, renewal_date, status)
+          contracts(id, monthly_value, start_date, renewal_date, status, payment_due_day, is_recurring)
         `)
         .eq("id", clientId)
         .single();

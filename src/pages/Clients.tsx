@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Clock, Loader2, AlertTriangle, Pencil, Calendar, FileText, DollarSign } from "lucide-react";
+import { Search, Clock, Loader2, AlertTriangle, Pencil, Calendar, FileText, DollarSign, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<ClientWithContracts | null>(null);
   const [openContractOnEdit, setOpenContractOnEdit] = useState(false);
   const [pendingClientId, setPendingClientId] = useState<string | null>(null);
+  const [initialSection, setInitialSection] = useState<"status" | "contracts" | "value" | null>(null);
 
   const { data: clients = [], isLoading, refetch } = useAllClients();
 
@@ -108,6 +110,12 @@ export default function Clients() {
     }).format(value);
   };
 
+  const openClientWithSection = (client: ClientWithContracts, section: "status" | "contracts" | "value" | null) => {
+    setEditingClient(client);
+    setInitialSection(section);
+    setOpenContractOnEdit(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -117,6 +125,7 @@ export default function Clients() {
   }
 
   return (
+    <TooltipProvider>
     <div className="space-y-6">
       {/* Header */}
       <motion.div
@@ -219,26 +228,46 @@ export default function Clients() {
         </motion.div>
       )}
 
+      {/* Column Headers */}
+      {otherClients.length > 0 && (
+        <div className="hidden sm:grid grid-cols-[1fr_auto] items-center px-4">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</span>
+          <div className="flex items-center gap-6 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <span className="w-16 text-center">Status</span>
+            <span className="w-20 text-center">Contratos</span>
+            <span className="w-24 text-center">MRR</span>
+            <span className="w-16 text-center">Pgto</span>
+            <span className="w-28 text-center">Vencimento</span>
+            <span className="w-8" />
+          </div>
+        </div>
+      )}
+
       {/* Client Cards */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="space-y-2"
+        className="space-y-1.5"
       >
         {otherClients.map((client, index) => {
           const activeContracts = client.contracts?.filter(c => c.status === "active") || [];
           const mrr = activeContracts.reduce((sum, c) => sum + c.monthly_value, 0);
 
-          const renewalDates = activeContracts
-            .filter(c => c.renewal_date)
-            .map(c => parseLocalDate(c.renewal_date!));
+          // Get nearest renewal only from recurring contracts
+          const recurringContracts = activeContracts.filter(c => c.is_recurring && c.renewal_date);
+          const renewalDates = recurringContracts.map(c => ({
+            date: parseLocalDate(c.renewal_date!),
+            days: differenceInDays(parseLocalDate(c.renewal_date!), new Date()),
+          }));
           const nearestRenewal = renewalDates.length > 0 
-            ? renewalDates.reduce((a, b) => a < b ? a : b) 
+            ? renewalDates.reduce((a, b) => a.days < b.days ? a : b) 
             : null;
-          const daysUntilRenewal = nearestRenewal 
-            ? differenceInDays(nearestRenewal, new Date()) 
-            : null;
+          // Only show renewal when within 60 days
+          const showRenewal = nearestRenewal && nearestRenewal.days <= 60 && nearestRenewal.days > 0;
+
+          // Payment day - get from first active contract
+          const paymentDay = activeContracts.length > 0 ? (activeContracts[0].payment_due_day ?? 10) : null;
 
           const statusInfo = statusConfig[client.status];
 
@@ -249,7 +278,7 @@ export default function Clients() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.03 * index }}
               className="glass rounded-xl p-4 hover:bg-muted/30 transition-colors cursor-pointer group"
-              onClick={() => setEditingClient(client)}
+              onClick={() => openClientWithSection(client, null)}
             >
               <div className="flex items-center gap-4">
                 {/* Client Identity */}
@@ -263,55 +292,95 @@ export default function Clients() {
                       <span className="text-sm font-bold text-muted-foreground">{client.name.charAt(0)}</span>
                     </div>
                   )}
-                  <div className="min-w-0">
-                    <p className="font-semibold text-foreground truncate">{client.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Desde {parseLocalDate(client.created_at.split("T")[0]).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
-                    </p>
-                  </div>
+                  <p className="font-semibold text-foreground truncate">{client.name}</p>
                 </div>
 
-                {/* Inline Badges */}
-                <div className="hidden sm:flex items-center gap-2 flex-wrap justify-end">
+                {/* Desktop Inline Metrics */}
+                <div className="hidden sm:flex items-center gap-6">
                   {/* Status */}
-                  <Badge variant="outline" className={cn("text-xs", statusInfo.color)}>
-                    {statusInfo.label}
-                  </Badge>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge 
+                        variant="outline" 
+                        className={cn("text-xs cursor-pointer w-16 justify-center", statusInfo.color)}
+                        onClick={(e) => { e.stopPropagation(); openClientWithSection(client, "status"); }}
+                      >
+                        {statusInfo.label}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>Clique para alterar status</TooltipContent>
+                  </Tooltip>
 
                   {/* Active Contracts */}
-                  <Badge variant="outline" className="text-xs gap-1">
-                    <FileText className="h-3 w-3" />
-                    {activeContracts.length}
-                  </Badge>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div 
+                        className="flex items-center gap-1.5 w-20 justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); openClientWithSection(client, "contracts"); }}
+                      >
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground">{activeContracts.length}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Contratos ativos · Clique para ver</TooltipContent>
+                  </Tooltip>
 
                   {/* MRR */}
-                  {mrr > 0 && (
-                    <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/30">
-                      <DollarSign className="h-3 w-3" />
-                      {formatCurrency(mrr).replace("R$", "").trim()}
-                    </Badge>
-                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div 
+                        className="flex items-center gap-1.5 w-24 justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); openClientWithSection(client, "contracts"); }}
+                      >
+                        <DollarSign className="h-3.5 w-3.5 text-success" />
+                        <span className={cn("text-sm font-medium", mrr > 0 ? "text-success" : "text-muted-foreground")}>
+                          {mrr > 0 ? formatCurrency(mrr).replace("R$", "").trim() : "—"}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Receita mensal recorrente</TooltipContent>
+                  </Tooltip>
 
-                  {/* Renewal */}
-                  {nearestRenewal && (
-                    <Badge 
-                      variant="outline" 
-                      className={cn(
-                        "text-xs gap-1",
-                        daysUntilRenewal !== null && daysUntilRenewal <= 30
-                          ? "bg-destructive/10 text-destructive border-destructive/30"
-                          : daysUntilRenewal !== null && daysUntilRenewal <= 60
-                            ? "bg-warning/10 text-warning border-warning/30"
-                            : ""
-                      )}
-                    >
-                      <Calendar className="h-3 w-3" />
-                      {nearestRenewal.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                      {daysUntilRenewal !== null && daysUntilRenewal <= 60 && daysUntilRenewal > 0 && (
-                        <span className="font-semibold">{daysUntilRenewal}d</span>
-                      )}
-                    </Badge>
-                  )}
+                  {/* Payment Day */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div 
+                        className="flex items-center gap-1.5 w-16 justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); openClientWithSection(client, "contracts"); }}
+                      >
+                        <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-sm text-foreground">{paymentDay ?? "—"}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Dia de pagamento</TooltipContent>
+                  </Tooltip>
+
+                  {/* Renewal - only when close */}
+                  <div className="w-28 flex justify-center">
+                    {showRenewal ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            variant="outline"
+                            className={cn(
+                              "text-xs gap-1 cursor-pointer",
+                              nearestRenewal.days <= 30
+                                ? "bg-destructive/10 text-destructive border-destructive/30"
+                                : "bg-warning/10 text-warning border-warning/30"
+                            )}
+                            onClick={(e) => { e.stopPropagation(); openClientWithSection(client, "contracts"); }}
+                          >
+                            <Calendar className="h-3 w-3" />
+                            {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                            <span className="font-semibold">{nearestRenewal.days}d</span>
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>Vencimento do contrato</TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Edit Button */}
@@ -321,15 +390,15 @@ export default function Clients() {
                   className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setEditingClient(client);
+                    openClientWithSection(client, null);
                   }}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
               </div>
 
-              {/* Mobile: show badges below */}
-              <div className="flex sm:hidden items-center gap-1.5 flex-wrap mt-3 pt-3 border-t border-border">
+              {/* Mobile: show info below */}
+              <div className="flex sm:hidden items-center gap-2 flex-wrap mt-3 pt-3 border-t border-border">
                 <Badge variant="outline" className={cn("text-xs", statusInfo.color)}>
                   {statusInfo.label}
                 </Badge>
@@ -342,23 +411,25 @@ export default function Clients() {
                     {formatCurrency(mrr)}
                   </Badge>
                 )}
-                {nearestRenewal && (
+                {paymentDay && (
+                  <Badge variant="outline" className="text-xs gap-1">
+                    <CreditCard className="h-3 w-3" />
+                    Dia {paymentDay}
+                  </Badge>
+                )}
+                {showRenewal && nearestRenewal && (
                   <Badge 
                     variant="outline" 
                     className={cn(
                       "text-xs gap-1",
-                      daysUntilRenewal !== null && daysUntilRenewal <= 30
+                      nearestRenewal.days <= 30
                         ? "bg-destructive/10 text-destructive border-destructive/30"
-                        : daysUntilRenewal !== null && daysUntilRenewal <= 60
-                          ? "bg-warning/10 text-warning border-warning/30"
-                          : ""
+                        : "bg-warning/10 text-warning border-warning/30"
                     )}
                   >
                     <Calendar className="h-3 w-3" />
-                    {nearestRenewal.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                    {daysUntilRenewal !== null && daysUntilRenewal <= 60 && daysUntilRenewal > 0 && (
-                      <span className="font-semibold">{daysUntilRenewal}d</span>
-                    )}
+                    {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                    <span className="font-semibold">{nearestRenewal.days}d</span>
                   </Badge>
                 )}
               </div>
@@ -380,11 +451,14 @@ export default function Clients() {
           if (!open) {
             setEditingClient(null);
             setOpenContractOnEdit(false);
+            setInitialSection(null);
           }
         }}
         onClientUpdated={() => refetch()}
         openContractDialogOnMount={openContractOnEdit}
+        initialSection={initialSection}
       />
     </div>
+    </TooltipProvider>
   );
 }
