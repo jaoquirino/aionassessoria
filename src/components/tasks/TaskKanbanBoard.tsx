@@ -178,7 +178,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "rounded-xl border-2 border-dashed p-3 min-h-[500px] min-w-[280px] w-[280px] flex-shrink-0 snap-start transition-colors",
+              "rounded-xl border-2 border-dashed p-3 min-h-[500px] min-w-[320px] w-[320px] flex-shrink-0 snap-start transition-colors",
                getColumnColorClass(column.color_class),
                dragOverColumn === column.key && column.key !== "overdue" && "border-primary bg-primary/5"
             )}
@@ -316,15 +316,17 @@ interface TaskCardProps {
       <div className="flex items-start gap-2">
         <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 cursor-grab" />
         <div className="flex-1 min-w-0 space-y-2">
-          {/* Título */}
+          {/* Título + Warning */}
           <div className="flex items-start justify-between gap-2">
-            <p className="font-medium text-foreground text-sm line-clamp-2">
-              {task.title}
-            </p>
+            <div className="flex items-start gap-1.5 min-w-0 flex-1">
+              {isOverdue && (
+                <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              )}
+              <p className="font-medium text-foreground text-sm line-clamp-2">
+                {task.title}
+              </p>
+            </div>
              <div className="flex items-center gap-1 shrink-0">
-               {isOverdue && (
-                 <AlertTriangle className="h-4 w-4 text-destructive" />
-               )}
                {/* Quick status action button */}
                {task.status === "done" ? (
                  <button

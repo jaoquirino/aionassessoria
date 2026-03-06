@@ -1,10 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Clock, Loader2, AlertTriangle, Pencil, Calendar, FileText, DollarSign, CreditCard } from "lucide-react";
+import { Search, Clock, Loader2, AlertTriangle, Calendar, FileText, DollarSign, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Select,
@@ -237,8 +236,7 @@ export default function Clients() {
             <span className="w-20 text-center">Contratos</span>
             <span className="w-24 text-center">MRR</span>
             <span className="w-16 text-center">Pgto</span>
-            <span className="w-28 text-center">Vencimento</span>
-            <span className="w-8" />
+            <span className="w-32 text-center">Vencimento</span>
           </div>
         </div>
       )}
@@ -355,28 +353,37 @@ export default function Clients() {
                   </Tooltip>
 
                   {/* Renewal */}
-                  <div className="w-28 flex justify-center">
+                  <div className="w-32 flex justify-center">
                     {nearestRenewal ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Badge 
-                            variant="outline"
-                            className={cn(
-                              "text-xs gap-1 cursor-pointer",
-                              isRenewalClose && nearestRenewal.days <= 30
-                                ? "bg-destructive/10 text-destructive border-destructive/30"
-                                : isRenewalClose
-                                ? "bg-warning/10 text-warning border-warning/30"
-                                : "text-muted-foreground"
-                            )}
+                          <div 
+                            className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={(e) => { e.stopPropagation(); openClientWithSection(client, "contracts"); }}
                           >
-                            <Calendar className="h-3 w-3" />
-                            {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                            <Badge 
+                              variant="outline"
+                              className={cn(
+                                "text-xs gap-1",
+                                isRenewalClose && nearestRenewal.days <= 30
+                                  ? "bg-destructive/10 text-destructive border-destructive/30"
+                                  : isRenewalClose
+                                  ? "bg-warning/10 text-warning border-warning/30"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              <Calendar className="h-3 w-3" />
+                              {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                            </Badge>
                             {isRenewalClose && (
-                              <span className="font-semibold">{nearestRenewal.days}d</span>
+                              <span className={cn(
+                                "text-xs font-semibold",
+                                nearestRenewal.days <= 30 ? "text-destructive" : "text-warning"
+                              )}>
+                                {nearestRenewal.days}d
+                              </span>
                             )}
-                          </Badge>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>Vencimento do contrato</TooltipContent>
                       </Tooltip>
@@ -385,19 +392,6 @@ export default function Clients() {
                     )}
                   </div>
                 </div>
-
-                {/* Edit Button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openClientWithSection(client, null);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
               </div>
 
               {/* Mobile: show info below */}
