@@ -36,6 +36,7 @@ export default function Tasks() {
   const [viewMode] = useState<"kanban">("kanban");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTaskTab, setSelectedTaskTab] = useState<string>("details");
+  const [initialSubtaskId, setInitialSubtaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<FiltersState>({
     search: "",
     status: "all",
