@@ -78,7 +78,7 @@ export default function Dashboard() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTeamMember, setSelectedTeamMember] = useState<any>(null);
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
-
+  const hasAnimated = useRef(false);
   const isRestricted = currentMember?.restricted_view === true;
 
   // Mini chart data for revenue - show all 12 months
