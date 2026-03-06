@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Clock, Loader2, AlertTriangle, Calendar, FileText, DollarSign, CreditCard } from "lucide-react";
+import { Search, Clock, Loader2, AlertTriangle, Calendar, FileText, DollarSign, CreditCard, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
