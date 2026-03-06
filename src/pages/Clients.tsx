@@ -355,28 +355,37 @@ export default function Clients() {
                   </Tooltip>
 
                   {/* Renewal */}
-                  <div className="w-28 flex justify-center">
+                  <div className="w-32 flex justify-center">
                     {nearestRenewal ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Badge 
-                            variant="outline"
-                            className={cn(
-                              "text-xs gap-1 cursor-pointer",
-                              isRenewalClose && nearestRenewal.days <= 30
-                                ? "bg-destructive/10 text-destructive border-destructive/30"
-                                : isRenewalClose
-                                ? "bg-warning/10 text-warning border-warning/30"
-                                : "text-muted-foreground"
-                            )}
+                          <div 
+                            className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={(e) => { e.stopPropagation(); openClientWithSection(client, "contracts"); }}
                           >
-                            <Calendar className="h-3 w-3" />
-                            {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                            <Badge 
+                              variant="outline"
+                              className={cn(
+                                "text-xs gap-1",
+                                isRenewalClose && nearestRenewal.days <= 30
+                                  ? "bg-destructive/10 text-destructive border-destructive/30"
+                                  : isRenewalClose
+                                  ? "bg-warning/10 text-warning border-warning/30"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              <Calendar className="h-3 w-3" />
+                              {nearestRenewal.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                            </Badge>
                             {isRenewalClose && (
-                              <span className="font-semibold">{nearestRenewal.days}d</span>
+                              <span className={cn(
+                                "text-xs font-semibold",
+                                nearestRenewal.days <= 30 ? "text-destructive" : "text-warning"
+                              )}>
+                                {nearestRenewal.days}d
+                              </span>
                             )}
-                          </Badge>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>Vencimento do contrato</TooltipContent>
                       </Tooltip>
