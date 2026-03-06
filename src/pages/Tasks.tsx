@@ -305,8 +305,14 @@ export default function Tasks() {
       <TaskEditDialog 
         taskId={selectedTaskId} 
         open={!!selectedTaskId} 
-        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTaskId(null);
+            setInitialSubtaskId(null);
+          }
+        }}
         initialTab={selectedTaskTab}
+        initialSubtaskId={initialSubtaskId}
       />
     </div>
   );
