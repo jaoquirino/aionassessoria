@@ -12,6 +12,7 @@ export interface DeliveryItem {
   moduleName: string | null;
   weight: number;
   deliverableType: string | null;
+  type: string;
 }
 
 export interface FinancialComparison {
@@ -84,6 +85,7 @@ export function useDeliveriesByClient(clientId?: string) {
         moduleName: task.contract_modules?.service_module?.name || null,
         weight: task.weight,
         deliverableType: (task as any).deliverable_type || null,
+        type: task.type,
       })) as DeliveryItem[];
     },
   });
