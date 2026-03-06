@@ -237,8 +237,7 @@ export default function Clients() {
             <span className="w-20 text-center">Contratos</span>
             <span className="w-24 text-center">MRR</span>
             <span className="w-16 text-center">Pgto</span>
-            <span className="w-28 text-center">Vencimento</span>
-            <span className="w-8" />
+            <span className="w-32 text-center">Vencimento</span>
           </div>
         </div>
       )}
