@@ -115,7 +115,8 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
   };
 
   const handleSave = async () => {
-    if (!noValue && monthlyValue <= 0 || !startDate) return;
+    if (!isInternal && !noValue && monthlyValue <= 0) return;
+    if (!isInternal && isRecurring && !startDate) return;
 
     try {
       if (isEditing && contract) {
