@@ -132,13 +132,19 @@ export function useTask(taskId: string | null) {
           supabase.from("task_history").select("*").eq("task_id", taskId).order("created_at", { ascending: false }),
         ]);
 
+        // Enrich history entries with performer info
+        const enrichedHistory = (historyRes.data || []).map(entry => ({
+          ...entry,
+          performer: entry.performed_by ? membersMap.get(entry.performed_by) || null : null,
+        }));
+
         return {
           ...data,
           assignee: data.assigned_to ? membersMap.get(data.assigned_to) || null : null,
           creator: data.created_by ? membersMap.get(data.created_by) || null : null,
           checklist: checklistRes.data || [],
           attachments: attachmentsRes.data || [],
-          history: historyRes.data || [],
+          history: enrichedHistory,
         } as Task;
       }
 

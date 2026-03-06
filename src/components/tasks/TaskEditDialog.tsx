@@ -1196,7 +1196,20 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                             <span className={colors.icon}>{getIcon()}</span>
                           </div>
                           <div className="flex-1">
-                            <p className="text-muted-foreground">{getHistoryMessage()}</p>
+                            <div className="flex items-center gap-2">
+                              {entry.performer && (
+                                <div className="flex items-center gap-1.5">
+                                  <Avatar className="h-5 w-5">
+                                    <AvatarImage src={entry.performer.avatar_url || undefined} />
+                                    <AvatarFallback className="text-[8px] bg-muted">
+                                      {(entry.performer.name || "?").split(" ").map(n => n[0]).join("").slice(0, 2)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-xs font-medium text-foreground">{entry.performer.name}</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-muted-foreground mt-0.5">{getHistoryMessage()}</p>
                             <p className="text-xs text-muted-foreground mt-1">
                               {format(new Date(entry.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                             </p>
