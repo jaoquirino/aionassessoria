@@ -507,7 +507,12 @@ export default function Dashboard() {
                           client.operationalWeight > 10 ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
                         )}>{client.operationalWeight}</span>
                       </td>
-                      <td className="py-4"><span className="text-sm text-muted-foreground">{client.deliveriesThisMonth}</span></td>
+                      <td className="py-4">
+                        <span className="text-sm text-foreground">{client.deliveriesThisMonth}</span>
+                        {client.designLimit != null && (
+                          <span className="text-xs text-muted-foreground"> / {client.designLimit}</span>
+                        )}
+                      </td>
                       <td className="py-4">
                         <span className={cn("text-xs font-medium capitalize",
                           client.healthStatus === "normal" && "text-success",
