@@ -139,13 +139,22 @@ export default function Clients() {
             Gerencie clientes e contratos
           </p>
         </div>
-        <AddClientDialog 
-          onClientAdded={() => {}} 
-          onClientCreatedForOnboarding={async (clientId) => {
-            await refetch();
-            setPendingClientId(clientId);
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleHideValues}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={hideValues ? "Mostrar valores" : "Ocultar valores"}
+          >
+            {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+          <AddClientDialog 
+            onClientAdded={() => {}} 
+            onClientCreatedForOnboarding={async (clientId) => {
+              await refetch();
+              setPendingClientId(clientId);
+            }}
+          />
+        </div>
       </motion.div>
 
       {/* Contract Alert */}
