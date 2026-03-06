@@ -111,7 +111,12 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                 <SelectItem value="all">Todos os clientes</SelectItem>
                 {clients?.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
-                    {client.name}
+                    <span className="flex items-center gap-2">
+                      {client.logo_url && (
+                        <img src={client.logo_url} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                      )}
+                      {client.name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
