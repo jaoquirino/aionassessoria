@@ -186,153 +186,203 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Entregues</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">{groupedDeliveries.done.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pendentes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">{groupedDeliveries.pending.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Peso Total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filteredDeliveries.reduce((sum, d) => sum + d.weight, 0)}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Design Deliverables Count */}
+      {/* Unified Filter Bar */}
       {(() => {
+        const overdue = filteredDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
         const arteCount = filteredDeliveries.filter(d => d.deliverableType === "arte").length;
         const videoCount = filteredDeliveries.filter(d => d.deliverableType === "video").length;
-        const totalDesign = arteCount + videoCount;
-        if (totalDesign === 0) return null;
+
+        const typeOptions = [
+          { value: "recurring", label: "Recorrente" },
+          { value: "planning", label: "Planejamento" },
+          { value: "project", label: "Projeto" },
+          { value: "extra", label: "Extra" },
+        ];
+
+        // Apply all filters
+        let displayDeliveries = filteredDeliveries;
+        if (statusFilter === "done") displayDeliveries = displayDeliveries.filter(d => d.status === "done");
+        else if (statusFilter === "pending") displayDeliveries = displayDeliveries.filter(d => d.status !== "done");
+        else if (statusFilter === "overdue") displayDeliveries = displayDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
+        if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.deliverableType === designFilter);
+        if (typeFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.type === typeFilter);
+
+        const hasActiveFilter = statusFilter !== "all" || designFilter !== "all" || typeFilter !== "all";
+
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Image className="h-4 w-4" />
-                Entregáveis de Design
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div
-                  onClick={() => setDesignFilter(designFilter === "all" ? "all" : "all")}
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Status filters */}
+              <button
+                onClick={() => setStatusFilter(statusFilter === "all" ? "all" : "all")}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                  statusFilter === "all"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                )}
+              >
+                Total ({filteredDeliveries.length})
+              </button>
+              <button
+                onClick={() => setStatusFilter(statusFilter === "done" ? "all" : "done")}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                  statusFilter === "done"
+                    ? "bg-success text-success-foreground"
+                    : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                )}
+              >
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  Entregues ({groupedDeliveries.done.length})
+                </span>
+              </button>
+              <button
+                onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                  statusFilter === "pending"
+                    ? "bg-warning text-warning-foreground"
+                    : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                )}
+              >
+                Pendentes ({groupedDeliveries.pending.length})
+              </button>
+              {overdue.length > 0 && (
+                <button
+                  onClick={() => setStatusFilter(statusFilter === "overdue" ? "all" : "overdue")}
                   className={cn(
-                    "text-center p-3 rounded-lg cursor-pointer transition-colors",
-                    designFilter === "all" ? "bg-muted ring-2 ring-primary" : "bg-muted/50 hover:bg-muted/80"
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    statusFilter === "overdue"
+                      ? "bg-destructive text-destructive-foreground"
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
                   )}
-                  role="button"
                 >
-                  <div className="text-2xl font-bold">{totalDesign}</div>
-                  <p className="text-xs text-muted-foreground">Total</p>
-                </div>
-                <div
+                  <span className="flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    Atrasadas ({overdue.length})
+                  </span>
+                </button>
+              )}
+
+              <div className="w-px h-6 bg-border mx-1" />
+
+              {/* Design type filters */}
+              {arteCount > 0 && (
+                <button
                   onClick={() => setDesignFilter(designFilter === "arte" ? "all" : "arte")}
                   className={cn(
-                    "text-center p-3 rounded-lg cursor-pointer transition-colors",
-                    designFilter === "arte" ? "bg-purple/20 ring-2 ring-purple" : "bg-purple/10 hover:bg-purple/20"
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    designFilter === "arte"
+                      ? "bg-purple/20 text-purple ring-1 ring-purple"
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
                   )}
-                  role="button"
                 >
-                  <div className="text-2xl font-bold text-purple flex items-center justify-center gap-1">
-                    <Image className="h-4 w-4" /> {arteCount}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Artes</p>
-                </div>
-                <div
+                  <span className="flex items-center gap-1.5">
+                    <Image className="h-3.5 w-3.5" />
+                    Artes ({arteCount})
+                  </span>
+                </button>
+              )}
+              {videoCount > 0 && (
+                <button
                   onClick={() => setDesignFilter(designFilter === "video" ? "all" : "video")}
                   className={cn(
-                    "text-center p-3 rounded-lg cursor-pointer transition-colors",
-                    designFilter === "video" ? "bg-info/20 ring-2 ring-info" : "bg-info/10 hover:bg-info/20"
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    designFilter === "video"
+                      ? "bg-info/20 text-info ring-1 ring-info"
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
                   )}
-                  role="button"
                 >
-                  <div className="text-2xl font-bold text-info flex items-center justify-center gap-1">
-                    <Video className="h-4 w-4" /> {videoCount}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Vídeos</p>
+                  <span className="flex items-center gap-1.5">
+                    <Video className="h-3.5 w-3.5" />
+                    Vídeos ({videoCount})
+                  </span>
+                </button>
+              )}
+
+              <div className="w-px h-6 bg-border mx-1" />
+
+              {/* Type filter */}
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[160px] h-8 text-sm">
+                  <SelectValue placeholder="Tipo de tarefa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  {typeOptions.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {hasActiveFilter && (
+                <button
+                  onClick={() => { setStatusFilter("all"); setDesignFilter("all"); setTypeFilter("all"); }}
+                  className="px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <X className="h-3 w-3" /> Limpar filtros
+                </button>
+              )}
+            </div>
+
+            {/* Deliveries List */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  Lista de Entregas ({displayDeliveries.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {displayDeliveries.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">Nenhuma entrega encontrada</p>
+                  ) : (
+                    displayDeliveries.map((delivery) => {
+                      const StatusIcon = statusConfig[delivery.status]?.icon || Clock;
+                      return (
+                        <div
+                          key={delivery.id}
+                          onClick={() => setSelectedTaskId(delivery.id)}
+                          className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3">
+                            <StatusIcon className={cn(
+                              "h-4 w-4",
+                              delivery.status === "done" ? "text-success" : "text-muted-foreground"
+                            )} />
+                            <div>
+                              <p className="font-medium text-sm">{delivery.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {delivery.clientName}
+                                {delivery.moduleName && ` · ${delivery.moduleName}`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {delivery.deliverableType && (
+                              <Badge variant="outline" className={cn(
+                                "text-xs shrink-0",
+                                delivery.deliverableType === "arte" ? "border-purple/30 text-purple" : "border-info/30 text-info"
+                              )}>
+                                {delivery.deliverableType === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
+                              </Badge>
+                            )}
+                            <Badge className={cn("shrink-0", statusConfig[delivery.status]?.color)}>
+                              {statusConfig[delivery.status]?.label || delivery.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </>
         );
       })()}
-
-      {/* Deliveries List */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Lista de Entregas</CardTitle>
-          {designFilter !== "all" && (
-            <Badge variant="outline" className="cursor-pointer gap-1" onClick={() => setDesignFilter("all")}>
-              {designFilter === "arte" ? "🎨 Artes" : "🎬 Vídeos"} ✕
-            </Badge>
-          )}
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {(() => {
-              const displayDeliveries = designFilter === "all"
-                ? filteredDeliveries
-                : filteredDeliveries.filter(d => d.deliverableType === designFilter);
-              if (displayDeliveries.length === 0) return (
-                <p className="text-center text-muted-foreground py-8">Nenhuma entrega encontrada</p>
-              );
-              return displayDeliveries.map((delivery) => {
-                const StatusIcon = statusConfig[delivery.status]?.icon || Clock;
-                return (
-                  <div
-                    key={delivery.id}
-                    onClick={() => setSelectedTaskId(delivery.id)}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3">
-                      <StatusIcon className={cn(
-                        "h-4 w-4",
-                        delivery.status === "done" ? "text-success" : "text-muted-foreground"
-                      )} />
-                      <div>
-                        <p className="font-medium text-sm">{delivery.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {delivery.clientName}
-                          {delivery.moduleName && ` · ${delivery.moduleName}`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {delivery.deliverableType && (
-                        <Badge variant="outline" className={cn(
-                          "text-xs shrink-0",
-                          delivery.deliverableType === "arte" ? "border-purple/30 text-purple" : "border-info/30 text-info"
-                        )}>
-                          {delivery.deliverableType === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
-                        </Badge>
-                      )}
-                      <Badge className={cn("shrink-0", statusConfig[delivery.status]?.color)}>
-                        {statusConfig[delivery.status]?.label || delivery.status}
-                      </Badge>
-                    </div>
-                  </div>
-                );
-              });
-            })()}
-          </div>
-        </CardContent>
-      </Card>
       <TaskEditDialog
         taskId={selectedTaskId}
         open={!!selectedTaskId}
