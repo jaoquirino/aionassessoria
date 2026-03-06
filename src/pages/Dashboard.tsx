@@ -174,16 +174,20 @@ export default function Dashboard() {
   const handleTaskClick = (task: { id: string; isSubtask: boolean; parentTaskId: string | null }) => {
     if (task.isSubtask && task.parentTaskId) {
       setSelectedTaskId(task.parentTaskId);
+      setSelectedSubtaskId(task.id);
     } else {
       setSelectedTaskId(task.id);
+      setSelectedSubtaskId(null);
     }
   };
 
   const handleClientTaskClick = (task: ClientTask) => {
     if (task.isSubtask && task.parentTaskId) {
       setSelectedTaskId(task.parentTaskId);
+      setSelectedSubtaskId(task.id);
     } else {
       setSelectedTaskId(task.id);
+      setSelectedSubtaskId(null);
     }
   };
 
