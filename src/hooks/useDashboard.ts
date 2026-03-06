@@ -77,8 +77,29 @@ export function useDashboardData() {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // Parallel fetch for all data - much faster
-      const [tasksRes, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes] = await Promise.all([
-        supabase.from("tasks").select("*").order("due_date"),
+      // Fetch all non-archived tasks (use range to bypass 1000 row limit)
+      const fetchAllTasks = async () => {
+        const allTasks: any[] = [];
+        let from = 0;
+        const batchSize = 1000;
+        while (true) {
+          const { data, error } = await supabase
+            .from("tasks")
+            .select("*")
+            .is("archived_at", null)
+            .order("due_date")
+            .range(from, from + batchSize - 1);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          allTasks.push(...data);
+          if (data.length < batchSize) break;
+          from += batchSize;
+        }
+        return allTasks;
+      };
+
+      const [tasks, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes] = await Promise.all([
+        fetchAllTasks(),
         supabase.from("clients").select("*, is_internal"),
         supabase.from("contracts").select("*, client:clients(name)").eq("status", "active"),
         supabase.from("team_members_public").select("*").eq("is_active", true),
@@ -86,7 +107,6 @@ export function useDashboardData() {
         supabase.from("task_assignees").select("task_id, team_member_id"),
       ]);
 
-      const tasks = tasksRes.data || [];
       const clients = clientsRes.data || [];
       const contracts = contractsRes.data || [];
       const teamMembers = teamMembersRes.data || [];
@@ -113,7 +133,12 @@ export function useDashboardData() {
       const operationalTasks = tasks.filter(t => t.type !== "onboarding");
       const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
 
+      // Separate parent tasks (no parent_task_id) from subtasks for weight calculation
+      // Subtasks inherit weight from parent, so only count parent-level tasks for weight
+      const parentTaskIds = new Set(tasks.filter(t => t.parent_task_id).map(t => t.parent_task_id));
+
       // Calculate stats (excluding onboarding tasks)
+      // For overdue/delivery counts, include all tasks (parents + subtasks)
       const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < now && t.status !== "done").length;
       const todayDeliveries = operationalTasks.filter(t => {
         const due = parseLocalDate(t.due_date);
@@ -138,8 +163,11 @@ export function useDashboardData() {
         .filter((c: { client_id: string }) => !internalClientIds.has(c.client_id))
         .reduce((sum: number, c: { monthly_value: number }) => sum + Number(c.monthly_value), 0);
 
+      // For weight: exclude subtasks that have a parent (parent already carries the weight)
+      // But if parent has subtasks, only count the parent's weight once
       const activeTasks = operationalTasksForWeight.filter(t => t.status !== "done");
-      const totalWeight = activeTasks.reduce((sum, t) => sum + t.weight, 0);
+      const activeTasksForWeight = activeTasks.filter(t => !t.parent_task_id);
+      const totalWeight = activeTasksForWeight.reduce((sum, t) => sum + t.weight, 0);
       const totalCapacity = teamMembers.reduce((sum, m) => sum + (m.capacity_limit || 0), 0);
 
       // Map tasks for display
@@ -180,7 +208,8 @@ export function useDashboardData() {
       // Also exclude internal client tasks from weight calculation
       // Use task_assignees for multi-assignee support
       const memberTaskStats = new Map<string, { weight: number; count: number; overdue: number }>();
-      operationalTasksForWeight.filter(t => t.status !== "done").forEach(t => {
+      // Only count parent-level tasks for weight; subtasks don't add extra weight
+      operationalTasksForWeight.filter(t => t.status !== "done" && !t.parent_task_id).forEach(t => {
         // Get all assigned members for this task
         const assignedMembers = new Set<string>();
         if (t.assigned_to) assignedMembers.add(t.assigned_to);
@@ -190,6 +219,20 @@ export function useDashboardData() {
         assignedMembers.forEach(memberId => {
           const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
+          curr.count += 1;
+          if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
+          memberTaskStats.set(memberId, curr);
+        });
+      });
+      // Also count subtasks for task count and overdue, but NOT weight
+      operationalTasksForWeight.filter(t => t.status !== "done" && t.parent_task_id).forEach(t => {
+        const assignedMembers = new Set<string>();
+        if (t.assigned_to) assignedMembers.add(t.assigned_to);
+        const extraAssignees = taskAssigneeMap.get(t.id);
+        if (extraAssignees) extraAssignees.forEach(id => assignedMembers.add(id));
+
+        assignedMembers.forEach(memberId => {
+          const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.count += 1;
           if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
           memberTaskStats.set(memberId, curr);
@@ -234,9 +277,13 @@ export function useDashboardData() {
       // Client health (using operational tasks only)
       const clientTaskStats = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number }>();
       operationalTasksForWeight.forEach(t => {
+        // Only count weight for parent-level tasks (not subtasks)
         const curr = clientTaskStats.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0 };
         if (t.status !== "done") {
-          curr.weight += t.weight;
+          // Only add weight for parent-level tasks
+          if (!t.parent_task_id) {
+            curr.weight += t.weight;
+          }
           curr.pending += 1;
         } else {
           const doneDate = new Date(t.updated_at);
