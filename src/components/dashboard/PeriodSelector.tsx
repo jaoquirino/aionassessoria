@@ -136,11 +136,13 @@ export function getPeriodDates(period: PeriodOption, customRange?: CustomDateRan
   };
 
   switch (period) {
-    case "7d":
-      setWindow(7);
+    case "current_month":
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
       break;
-    case "15d":
-      setWindow(15);
+    case "last_month":
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
       break;
     case "30d":
       setWindow(30);
