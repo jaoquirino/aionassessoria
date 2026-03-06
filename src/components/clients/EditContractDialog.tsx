@@ -14,7 +14,7 @@ import { useUpdateContract, type ContractWithModules } from "@/hooks/useContract
 import { useAllModules } from "@/hooks/useModules";
 import { useUpdateContractModules } from "@/hooks/useContractModules";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { Package, RotateCcw } from "lucide-react";
+import { Package, RotateCcw, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EditContractDialogProps {
