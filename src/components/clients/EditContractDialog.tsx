@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -14,7 +16,8 @@ import { useUpdateContract, type ContractWithModules } from "@/hooks/useContract
 import { useAllModules } from "@/hooks/useModules";
 import { useUpdateContractModules } from "@/hooks/useContractModules";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { Package } from "lucide-react";
+import { Package, RotateCcw } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EditContractDialogProps {
   contract: ContractWithModules | null;
@@ -46,6 +49,7 @@ export function EditContractDialog({
   const [status, setStatus] = useState("active");
   const [notes, setNotes] = useState("");
   const [moduleConfigs, setModuleConfigs] = useState<ModuleConfig[]>([]);
+  const [isRecurring, setIsRecurring] = useState(true);
 
   const updateContract = useUpdateContract();
   const updateModules = useUpdateContractModules();
@@ -60,8 +64,8 @@ export function EditContractDialog({
       setMinimumDuration(contract.minimum_duration_months);
       setStatus(contract.status);
       setNotes(contract.notes || "");
+      setIsRecurring((contract as any).is_recurring !== false);
 
-      // Initialize module configs from contract modules
       const configs: ModuleConfig[] = allModules.map((module) => {
         const existingModule = contract.modules?.find(m => m.module_id === module.id);
         return {
@@ -98,14 +102,14 @@ export function EditContractDialog({
       id: contract.id,
       monthly_value: monthlyValue,
       start_date: startDate,
-      renewal_date: renewalDate || null,
+      renewal_date: isRecurring ? (renewalDate || null) : null,
       payment_due_day: paymentDueDay,
       minimum_duration_months: minimumDuration,
       status,
       notes: notes || null,
+      is_recurring: isRecurring,
     });
 
-    // Update modules
     const selectedModules = moduleConfigs
       .filter(c => c.selected)
       .map(c => ({
@@ -121,14 +125,9 @@ export function EditContractDialog({
     onOpenChange(false);
   };
 
-  // Check if module needs deliverable tracking (has default limit or is design-related)
-  const moduleNeedsDeliverableLimit = (moduleName: string, defaultLimit: number | null) => {
-    if (defaultLimit !== null) return true;
-    const designKeywords = ["design", "arte", "visual", "gráfico", "video", "vídeo"];
-    return designKeywords.some(k => moduleName.toLowerCase().includes(k));
-  };
-
   if (!contract) return null;
+
+  const selectedCount = moduleConfigs.filter(c => c.selected).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -147,95 +146,166 @@ export function EditContractDialog({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start-date">Data de Início</Label>
-              <DatePicker
-                id="start-date"
-                value={startDate}
-                onChange={setStartDate}
-                placeholder="Selecionar data"
-              />
+          {/* Recurring Toggle */}
+          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <RotateCcw className="h-4 w-4 text-muted-foreground" />
+              <div className="space-y-0.5">
+                <Label htmlFor="recurring" className="text-sm font-medium">
+                  Contrato recorrente
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {isRecurring ? "Com data de início, duração e vencimento" : "Apenas dia de pagamento"}
+                </p>
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="renewal-date">Vencimento</Label>
-              <DatePicker
-                id="renewal-date"
-                value={renewalDate}
-                onChange={setRenewalDate}
-                placeholder="Selecionar data"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="payment-due-day">Mensalidade</Label>
-              <Input
-                id="payment-due-day"
-                type="number"
-                min={1}
-                max={31}
-                value={paymentDueDay}
-                onChange={(e) => {
-                  const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
-                  setPaymentDueDay(val);
-                }}
-                placeholder="1-31"
-              />
-            </div>
+            <Switch
+              id="recurring"
+              checked={isRecurring}
+              onCheckedChange={setIsRecurring}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="min-duration">Duração Total (meses)</Label>
-              <Input
-                id="min-duration"
-                type="number"
-                min={1}
-                value={minimumDuration}
-                onChange={(e) => setMinimumDuration(parseInt(e.target.value) || 12)}
-              />
-            </div>
+          {isRecurring ? (
+            <>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start-date">Data de Início</Label>
+                  <DatePicker
+                    id="start-date"
+                    value={startDate}
+                    onChange={setStartDate}
+                    placeholder="Selecionar data"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="contract-status">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger id="contract-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="renewal-date">Vencimento</Label>
+                  <DatePicker
+                    id="renewal-date"
+                    value={renewalDate}
+                    onChange={setRenewalDate}
+                    placeholder="Selecionar data"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="payment-due-day">Dia Pgto</Label>
+                  <Input
+                    id="payment-due-day"
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={paymentDueDay}
+                    onChange={(e) => {
+                      const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
+                      setPaymentDueDay(val);
+                    }}
+                    placeholder="1-31"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="min-duration">Duração Total (meses)</Label>
+                  <Input
+                    id="min-duration"
+                    type="number"
+                    min={1}
+                    value={minimumDuration}
+                    onChange={(e) => setMinimumDuration(parseInt(e.target.value) || 12)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contract-status">Status</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger id="contract-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="payment-due-day">Dia de Pagamento</Label>
+                <Input
+                  id="payment-due-day"
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={paymentDueDay}
+                  onChange={(e) => {
+                    const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
+                    setPaymentDueDay(val);
+                  }}
+                  placeholder="1-31"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contract-status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger id="contract-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
+          )}
 
           <Separator />
 
-          {/* Modules Section */}
+          {/* Modules Section - improved */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
-              <Label className="text-base font-medium">Módulos Contratados</Label>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-base font-medium">Módulos Contratados</Label>
+              </div>
+              {selectedCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedCount} selecionado{selectedCount > 1 ? "s" : ""}
+                </Badge>
+              )}
             </div>
             
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="grid gap-2 max-h-56 overflow-y-auto">
               {allModules?.filter(m => m.is_active).map((module) => {
                 const config = moduleConfigs.find(c => c.moduleId === module.id);
-                const needsLimit = moduleNeedsDeliverableLimit(module.name, module.deliverable_limit);
+                const isSelected = config?.selected || false;
                 
                 return (
                   <div 
                     key={module.id} 
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer",
+                      isSelected 
+                        ? "bg-primary/5 border-primary/20" 
+                        : "bg-muted/20 border-transparent hover:bg-muted/40"
+                    )}
+                    onClick={() => handleModuleToggle(module.id)}
                   >
                     <Checkbox
                       id={`module-${module.id}`}
-                      checked={config?.selected || false}
+                      checked={isSelected}
                       onCheckedChange={() => handleModuleToggle(module.id)}
                     />
                     <div className="flex-1 min-w-0">
@@ -245,14 +315,27 @@ export function EditContractDialog({
                       >
                         {module.name}
                       </label>
-                      <p className="text-xs text-muted-foreground">
-                        Peso: {module.default_weight} · {module.primary_role}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          Peso: {module.default_weight}
+                        </span>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <span className="text-xs text-muted-foreground">
+                          {module.primary_role}
+                        </span>
+                        {module.is_recurring && (
+                          <>
+                            <span className="text-xs text-muted-foreground">·</span>
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                              Recorrente
+                            </Badge>
+                          </>
+                        )}
+                      </div>
                     </div>
                     
-                    {/* Deliverable limit - shown for all selected modules */}
-                    {config?.selected && (
-                      <div className="flex items-center gap-1.5">
+                    {isSelected && (
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <Input
                           type="number"
                           min={0}
