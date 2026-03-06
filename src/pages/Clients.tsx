@@ -415,7 +415,7 @@ export default function Clients() {
                 </Badge>
                 {mrr > 0 && (
                   <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/30">
-                    {formatCurrency(mrr)}
+                    {maskCurrency(formatCurrency(mrr))}
                   </Badge>
                 )}
                 {paymentDay && (
