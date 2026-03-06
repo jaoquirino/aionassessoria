@@ -27,6 +27,7 @@ export interface DashboardTask {
   weight: number;
   type: string;
   isSubtask: boolean;
+  parentTaskId: string | null;
 }
 
 export interface DashboardTeamMember {
