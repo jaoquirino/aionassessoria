@@ -42,6 +42,7 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
   const [useCustomDates, setUseCustomDates] = useState(false);
   const [rangePickerOpen, setRangePickerOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video">("all");
   
   const { data: clients, isLoading: clientsLoading } = useAllClients();
   const { data: deliveries, isLoading: deliveriesLoading } = useDeliveriesByClient(
