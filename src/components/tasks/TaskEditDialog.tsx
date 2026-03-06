@@ -424,11 +424,12 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                    <CheckSquare className="h-3 w-3" /> Subtarefa
                  </p>
                )}
-               <Input 
+               <input 
                  ref={titleInputRef}
                  value={title} 
                  onChange={(e) => { setTitle(e.target.value); markDirty(); }}
-                 className="text-[48px] leading-tight font-bold border-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 mb-3"
+                 className="w-full bg-transparent border-none p-0 h-auto font-bold outline-none placeholder:text-muted-foreground mb-3"
+                 style={{ fontSize: '48px', lineHeight: '1.1' }}
                  placeholder="Título da tarefa"
                  autoFocus
                />
