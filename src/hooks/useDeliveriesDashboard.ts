@@ -13,6 +13,7 @@ export interface DeliveryItem {
   weight: number;
   deliverableType: string | null;
   type: string;
+  isSubtask: boolean;
 }
 
 export interface FinancialComparison {
