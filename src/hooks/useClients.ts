@@ -58,7 +58,7 @@ export function useAllClients() {
         .from("clients")
         .select(`
           *,
-          contracts(id, monthly_value, start_date, renewal_date, status)
+          contracts(id, monthly_value, start_date, renewal_date, status, payment_due_day, is_recurring)
         `)
         .order("name", { ascending: true });
 
