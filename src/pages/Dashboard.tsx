@@ -390,7 +390,6 @@ export default function Dashboard() {
                   <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Peso</th>
                   <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Entregas</th>
                   <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
-                  <th className="pb-3 w-10"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
