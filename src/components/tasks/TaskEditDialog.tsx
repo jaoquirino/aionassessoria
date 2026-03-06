@@ -70,6 +70,7 @@ interface TaskEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialTab?: string;
+  initialSubtaskId?: string | null;
 }
 
 // Hook to fetch modules for a specific client
