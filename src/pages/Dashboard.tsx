@@ -141,56 +141,121 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="glass rounded-xl p-6"
       >
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <Package className="h-5 w-5 text-primary" />
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Package className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">{isRestricted ? "Minhas Tarefas" : "Tarefas"}</h3>
+              <p className="text-sm text-muted-foreground">
+                {displayStats.overdueTasks} atrasadas · {filteredTasks.length} em andamento
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Tarefas</h3>
-            <p className="text-sm text-muted-foreground">Resumo operacional</p>
-          </div>
+          <button
+            onClick={() => navigate("/tarefas")}
+            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          >
+            Ver todas
+            <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div
+
+        {/* Pill badges */}
+        <div className="flex flex-wrap gap-2 mb-5">
+          <button
             onClick={() => navigate("/tarefas?filter=overdue")}
             className={cn(
-              "flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all hover:scale-105",
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
               displayStats.overdueTasks > 0
-                ? "bg-destructive/10 border border-destructive/20"
-                : "bg-muted/50 border border-border"
+                ? "bg-destructive/10 text-destructive border border-destructive/20"
+                : "bg-muted/50 text-muted-foreground border border-border"
             )}
           >
-            <AlertTriangle className={cn("h-5 w-5 mb-1", displayStats.overdueTasks > 0 ? "text-destructive" : "text-muted-foreground")} />
-            <span className={cn("text-2xl font-bold", displayStats.overdueTasks > 0 ? "text-destructive" : "text-foreground")}>
-              {displayStats.overdueTasks}
-            </span>
-            <span className="text-xs text-muted-foreground">Atrasadas</span>
-          </div>
-          <div
+            {displayStats.overdueTasks} Atrasadas
+          </button>
+          <button
             onClick={() => navigate("/tarefas?filter=today")}
-            className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/50 border border-border cursor-pointer transition-all hover:scale-105"
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium bg-success/10 text-success border border-success/20 transition-all hover:scale-105"
           >
-            <CheckCircle className="h-5 w-5 mb-1 text-success" />
-            <span className="text-2xl font-bold text-foreground">{displayStats.todayDeliveries}</span>
-            <span className="text-xs text-muted-foreground">Entregas Hoje</span>
-          </div>
-          <div
+            {displayStats.todayDeliveries} Entregas Hoje
+          </button>
+          <button
             onClick={() => navigate("/tarefas?filter=week")}
-            className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/50 border border-border cursor-pointer transition-all hover:scale-105"
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium bg-primary/10 text-primary border border-primary/20 transition-all hover:scale-105"
           >
-            <Clock className="h-5 w-5 mb-1 text-primary" />
-            <span className="text-2xl font-bold text-foreground">{displayStats.weekDeliveries}</span>
-            <span className="text-xs text-muted-foreground">Da Semana</span>
-            <span className="text-[10px] text-muted-foreground">{displayStats.weekCompleted} concluídas</span>
-          </div>
-          <div
+            {displayStats.weekDeliveries} Da Semana
+          </button>
+          <button
             onClick={() => navigate("/tarefas")}
-            className="flex flex-col items-center justify-center p-4 rounded-xl bg-muted/50 border border-border cursor-pointer transition-all hover:scale-105"
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium bg-muted/50 text-foreground border border-border transition-all hover:scale-105"
           >
-            <Package className="h-5 w-5 mb-1 text-primary" />
-            <span className="text-2xl font-bold text-foreground">{displayStats.activeTasks}</span>
-            <span className="text-xs text-muted-foreground">Ativas</span>
-          </div>
+            {displayStats.activeTasks} Ativas
+          </button>
+        </div>
+
+        {/* Tasks list inline */}
+        <div className="space-y-2">
+          {filteredTasks.length === 0 ? (
+            <p className="text-center text-muted-foreground py-6">Nenhuma tarefa ativa</p>
+          ) : (
+            filteredTasks.slice(0, 8).map((task, index) => (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.03 * index }}
+                className={cn(
+                  "group flex items-center gap-4 rounded-lg border p-3 transition-all hover:bg-muted/50 cursor-pointer",
+                  task.isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border"
+                )}
+                onClick={() => handleTaskClick(task)}
+              >
+                <div
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                    task.isOverdue ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                  )}
+                >
+                  {task.isOverdue ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {task.isSubtask && (
+                      <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    )}
+                    <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{task.clientName}</span>
+                    <span>·</span>
+                    <div className="flex items-center gap-1">
+                      {task.assigneeAvatar && (
+                        <Avatar className="h-4 w-4">
+                          <AvatarImage src={task.assigneeAvatar} />
+                          <AvatarFallback className="text-[8px]">
+                            {task.assigneeName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <span>{task.assigneeName}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Badge className={cn("shrink-0 text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
+                    {statusConfig[task.status]?.label || task.status}
+                  </Badge>
+                  {task.isOverdue && (
+                    <span className="text-xs font-medium text-destructive">Atrasada</span>
+                  )}
+                </div>
+              </motion.div>
+            ))
+          )}
         </div>
       </motion.div>
 
