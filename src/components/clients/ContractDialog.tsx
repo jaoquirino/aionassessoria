@@ -72,6 +72,7 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
       setModuleDeliverableLimits({});
       setRequiresOnboarding(true);
       setIsRecurring(true);
+      setIsInternal(false);
     }
   }, [contract, open]);
 
