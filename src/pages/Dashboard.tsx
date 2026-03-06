@@ -411,7 +411,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Receita Mensal</p>
-                  <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.monthlyRevenue)}</p>
+                  <p className="text-2xl font-bold text-foreground">{maskCurrency(formatCurrency(stats.monthlyRevenue))}</p>
                 </div>
               </div>
               {revenueChartData.length > 1 && (
