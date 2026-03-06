@@ -297,6 +297,7 @@ export function useDashboardData() {
           return {
             id: c.id,
             name: c.name,
+            logo_url: c.logo_url || null,
             monthlyValue: revenue,
             operationalWeight: stats.weight,
             deliveriesThisMonth: stats.delivered,
