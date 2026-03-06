@@ -324,10 +324,7 @@ interface TaskCardProps {
               </p>
             </div>
              <div className="flex items-center gap-1 shrink-0">
-               {isOverdue && (
-                 <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-               )}
-               {/* Quick status action button */}
+                {/* Quick status action button */}
                {task.status === "done" ? (
                  <button
                    className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
@@ -365,7 +362,10 @@ interface TaskCardProps {
                      Arquivar
                    </DropdownMenuItem>
                  </DropdownMenuContent>
-               </DropdownMenu>
+                </DropdownMenu>
+                {isOverdue && (
+                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+                )}
             </div>
           </div>
 
