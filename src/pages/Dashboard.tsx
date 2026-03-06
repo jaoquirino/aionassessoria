@@ -427,7 +427,7 @@ export default function Dashboard() {
                         </defs>
                         <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
                         <Tooltip
-                          formatter={(value: number) => [formatCurrency(value), "Receita"]}
+                          formatter={(value: number) => [maskCurrency(formatCurrency(value)), "Receita"]}
                           contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
                         />
                         <Area type="monotone" dataKey="value" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#revenueGradient)" />
