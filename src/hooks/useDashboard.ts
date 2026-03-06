@@ -139,14 +139,13 @@ export function useDashboardData() {
 
       // Subtasks inherit weight from parent, so only count parent-level tasks for weight
 
-      // Calculate stats (excluding onboarding tasks)
-      // For overdue/delivery counts, include all tasks (parents + subtasks)
-      const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < todayMidnight && t.status !== "done").length;
-      const todayDeliveries = operationalTasks.filter(t => {
+      // Calculate stats (excluding onboarding tasks AND internal clients)
+      const overdueTasks = operationalTasksForWeight.filter(t => parseLocalDate(t.due_date) < todayMidnight && t.status !== "done").length;
+      const todayDeliveries = operationalTasksForWeight.filter(t => {
         const due = parseLocalDate(t.due_date);
         return due.toDateString() === today.toDateString();
       }).length;
-      const weekTasks = operationalTasks.filter(t => {
+      const weekTasks = operationalTasksForWeight.filter(t => {
         const due = parseLocalDate(t.due_date);
         return due >= startOfWeek && due <= endOfWeek;
       });
