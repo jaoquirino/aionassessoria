@@ -150,138 +150,162 @@ export function EditContractDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="monthly-value">Valor Mensal</Label>
-            <CurrencyInput
-              id="monthly-value"
-              value={monthlyValue}
-              onChange={setMonthlyValue}
-            />
-          </div>
-
-          {/* Recurring Toggle */}
+          {/* Internal Toggle */}
           <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
             <div className="flex items-center gap-2">
-              <RotateCcw className="h-4 w-4 text-muted-foreground" />
+              <Building2 className="h-4 w-4 text-muted-foreground" />
               <div className="space-y-0.5">
-                <Label htmlFor="recurring" className="text-sm font-medium">
-                  Contrato recorrente
+                <Label htmlFor="internal-edit" className="text-sm font-medium">
+                  Contrato interno
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  {isRecurring ? "Com data de início, duração e vencimento" : "Apenas dia de pagamento"}
+                  Seleciona todos os módulos, sem valor ou datas
                 </p>
               </div>
             </div>
             <Switch
-              id="recurring"
-              checked={isRecurring}
-              onCheckedChange={setIsRecurring}
+              id="internal-edit"
+              checked={isInternal}
+              onCheckedChange={handleInternalToggle}
             />
           </div>
 
-          {isRecurring ? (
+          {!isInternal && (
             <>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start-date">Data de Início</Label>
-                  <DatePicker
-                    id="start-date"
-                    value={startDate}
-                    onChange={setStartDate}
-                    placeholder="Selecionar data"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="renewal-date">Vencimento</Label>
-                  <DatePicker
-                    id="renewal-date"
-                    value={renewalDate}
-                    onChange={setRenewalDate}
-                    placeholder="Selecionar data"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="payment-due-day">Dia Pgto</Label>
-                  <Input
-                    id="payment-due-day"
-                    type="number"
-                    min={1}
-                    max={31}
-                    value={paymentDueDay}
-                    onChange={(e) => {
-                      const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
-                      setPaymentDueDay(val);
-                    }}
-                    placeholder="1-31"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="min-duration">Duração Total (meses)</Label>
-                  <Input
-                    id="min-duration"
-                    type="number"
-                    min={1}
-                    value={minimumDuration}
-                    onChange={(e) => setMinimumDuration(parseInt(e.target.value) || 12)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contract-status">Status</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger id="contract-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="payment-due-day">Dia de Pagamento</Label>
-                <Input
-                  id="payment-due-day"
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={paymentDueDay}
-                  onChange={(e) => {
-                    const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
-                    setPaymentDueDay(val);
-                  }}
-                  placeholder="1-31"
+                <Label htmlFor="monthly-value">Valor Mensal</Label>
+                <CurrencyInput
+                  id="monthly-value"
+                  value={monthlyValue}
+                  onChange={setMonthlyValue}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="contract-status">Status</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger id="contract-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Recurring Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <RotateCcw className="h-4 w-4 text-muted-foreground" />
+                  <div className="space-y-0.5">
+                    <Label htmlFor="recurring" className="text-sm font-medium">
+                      Contrato recorrente
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {isRecurring ? "Com data de início, duração e vencimento" : "Apenas dia de pagamento"}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="recurring"
+                  checked={isRecurring}
+                  onCheckedChange={setIsRecurring}
+                />
               </div>
-            </div>
+
+              {isRecurring ? (
+                <>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="start-date">Data de Início</Label>
+                      <DatePicker
+                        id="start-date"
+                        value={startDate}
+                        onChange={setStartDate}
+                        placeholder="Selecionar data"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="renewal-date">Vencimento</Label>
+                      <DatePicker
+                        id="renewal-date"
+                        value={renewalDate}
+                        onChange={setRenewalDate}
+                        placeholder="Selecionar data"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="payment-due-day">Dia Pgto</Label>
+                      <Input
+                        id="payment-due-day"
+                        type="number"
+                        min={1}
+                        max={31}
+                        value={paymentDueDay}
+                        onChange={(e) => {
+                          const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
+                          setPaymentDueDay(val);
+                        }}
+                        placeholder="1-31"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="min-duration">Duração Total (meses)</Label>
+                      <Input
+                        id="min-duration"
+                        type="number"
+                        min={1}
+                        value={minimumDuration}
+                        onChange={(e) => setMinimumDuration(parseInt(e.target.value) || 12)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="contract-status">Status</Label>
+                      <Select value={status} onValueChange={setStatus}>
+                        <SelectTrigger id="contract-status">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="payment-due-day">Dia de Pagamento</Label>
+                    <Input
+                      id="payment-due-day"
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={paymentDueDay}
+                      onChange={(e) => {
+                        const val = Math.min(31, Math.max(1, Number(e.target.value) || 1));
+                        setPaymentDueDay(val);
+                      }}
+                      placeholder="1-31"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contract-status">Status</Label>
+                    <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger id="contract-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <Separator />
