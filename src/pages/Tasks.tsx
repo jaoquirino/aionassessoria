@@ -36,6 +36,7 @@ export default function Tasks() {
   const [viewMode] = useState<"kanban">("kanban");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTaskTab, setSelectedTaskTab] = useState<string>("details");
+  const [initialSubtaskId, setInitialSubtaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<FiltersState>({
     search: "",
     status: "all",
@@ -55,12 +56,16 @@ export default function Tasks() {
   const createTask = useCreateTask();
   const archiveTask = useArchiveTask();
 
-  // Handle task opening from URL query param (e.g., from notifications)
+  // Handle task opening from URL query param (e.g., from notifications or dashboard)
   useEffect(() => {
     const taskIdFromUrl = searchParams.get("task");
+    const subtaskIdFromUrl = searchParams.get("subtask");
     if (taskIdFromUrl) {
       setSelectedTaskId(taskIdFromUrl);
-      // Remove query param after opening
+      if (subtaskIdFromUrl) {
+        setInitialSubtaskId(subtaskIdFromUrl);
+      }
+      // Remove query params after opening
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -300,8 +305,14 @@ export default function Tasks() {
       <TaskEditDialog 
         taskId={selectedTaskId} 
         open={!!selectedTaskId} 
-        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTaskId(null);
+            setInitialSubtaskId(null);
+          }
+        }}
         initialTab={selectedTaskTab}
+        initialSubtaskId={initialSubtaskId}
       />
     </div>
   );

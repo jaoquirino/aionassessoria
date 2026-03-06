@@ -27,6 +27,7 @@ export interface DashboardTask {
   weight: number;
   type: string;
   isSubtask: boolean;
+  parentTaskId: string | null;
 }
 
 export interface DashboardTeamMember {
@@ -128,19 +129,19 @@ export function useDashboardData() {
       );
 
       const now = new Date();
+      // Strip time for date-only comparisons (overdue = due date strictly before today)
+      const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       // Filter out onboarding tasks from general stats
       // Also filter out tasks from internal clients for weight calculations
       const operationalTasks = tasks.filter(t => t.type !== "onboarding");
       const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
 
-      // Separate parent tasks (no parent_task_id) from subtasks for weight calculation
       // Subtasks inherit weight from parent, so only count parent-level tasks for weight
-      const parentTaskIds = new Set(tasks.filter(t => t.parent_task_id).map(t => t.parent_task_id));
 
       // Calculate stats (excluding onboarding tasks)
       // For overdue/delivery counts, include all tasks (parents + subtasks)
-      const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < now && t.status !== "done").length;
+      const overdueTasks = operationalTasks.filter(t => parseLocalDate(t.due_date) < todayMidnight && t.status !== "done").length;
       const todayDeliveries = operationalTasks.filter(t => {
         const due = parseLocalDate(t.due_date);
         return due.toDateString() === today.toDateString();
@@ -175,13 +176,6 @@ export function useDashboardData() {
       const memberMap = new Map(teamMembers.map(m => [m.id, m.name]));
       const clientMap = new Map(clients.map(c => [c.id, c.name]));
 
-      // Helper: check if a task is assigned to a specific member (via assigned_to OR task_assignees)
-      const isAssignedTo = (task: any, memberId: string) => {
-        if (task.assigned_to === memberId) return true;
-        const assigneeIds = taskAssigneeMap.get(task.id);
-        return assigneeIds ? assigneeIds.includes(memberId) : false;
-      };
-
       // Get all assignee names for a task
       const getAssigneeName = (task: any) => {
         const assigneeIds = taskAssigneeMap.get(task.id) || [];
@@ -200,10 +194,11 @@ export function useDashboardData() {
         assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
         status: t.status,
-        isOverdue: parseLocalDate(t.due_date) < now && t.status !== "done",
+        isOverdue: parseLocalDate(t.due_date) < todayMidnight && t.status !== "done",
         weight: t.weight,
         type: t.type,
         isSubtask: !!t.parent_task_id,
+        parentTaskId: t.parent_task_id || null,
       }));
 
       // Map team capacity (using operational tasks only)
@@ -222,7 +217,7 @@ export function useDashboardData() {
           const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
           curr.count += 1;
-          if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
+          if (parseLocalDate(t.due_date) < todayMidnight) curr.overdue += 1;
           memberTaskStats.set(memberId, curr);
         });
       });
@@ -236,7 +231,7 @@ export function useDashboardData() {
         assignedMembers.forEach(memberId => {
           const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.count += 1;
-          if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
+          if (parseLocalDate(t.due_date) < todayMidnight) curr.overdue += 1;
           memberTaskStats.set(memberId, curr);
         });
       });

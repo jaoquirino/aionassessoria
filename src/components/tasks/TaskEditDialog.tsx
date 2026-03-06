@@ -70,6 +70,7 @@ interface TaskEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialTab?: string;
+  initialSubtaskId?: string | null;
 }
 
 // Hook to fetch modules for a specific client
@@ -130,7 +131,7 @@ function useClientModules(clientId: string | null) {
   });
 }
 
-export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "details" }: TaskEditDialogProps) {
+export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "details", initialSubtaskId = null }: TaskEditDialogProps) {
   const { data: task, isLoading: taskLoading } = useTask(taskId);
   // Pre-populate from tasks list cache for instant display
   const queryClient = useQueryClient();
@@ -182,7 +183,17 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
-  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(initialSubtaskId || null);
+
+  // Auto-open subtask when initialSubtaskId changes and subtasks are loaded
+  useEffect(() => {
+    if (initialSubtaskId && subtasks.length > 0) {
+      const subtaskExists = subtasks.some(s => s.id === initialSubtaskId);
+      if (subtaskExists) {
+        setEditingSubtaskId(initialSubtaskId);
+      }
+    }
+  }, [initialSubtaskId, subtasks]);
   const [newAttachmentName, setNewAttachmentName] = useState("");
   const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [newComment, setNewComment] = useState("");

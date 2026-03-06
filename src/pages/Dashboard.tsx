@@ -240,7 +240,13 @@ export default function Dashboard() {
                     "group flex items-center gap-4 rounded-lg border p-4 transition-all hover:bg-muted/50 cursor-pointer",
                     task.isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border"
                   )}
-                  onClick={() => navigate(`/tarefas?task=${task.id}`)}
+                  onClick={() => {
+                    if (task.isSubtask && task.parentTaskId) {
+                      navigate(`/tarefas?task=${task.parentTaskId}&subtask=${task.id}`);
+                    } else {
+                      navigate(`/tarefas?task=${task.id}`);
+                    }
+                  }}
                 >
                   <div
                     className={cn(
