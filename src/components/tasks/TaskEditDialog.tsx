@@ -183,7 +183,17 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
-  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(initialSubtaskId || null);
+
+  // Auto-open subtask when initialSubtaskId changes and subtasks are loaded
+  useEffect(() => {
+    if (initialSubtaskId && subtasks.length > 0) {
+      const subtaskExists = subtasks.some(s => s.id === initialSubtaskId);
+      if (subtaskExists) {
+        setEditingSubtaskId(initialSubtaskId);
+      }
+    }
+  }, [initialSubtaskId, subtasks]);
   const [newAttachmentName, setNewAttachmentName] = useState("");
   const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
   const [newComment, setNewComment] = useState("");
