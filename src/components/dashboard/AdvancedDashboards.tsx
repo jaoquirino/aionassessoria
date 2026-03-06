@@ -248,20 +248,8 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                 </button>
               )}
 
-              <div className="w-px h-6 bg-border mx-1" />
 
-              {/* Type filter */}
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[160px] h-8 text-sm">
-                  <SelectValue placeholder="Tipo de tarefa" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
-                  {typeOptions.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
 
               {hasActiveFilter && (
                 <button
