@@ -208,7 +208,8 @@ export function useDashboardData() {
       // Also exclude internal client tasks from weight calculation
       // Use task_assignees for multi-assignee support
       const memberTaskStats = new Map<string, { weight: number; count: number; overdue: number }>();
-      operationalTasksForWeight.filter(t => t.status !== "done").forEach(t => {
+      // Only count parent-level tasks for weight; subtasks don't add extra weight
+      operationalTasksForWeight.filter(t => t.status !== "done" && !t.parent_task_id).forEach(t => {
         // Get all assigned members for this task
         const assignedMembers = new Set<string>();
         if (t.assigned_to) assignedMembers.add(t.assigned_to);
@@ -218,6 +219,20 @@ export function useDashboardData() {
         assignedMembers.forEach(memberId => {
           const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
+          curr.count += 1;
+          if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
+          memberTaskStats.set(memberId, curr);
+        });
+      });
+      // Also count subtasks for task count and overdue, but NOT weight
+      operationalTasksForWeight.filter(t => t.status !== "done" && t.parent_task_id).forEach(t => {
+        const assignedMembers = new Set<string>();
+        if (t.assigned_to) assignedMembers.add(t.assigned_to);
+        const extraAssignees = taskAssigneeMap.get(t.id);
+        if (extraAssignees) extraAssignees.forEach(id => assignedMembers.add(id));
+
+        assignedMembers.forEach(memberId => {
+          const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.count += 1;
           if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
           memberTaskStats.set(memberId, curr);
