@@ -33,14 +33,13 @@ function formatCurrency(value: number) {
 }
 
 interface DeliveriesDashboardProps {
-  period: PeriodOption;
+  period?: PeriodOption; // kept for backward compat but no longer used externally
 }
 
-export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
+export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashboardProps) {
+  const [period, setPeriod] = useState<PeriodOption>("30d");
+  const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
   const [selectedClient, setSelectedClient] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
-  const [useCustomDates, setUseCustomDates] = useState(false);
-  const [rangePickerOpen, setRangePickerOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
   const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video">("all");
