@@ -20,6 +20,7 @@ import { useAllClients, type ClientWithContracts } from "@/hooks/useClients";
 import { differenceInDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useHideValues } from "@/hooks/useHideValues";
 
 const statusConfig = {
   onboarding: { label: "Onboarding", color: "bg-blue-500/20 text-blue-500 border-blue-500/30" },
