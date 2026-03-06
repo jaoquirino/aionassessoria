@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Clock, Loader2, AlertTriangle, Pencil } from "lucide-react";
+import { Search, Clock, Loader2, AlertTriangle, Pencil, Calendar, FileText, DollarSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,46 +22,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const statusConfig = {
-  onboarding: { label: "Onboarding", color: "bg-blue-500/20 text-blue-500 border-blue-500/30", ringColor: "ring-blue-500" },
-  active: { label: "Ativo", color: "bg-success/20 text-success border-success/30", ringColor: "ring-success" },
-  paused: { label: "Pausado", color: "bg-warning/20 text-warning border-warning/30", ringColor: "ring-warning" },
-  ended: { label: "Encerrado", color: "bg-muted text-muted-foreground border-muted", ringColor: "ring-muted-foreground" },
+  onboarding: { label: "Onboarding", color: "bg-blue-500/20 text-blue-500 border-blue-500/30" },
+  active: { label: "Ativo", color: "bg-success/20 text-success border-success/30" },
+  paused: { label: "Pausado", color: "bg-warning/20 text-warning border-warning/30" },
+  ended: { label: "Encerrado", color: "bg-muted text-muted-foreground border-muted" },
 };
-
-function CircleIndicator({ 
-  label, 
-  value, 
-  color = "text-foreground",
-  ringColor = "ring-border",
-  subValue,
-  subColor,
-  size = "md",
-}: { 
-  label: string; 
-  value: string | number; 
-  color?: string;
-  ringColor?: string;
-  subValue?: string;
-  subColor?: string;
-  size?: "sm" | "md";
-}) {
-  const sizeClasses = size === "sm" ? "w-12 h-12" : "w-14 h-14";
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className={cn(
-        sizeClasses,
-        "rounded-full ring-2 flex flex-col items-center justify-center bg-background",
-        ringColor
-      )}>
-        <span className={cn("font-bold text-xs leading-tight", color)}>{value}</span>
-        {subValue && (
-          <span className={cn("text-[9px] leading-tight", subColor || "text-muted-foreground")}>{subValue}</span>
-        )}
-      </div>
-      <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-16">{label}</span>
-    </div>
-  );
-}
 
 export default function Clients() {
   const navigate = useNavigate();
@@ -259,7 +224,7 @@ export default function Clients() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="space-y-3"
+        className="space-y-2"
       >
         {otherClients.map((client, index) => {
           const activeContracts = client.contracts?.filter(c => c.status === "active") || [];
@@ -274,21 +239,6 @@ export default function Clients() {
           const daysUntilRenewal = nearestRenewal 
             ? differenceInDays(nearestRenewal, new Date()) 
             : null;
-
-          const renewalColor = daysUntilRenewal !== null && daysUntilRenewal <= 30 
-            ? "text-destructive" 
-            : daysUntilRenewal !== null && daysUntilRenewal <= 60 
-              ? "text-warning" 
-              : "text-foreground";
-          const renewalRing = daysUntilRenewal !== null && daysUntilRenewal <= 30 
-            ? "ring-destructive" 
-            : daysUntilRenewal !== null && daysUntilRenewal <= 60 
-              ? "ring-warning" 
-              : "ring-border";
-
-          const clientSince = parseLocalDate(client.created_at.split("T")[0]);
-          const sinceMonth = clientSince.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
-          const sinceYear = clientSince.getFullYear().toString().slice(2);
 
           const statusInfo = statusConfig[client.status];
 
@@ -305,7 +255,7 @@ export default function Clients() {
                 {/* Client Identity */}
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   {client.logo_url ? (
-                    <img src={client.logo_url} alt="" className="w-10 h-10 object-contain shrink-0 rounded-lg" />
+                    <img src={client.logo_url} alt="" className="w-10 h-10 object-contain shrink-0" />
                   ) : client.color ? (
                     <div className="w-10 h-10 rounded-lg shrink-0 border border-border" style={{ backgroundColor: client.color }} />
                   ) : (
@@ -316,64 +266,52 @@ export default function Clients() {
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground truncate">{client.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Desde {clientSince.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
+                      Desde {parseLocalDate(client.created_at.split("T")[0]).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
                     </p>
                   </div>
                 </div>
 
-                {/* Circle Indicators */}
-                <div className="hidden sm:flex items-center gap-4">
+                {/* Inline Badges */}
+                <div className="hidden sm:flex items-center gap-2 flex-wrap justify-end">
                   {/* Status */}
-                  <CircleIndicator
-                    label="Status"
-                    value={statusInfo.label}
-                    color={statusInfo.color.split(" ").find(c => c.startsWith("text-")) || "text-foreground"}
-                    ringColor={statusInfo.ringColor}
-                    size="sm"
-                  />
+                  <Badge variant="outline" className={cn("text-xs", statusInfo.color)}>
+                    {statusInfo.label}
+                  </Badge>
 
                   {/* Active Contracts */}
-                  <CircleIndicator
-                    label="Contratos"
-                    value={activeContracts.length}
-                    color={activeContracts.length > 0 ? "text-primary" : "text-muted-foreground"}
-                    ringColor={activeContracts.length > 0 ? "ring-primary" : "ring-border"}
-                  />
+                  <Badge variant="outline" className="text-xs gap-1">
+                    <FileText className="h-3 w-3" />
+                    {activeContracts.length}
+                  </Badge>
 
                   {/* MRR */}
-                  <CircleIndicator
-                    label="MRR"
-                    value={mrr > 0 ? formatCurrency(mrr).replace("R$", "").trim() : "—"}
-                    color={mrr > 0 ? "text-success" : "text-muted-foreground"}
-                    ringColor={mrr > 0 ? "ring-success" : "ring-border"}
-                    subValue={mrr > 0 ? "R$" : undefined}
-                    subColor="text-success/70"
-                  />
+                  {mrr > 0 && (
+                    <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/30">
+                      <DollarSign className="h-3 w-3" />
+                      {formatCurrency(mrr).replace("R$", "").trim()}
+                    </Badge>
+                  )}
 
                   {/* Renewal */}
-                  <CircleIndicator
-                    label="Vencimento"
-                    value={nearestRenewal 
-                      ? nearestRenewal.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
-                      : "—"
-                    }
-                    color={renewalColor}
-                    ringColor={renewalRing}
-                    subValue={daysUntilRenewal !== null && daysUntilRenewal <= 60 && daysUntilRenewal > 0 
-                      ? `${daysUntilRenewal}d` 
-                      : undefined
-                    }
-                    subColor={renewalColor}
-                  />
-
-                  {/* Client Since */}
-                  <CircleIndicator
-                    label="Desde"
-                    value={`${sinceMonth}`}
-                    color="text-muted-foreground"
-                    ringColor="ring-border"
-                    subValue={`/${sinceYear}`}
-                  />
+                  {nearestRenewal && (
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-xs gap-1",
+                        daysUntilRenewal !== null && daysUntilRenewal <= 30
+                          ? "bg-destructive/10 text-destructive border-destructive/30"
+                          : daysUntilRenewal !== null && daysUntilRenewal <= 60
+                            ? "bg-warning/10 text-warning border-warning/30"
+                            : ""
+                      )}
+                    >
+                      <Calendar className="h-3 w-3" />
+                      {nearestRenewal.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                      {daysUntilRenewal !== null && daysUntilRenewal <= 60 && daysUntilRenewal > 0 && (
+                        <span className="font-semibold">{daysUntilRenewal}d</span>
+                      )}
+                    </Badge>
+                  )}
                 </div>
 
                 {/* Edit Button */}
@@ -390,39 +328,39 @@ export default function Clients() {
                 </Button>
               </div>
 
-              {/* Mobile: show indicators below */}
-              <div className="flex sm:hidden items-center justify-around mt-3 pt-3 border-t border-border">
-                <CircleIndicator
-                  label="Status"
-                  value={statusInfo.label}
-                  color={statusInfo.color.split(" ").find(c => c.startsWith("text-")) || "text-foreground"}
-                  ringColor={statusInfo.ringColor}
-                  size="sm"
-                />
-                <CircleIndicator
-                  label="Contratos"
-                  value={activeContracts.length}
-                  color={activeContracts.length > 0 ? "text-primary" : "text-muted-foreground"}
-                  ringColor={activeContracts.length > 0 ? "ring-primary" : "ring-border"}
-                  size="sm"
-                />
-                <CircleIndicator
-                  label="MRR"
-                  value={mrr > 0 ? formatCurrency(mrr).replace("R$", "").trim() : "—"}
-                  color={mrr > 0 ? "text-success" : "text-muted-foreground"}
-                  ringColor={mrr > 0 ? "ring-success" : "ring-border"}
-                  size="sm"
-                />
-                <CircleIndicator
-                  label="Vencimento"
-                  value={nearestRenewal 
-                    ? nearestRenewal.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
-                    : "—"
-                  }
-                  color={renewalColor}
-                  ringColor={renewalRing}
-                  size="sm"
-                />
+              {/* Mobile: show badges below */}
+              <div className="flex sm:hidden items-center gap-1.5 flex-wrap mt-3 pt-3 border-t border-border">
+                <Badge variant="outline" className={cn("text-xs", statusInfo.color)}>
+                  {statusInfo.label}
+                </Badge>
+                <Badge variant="outline" className="text-xs gap-1">
+                  <FileText className="h-3 w-3" />
+                  {activeContracts.length}
+                </Badge>
+                {mrr > 0 && (
+                  <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/30">
+                    {formatCurrency(mrr)}
+                  </Badge>
+                )}
+                {nearestRenewal && (
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "text-xs gap-1",
+                      daysUntilRenewal !== null && daysUntilRenewal <= 30
+                        ? "bg-destructive/10 text-destructive border-destructive/30"
+                        : daysUntilRenewal !== null && daysUntilRenewal <= 60
+                          ? "bg-warning/10 text-warning border-warning/30"
+                          : ""
+                    )}
+                  >
+                    <Calendar className="h-3 w-3" />
+                    {nearestRenewal.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                    {daysUntilRenewal !== null && daysUntilRenewal <= 60 && daysUntilRenewal > 0 && (
+                      <span className="font-semibold">{daysUntilRenewal}d</span>
+                    )}
+                  </Badge>
+                )}
               </div>
             </motion.div>
           );

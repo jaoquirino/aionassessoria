@@ -343,7 +343,7 @@ export function EditClientDialog({
                 <div className="flex items-center gap-3">
                   {clientLogoUrl ? (
                     <div className="relative group">
-                      <img src={clientLogoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-border" />
+                      <img src={clientLogoUrl} alt="Logo" className="w-12 h-12 object-contain" />
                       <button
                         onClick={() => setClientLogoUrl("")}
                         className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"

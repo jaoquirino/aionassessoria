@@ -44,6 +44,7 @@ export interface CreateContractInput {
   renewal_date?: string;
   notes?: string;
   modules?: string[]; // module IDs
+  is_recurring?: boolean;
 }
 
 export interface UpdateContractInput {
@@ -55,6 +56,7 @@ export interface UpdateContractInput {
   payment_due_day?: number;
   status?: string;
   notes?: string | null;
+  is_recurring?: boolean;
 }
 
 function computeContractStatus(contract: Contract): { status: "active" | "expiring_soon" | "renewing" | "ended"; daysUntilRenewal: number } {

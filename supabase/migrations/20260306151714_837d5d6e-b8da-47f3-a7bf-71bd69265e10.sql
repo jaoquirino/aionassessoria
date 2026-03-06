@@ -1,0 +1,1 @@
+ALTER TABLE public.contracts ADD COLUMN is_recurring boolean NOT NULL DEFAULT true;
