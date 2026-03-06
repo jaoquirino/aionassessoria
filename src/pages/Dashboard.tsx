@@ -33,7 +33,7 @@ import { useDashboardData, type ClientTask } from "@/hooks/useDashboard";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
 import { useHideValues } from "@/hooks/useHideValues";
-import { DeliveriesDashboard, FinancialEvolutionDashboard } from "@/components/dashboard/AdvancedDashboards";
+import { DeliveriesDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
