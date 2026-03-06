@@ -264,7 +264,7 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                 return (
                   <div
                     key={delivery.id}
-                    onClick={() => navigate(`/tarefas?task=${delivery.id}`)}
+                    onClick={() => setSelectedTaskId(delivery.id)}
                     className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
