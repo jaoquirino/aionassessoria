@@ -129,6 +129,8 @@ export function useDashboardData() {
       );
 
       const now = new Date();
+      // Strip time for date-only comparisons (overdue = due date strictly before today)
+      const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       // Filter out onboarding tasks from general stats
       // Also filter out tasks from internal clients for weight calculations
