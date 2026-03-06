@@ -502,6 +502,9 @@ export default function Dashboard() {
                             client.healthStatus === "attention" && "bg-warning",
                             client.healthStatus === "critical" && "bg-destructive"
                           )} />
+                          {client.logo_url && (
+                            <img src={client.logo_url} alt="" className="h-6 w-6 rounded object-contain shrink-0" />
+                          )}
                           <span className="font-medium text-foreground">{client.name}</span>
                         </div>
                       </td>
