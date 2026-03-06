@@ -65,6 +65,12 @@ export function EditContractDialog({
       setNotes(contract.notes || "");
       setIsRecurring((contract as any).is_recurring !== false);
 
+      // Detect internal: no value, not recurring, all active modules selected
+      const activeModuleIds = allModules.filter(m => m.is_active).map(m => m.id);
+      const contractModuleIds = contract.modules?.map(m => m.module_id) || [];
+      const allSelected = activeModuleIds.length > 0 && activeModuleIds.every(id => contractModuleIds.includes(id));
+      setIsInternal(contract.monthly_value === 0 && !(contract as any).is_recurring && allSelected);
+
       const configs: ModuleConfig[] = allModules.map((module) => {
         const existingModule = contract.modules?.find(m => m.module_id === module.id);
         return {
