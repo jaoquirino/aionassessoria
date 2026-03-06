@@ -26,6 +26,7 @@ export interface DashboardTask {
   isOverdue: boolean;
   weight: number;
   type: string;
+  isSubtask: boolean;
 }
 
 export interface DashboardTeamMember {
