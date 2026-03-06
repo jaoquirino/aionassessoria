@@ -592,7 +592,7 @@ export default function Dashboard() {
               <div className="space-y-4 overflow-y-auto min-h-0 flex-1">
                 <div className="grid grid-cols-3 gap-3">
                   <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <p className="text-sm font-bold text-foreground">{formatCurrency(selectedClientHealth.monthlyValue)}</p>
+                    <p className="text-sm font-bold text-foreground">{maskCurrency(formatCurrency(selectedClientHealth.monthlyValue))}</p>
                     <p className="text-xs text-muted-foreground">Receita</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
