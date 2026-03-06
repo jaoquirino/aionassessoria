@@ -151,7 +151,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         else if (statusFilter === "pending") displayDeliveries = displayDeliveries.filter(d => d.status !== "done");
         else if (statusFilter === "overdue") displayDeliveries = displayDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
         if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.deliverableType === designFilter);
-        if (typeFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.type === typeFilter);
+        
 
         const hasActiveFilter = statusFilter !== "all" || designFilter !== "all" || typeFilter !== "all";
 
