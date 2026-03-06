@@ -12,6 +12,8 @@ import {
   CornerDownRight,
   Activity,
   Heart,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Dialog,
