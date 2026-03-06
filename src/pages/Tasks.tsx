@@ -215,30 +215,15 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold text-foreground">Tarefas</h1>
           <p className="text-muted-foreground">Motor de entregas e produção</p>
         </div>
-        <div className="flex items-center gap-3">
-          {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground animate-pulse">Atualizando...</span>
-          )}
-          <Button onClick={() => handleQuickAddTask("todo")} className="gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Nova Tarefa</span>
-          </Button>
-          <ToggleGroup
-            type="single"
-            value={viewMode}
-            onValueChange={(v) => v && setViewMode(v as "kanban" | "list")}
-            className="bg-muted rounded-lg p-1"
-          >
-            <ToggleGroupItem value="kanban" aria-label="Visualização Kanban" className="gap-1.5 data-[state=on]:bg-background">
-              <LayoutGrid className="h-4 w-4" />
-              <span className="hidden sm:inline">Kanban</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="list" aria-label="Visualização Lista" className="gap-1.5 data-[state=on]:bg-background">
-              <List className="h-4 w-4" />
-              <span className="hidden sm:inline">Lista</span>
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
+         <div className="flex items-center gap-3">
+           {isFetching && !isLoading && (
+             <span className="text-xs text-muted-foreground animate-pulse">Atualizando...</span>
+           )}
+           <Button onClick={() => handleQuickAddTask("todo")} className="gap-2">
+             <Plus className="h-4 w-4" />
+             <span className="hidden sm:inline">Nova Tarefa</span>
+           </Button>
+         </div>
       </motion.div>
 
       {/* Alerts */}
