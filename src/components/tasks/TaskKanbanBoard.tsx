@@ -362,7 +362,10 @@ interface TaskCardProps {
                      Arquivar
                    </DropdownMenuItem>
                  </DropdownMenuContent>
-               </DropdownMenu>
+                </DropdownMenu>
+                {isOverdue && (
+                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+                )}
             </div>
           </div>
 
