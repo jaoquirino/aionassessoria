@@ -226,7 +226,7 @@ export function useDashboardData() {
           const curr = memberTaskStats.get(memberId) || { weight: 0, count: 0, overdue: 0 };
           curr.weight += t.weight;
           curr.count += 1;
-          if (parseLocalDate(t.due_date) < now) curr.overdue += 1;
+          if (parseLocalDate(t.due_date) < todayMidnight) curr.overdue += 1;
           memberTaskStats.set(memberId, curr);
         });
       });
