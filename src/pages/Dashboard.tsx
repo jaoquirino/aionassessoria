@@ -395,117 +395,65 @@ export default function Dashboard() {
               <tbody className="divide-y divide-border">
                 {clients.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-muted-foreground">Nenhum cliente ativo</td>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">Nenhum cliente ativo</td>
                   </tr>
                 ) : (
-                  clients.map((client, index) => {
-                    const isExpanded = expandedClientId === client.id;
-                    const clientTasks = (client as any).tasks as ClientTask[] || [];
-                    return (
-                      <>
-                        <motion.tr
-                          key={client.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.05 * index }}
-                          className="group cursor-pointer hover:bg-muted/30 transition-colors"
-                          onClick={() => setExpandedClientId(isExpanded ? null : client.id)}
-                        >
-                          <td className="py-4">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={cn(
-                                  "h-2 w-2 rounded-full",
-                                  client.healthStatus === "normal" && "bg-success",
-                                  client.healthStatus === "attention" && "bg-warning",
-                                  client.healthStatus === "critical" && "bg-destructive"
-                                )}
-                              />
-                              <span className="font-medium text-foreground">{client.name}</span>
-                            </div>
-                          </td>
-                          <td className="py-4 text-sm text-foreground">{formatCurrency(client.monthlyValue)}</td>
-                          <td className="py-4">
-                            <span
-                              className={cn(
-                                "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                                client.operationalWeight > 15
-                                  ? "bg-destructive/10 text-destructive"
-                                  : client.operationalWeight > 10
-                                  ? "bg-warning/10 text-warning"
-                                  : "bg-success/10 text-success"
-                              )}
-                            >
-                              {client.operationalWeight}
-                            </span>
-                          </td>
-                          <td className="py-4">
-                            <span className="text-sm text-muted-foreground">
-                              {client.deliveriesThisMonth} este mês
-                            </span>
-                          </td>
-                          <td className="py-4">
-                            <span
-                              className={cn(
-                                "text-xs font-medium capitalize",
-                                client.healthStatus === "normal" && "text-success",
-                                client.healthStatus === "attention" && "text-warning",
-                                client.healthStatus === "critical" && "text-destructive"
-                              )}
-                            >
-                              {client.healthStatus === "normal" ? "Saudável" : client.healthStatus === "attention" ? "Atenção" : "Crítico"}
-                            </span>
-                          </td>
-                          <td className="py-4">
-                            {isExpanded ? (
-                              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  clients.map((client, index) => (
+                    <motion.tr
+                      key={client.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.05 * index }}
+                      className="group cursor-pointer hover:bg-muted/30 transition-colors"
+                      onClick={() => setSelectedClientHealth(client)}
+                    >
+                      <td className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "h-2 w-2 rounded-full",
+                              client.healthStatus === "normal" && "bg-success",
+                              client.healthStatus === "attention" && "bg-warning",
+                              client.healthStatus === "critical" && "bg-destructive"
                             )}
-                          </td>
-                        </motion.tr>
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.tr
-                              key={`${client.id}-tasks`}
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                            >
-                              <td colSpan={6} className="p-0">
-                                <div className="bg-muted/20 border-t border-border px-6 py-3">
-                                  {clientTasks.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa no período</p>
-                                  ) : (
-                                    <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                                      {clientTasks.map(task => (
-                                        <div
-                                          key={task.id}
-                                          onClick={(e) => { e.stopPropagation(); handleClientTaskClick(task); }}
-                                          className={cn(
-                                            "flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-background/80 border border-transparent hover:border-border",
-                                          )}
-                                        >
-                                          {task.isSubtask && (
-                                            <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                          )}
-                                          <span className="text-sm font-medium text-foreground flex-1 truncate">{task.title}</span>
-                                          <span className="text-xs text-muted-foreground shrink-0">{task.assigneeName}</span>
-                                          <Badge className={cn("shrink-0 text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
-                                            {statusConfig[task.status]?.label || task.status}
-                                          </Badge>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                            </motion.tr>
+                          />
+                          <span className="font-medium text-foreground">{client.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 text-sm text-foreground">{formatCurrency(client.monthlyValue)}</td>
+                      <td className="py-4">
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
+                            client.operationalWeight > 15
+                              ? "bg-destructive/10 text-destructive"
+                              : client.operationalWeight > 10
+                              ? "bg-warning/10 text-warning"
+                              : "bg-success/10 text-success"
                           )}
-                        </AnimatePresence>
-                      </>
-                    );
-                  })
+                        >
+                          {client.operationalWeight}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span className="text-sm text-muted-foreground">
+                          {client.deliveriesThisMonth}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span
+                          className={cn(
+                            "text-xs font-medium capitalize",
+                            client.healthStatus === "normal" && "text-success",
+                            client.healthStatus === "attention" && "text-warning",
+                            client.healthStatus === "critical" && "text-destructive"
+                          )}
+                        >
+                          {client.healthStatus === "normal" ? "Saudável" : client.healthStatus === "attention" ? "Atenção" : "Crítico"}
+                        </span>
+                      </td>
+                    </motion.tr>
+                  ))
                 )}
               </tbody>
             </table>
