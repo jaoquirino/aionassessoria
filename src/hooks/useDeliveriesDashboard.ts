@@ -87,6 +87,7 @@ export function useDeliveriesByClient(clientId?: string) {
         weight: task.weight,
         deliverableType: (task as any).deliverable_type || null,
         type: task.type,
+        isSubtask: !!task.parent_task_id,
       })) as DeliveryItem[];
     },
   });
