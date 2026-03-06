@@ -76,6 +76,7 @@ export default function Dashboard() {
   const { data: currentMember } = useCurrentTeamMember();
   const { data: financialData } = useFinancialEvolution();
   const [activeTab, setActiveTab] = useState("overview");
+  const { hidden: hideValues, toggle: toggleHideValues, mask: maskCurrency } = useHideValues();
   
   const [selectedClientHealth, setSelectedClientHealth] = useState<any>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
