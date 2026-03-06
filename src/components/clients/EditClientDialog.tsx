@@ -15,6 +15,7 @@ import { useClientContractsWithModules, useDeleteContract, type ContractWithModu
 import { ContractDialog } from "./ContractDialog";
 import { EditContractDialog } from "./EditContractDialog";
 import { ClientContactInfo } from "./ClientContactInfo";
+import { LogoCropDialog } from "./LogoCropDialog";
 
 import { OnboardingStepsDialog } from "./OnboardingStepsDialog";
 import { useClientOnboardingProgress } from "@/hooks/useClientModuleOnboarding";
@@ -75,6 +76,9 @@ export function EditClientDialog({
   const [clientLogoUrl, setClientLogoUrl] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string>("");
+  const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
   const [onboardingDialogOpen, setOnboardingDialogOpen] = useState(false);
   const [selectedOnboardingModule, setSelectedOnboardingModule] = useState<{
     contractModuleId: string;
@@ -163,24 +167,32 @@ export function EditClientDialog({
     }
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length || !client) return;
+  const handleLogoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
     const file = e.target.files[0];
+    setPendingLogoFile(file);
+    const url = URL.createObjectURL(file);
+    setCropImageSrc(url);
+    setCropDialogOpen(true);
+    e.target.value = "";
+  };
+
+  const handleCroppedLogo = async (blob: Blob) => {
+    if (!client) return;
     setUploadingLogo(true);
+    setCropDialogOpen(false);
     try {
-      // Upload file first
-      const fileExt = file.name.split(".").pop();
-      const filePath = `logos/${client.id}/${Date.now()}.${fileExt}`;
+      const filePath = `logos/${client.id}/${Date.now()}.png`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, blob, { upsert: true, contentType: "image/png" });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
       setClientLogoUrl(urlData.publicUrl);
 
       // Try to extract color (non-blocking)
       try {
-        const localUrl = URL.createObjectURL(file);
+        const localUrl = URL.createObjectURL(blob);
         const detectedColor = await extractDominantColor(localUrl);
         URL.revokeObjectURL(localUrl);
         if (detectedColor && !clientColor) {
@@ -197,7 +209,9 @@ export function EditClientDialog({
       toast.error("Erro ao enviar logo: " + (err?.message || "erro desconhecido"));
     }
     setUploadingLogo(false);
-    e.target.value = "";
+    if (cropImageSrc) URL.revokeObjectURL(cropImageSrc);
+    setCropImageSrc("");
+    setPendingLogoFile(null);
   };
 
   const handleOpenOnboarding = (module: typeof selectedOnboardingModule) => {
@@ -355,12 +369,21 @@ export function EditClientDialog({
                     type="file"
                     className="hidden"
                     accept="image/*"
-                    onChange={handleLogoUpload}
+                    onChange={handleLogoFileSelect}
                   />
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Logo Crop Dialog */}
+          <LogoCropDialog
+            open={cropDialogOpen}
+            onOpenChange={setCropDialogOpen}
+            imageSrc={cropImageSrc}
+            onCropComplete={handleCroppedLogo}
+            isSaving={uploadingLogo}
+          />
 
           <Separator />
 
