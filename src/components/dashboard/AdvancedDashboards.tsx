@@ -47,6 +47,12 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
 
   const isLoading = clientsLoading || deliveriesLoading;
 
+  const clientLogoMap = useMemo(() => {
+    const map = new Map<string, string>();
+    clients?.forEach(c => { if (c.logo_url) map.set(c.id, c.logo_url); });
+    return map;
+  }, [clients]);
+
   // Filter deliveries by period
   const filteredDeliveries = useMemo(() => {
     if (!deliveries) return [];
