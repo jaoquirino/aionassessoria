@@ -546,13 +546,8 @@ export default function Dashboard() {
       </div>
     </>
   );
-          <button
-            onClick={() => navigate("/tarefas")}
-            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-          >
-            Ver todas
-            <ArrowRight className="h-4 w-4" />
-          </button>
+
+
         </div>
 
         <div className="flex flex-wrap gap-2 mb-5">
