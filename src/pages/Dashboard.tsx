@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Package,
   TrendingUp,
+  CornerDownRight,
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Badge } from "@/components/ui/badge";
