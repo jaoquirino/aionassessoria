@@ -200,9 +200,6 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
                 </Badge>
               </div>
                <div className="flex items-center gap-1">
-                 <span className="text-xs text-muted-foreground">
-                   P{totalWeight}
-                 </span>
                  <KanbanColumnMenu
                    column={column}
                    onEdit={handleEditColumn}
