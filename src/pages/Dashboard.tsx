@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Package,
   TrendingUp,
+  CornerDownRight,
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Badge } from "@/components/ui/badge";
@@ -252,8 +253,10 @@ export default function Dashboard() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
+                      {task.isSubtask && (
+                        <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      )}
                       <p className="font-medium text-foreground truncate">{task.title}</p>
-                      <Badge variant="outline" className="shrink-0 text-xs">Peso: {task.weight}</Badge>
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                       <span>{task.clientName}</span>
@@ -641,7 +644,7 @@ export default function Dashboard() {
               </TabsTrigger>
             </TabsList>
             
-            {activeTab !== "financial" && (
+            {activeTab === "overview" && (
               <PeriodSelector value={period} onChange={setPeriod} customRange={customRange} onCustomRangeChange={setCustomRange} />
             )}
           </div>

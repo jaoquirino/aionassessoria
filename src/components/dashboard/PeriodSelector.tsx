@@ -7,7 +7,7 @@ import { CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export type PeriodOption = "7d" | "30d" | "90d" | "year" | "all" | "custom";
+export type PeriodOption = "7d" | "15d" | "30d" | "90d" | "year" | "all" | "custom";
 
 export interface CustomDateRange {
   start: Date;
@@ -24,6 +24,7 @@ interface PeriodSelectorProps {
 
 const periodLabels: Record<Exclude<PeriodOption, "custom">, string> = {
   "7d": "Últimos 7 dias",
+  "15d": "Últimos 15 dias",
   "30d": "Últimos 30 dias",
   "90d": "Últimos 90 dias",
   "year": "Este ano",
@@ -137,6 +138,9 @@ export function getPeriodDates(period: PeriodOption, customRange?: CustomDateRan
   switch (period) {
     case "7d":
       setWindow(7);
+      break;
+    case "15d":
+      setWindow(15);
       break;
     case "30d":
       setWindow(30);

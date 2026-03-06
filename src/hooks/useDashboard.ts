@@ -26,6 +26,7 @@ export interface DashboardTask {
   isOverdue: boolean;
   weight: number;
   type: string;
+  isSubtask: boolean;
 }
 
 export interface DashboardTeamMember {
@@ -202,6 +203,7 @@ export function useDashboardData() {
         isOverdue: parseLocalDate(t.due_date) < now && t.status !== "done",
         weight: t.weight,
         type: t.type,
+        isSubtask: !!t.parent_task_id,
       }));
 
       // Map team capacity (using operational tasks only)

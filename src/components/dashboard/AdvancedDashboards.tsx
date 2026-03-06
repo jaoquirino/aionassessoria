@@ -1,20 +1,15 @@
 import { useState, useMemo } from "react";
-import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, CalendarIcon, Image, Video, AlertTriangle, X } from "lucide-react";
+import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, Image, Video, AlertTriangle, X, CornerDownRight } from "lucide-react";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDeliveriesByClient, useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
 import { useAllClients } from "@/hooks/useClients";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
-import { type PeriodOption, getPeriodDates } from "./PeriodSelector";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { PeriodSelector, type PeriodOption, type CustomDateRange, getPeriodDates } from "./PeriodSelector";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground", icon: Clock },
@@ -33,14 +28,13 @@ function formatCurrency(value: number) {
 }
 
 interface DeliveriesDashboardProps {
-  period: PeriodOption;
+  period?: PeriodOption; // kept for backward compat but no longer used externally
 }
 
-export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
+export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashboardProps) {
+  const [period, setPeriod] = useState<PeriodOption>("30d");
+  const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
   const [selectedClient, setSelectedClient] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
-  const [useCustomDates, setUseCustomDates] = useState(false);
-  const [rangePickerOpen, setRangePickerOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
   const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video">("all");
@@ -53,44 +47,18 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
 
   const isLoading = clientsLoading || deliveriesLoading;
 
-  // Filter deliveries by period or custom dates
+  // Filter deliveries by period
   const filteredDeliveries = useMemo(() => {
     if (!deliveries) return [];
     
-    let start: Date, end: Date;
-    
-    if (useCustomDates && dateRange.from && dateRange.to) {
-      start = dateRange.from;
-      end = dateRange.to;
-    } else {
-      const periodDates = getPeriodDates(period);
-      start = periodDates.start;
-      end = periodDates.end;
-    }
+    const periodDates = getPeriodDates(period, customRange);
+    const { start, end } = periodDates;
     
     return deliveries.filter(d => {
       const dueDate = new Date(d.dueDate);
       return dueDate >= start && dueDate <= end;
     });
-  }, [deliveries, period, useCustomDates, dateRange]);
-
-  // Group deliveries by status
-  const groupedDeliveries = {
-    done: filteredDeliveries.filter(d => d.status === "done"),
-    pending: filteredDeliveries.filter(d => d.status !== "done"),
-  };
-
-  const handleClearCustomDates = () => {
-    setDateRange({});
-    setUseCustomDates(false);
-  };
-
-  const handleApplyRange = () => {
-    if (dateRange.from && dateRange.to) {
-      setUseCustomDates(true);
-      setRangePickerOpen(false);
-    }
-  };
+  }, [deliveries, period, customRange]);
 
   if (isLoading) {
     return (
@@ -103,6 +71,11 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
       </div>
     );
   }
+
+  const groupedDeliveries = {
+    done: filteredDeliveries.filter(d => d.status === "done"),
+    pending: filteredDeliveries.filter(d => d.status !== "done"),
+  };
 
   return (
     <div className="space-y-6">
@@ -119,52 +92,13 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
-          {/* Custom Date Range - single popover with range calendar */}
-          <Popover open={rangePickerOpen} onOpenChange={setRangePickerOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className={cn(
-                "gap-2",
-                useCustomDates && dateRange.from && "border-primary"
-              )}>
-                <CalendarIcon className="h-4 w-4" />
-                {useCustomDates && dateRange.from && dateRange.to
-                  ? `${format(dateRange.from, "dd/MM/yy", { locale: ptBR })} — ${format(dateRange.to, "dd/MM/yy", { locale: ptBR })}`
-                  : "Período personalizado"
-                }
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <div className="p-4 space-y-4">
-                <p className="text-sm font-medium">Selecione o período</p>
-                <Calendar
-                  mode="range"
-                  selected={{ from: dateRange.from, to: dateRange.to }}
-                  onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
-                  locale={ptBR}
-                  numberOfMonths={2}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-                <div className="flex justify-end gap-2">
-                  {useCustomDates && (
-                    <Button variant="ghost" size="sm" onClick={handleClearCustomDates}>
-                      Limpar
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" onClick={() => setRangePickerOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleApplyRange}
-                    disabled={!dateRange.from || !dateRange.to}
-                  >
-                    Aplicar
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          {/* Period Selector */}
+          <PeriodSelector
+            value={period}
+            onChange={setPeriod}
+            customRange={customRange}
+            onCustomRangeChange={setCustomRange}
+          />
           
           {/* Client Filter */}
           <div className="flex items-center gap-2">
@@ -353,7 +287,12 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                               delivery.status === "done" ? "text-success" : "text-muted-foreground"
                             )} />
                             <div>
-                              <p className="font-medium text-sm">{delivery.title}</p>
+                              <p className="font-medium text-sm flex items-center gap-1.5">
+                                {delivery.isSubtask && (
+                                  <CornerDownRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                                )}
+                                {delivery.title}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {delivery.clientName}
                                 {delivery.moduleName && ` · ${delivery.moduleName}`}
