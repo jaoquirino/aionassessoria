@@ -500,7 +500,7 @@ export default function Dashboard() {
                           <span className="font-medium text-foreground">{client.name}</span>
                         </div>
                       </td>
-                      <td className="py-4 text-sm text-foreground">{formatCurrency(client.monthlyValue)}</td>
+                      <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
                       <td className="py-4">
                         <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
                           client.operationalWeight > 15 ? "bg-destructive/10 text-destructive" :
