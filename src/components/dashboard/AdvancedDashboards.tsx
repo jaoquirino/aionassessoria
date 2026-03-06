@@ -42,6 +42,7 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
   const [useCustomDates, setUseCustomDates] = useState(false);
   const [rangePickerOpen, setRangePickerOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video">("all");
   
   const { data: clients, isLoading: clientsLoading } = useAllClients();
   const { data: deliveries, isLoading: deliveriesLoading } = useDeliveriesByClient(
@@ -227,17 +228,38 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 rounded-lg bg-muted/50">
+                <div
+                  onClick={() => setDesignFilter(designFilter === "all" ? "all" : "all")}
+                  className={cn(
+                    "text-center p-3 rounded-lg cursor-pointer transition-colors",
+                    designFilter === "all" ? "bg-muted ring-2 ring-primary" : "bg-muted/50 hover:bg-muted/80"
+                  )}
+                  role="button"
+                >
                   <div className="text-2xl font-bold">{totalDesign}</div>
                   <p className="text-xs text-muted-foreground">Total</p>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-purple/10">
+                <div
+                  onClick={() => setDesignFilter(designFilter === "arte" ? "all" : "arte")}
+                  className={cn(
+                    "text-center p-3 rounded-lg cursor-pointer transition-colors",
+                    designFilter === "arte" ? "bg-purple/20 ring-2 ring-purple" : "bg-purple/10 hover:bg-purple/20"
+                  )}
+                  role="button"
+                >
                   <div className="text-2xl font-bold text-purple flex items-center justify-center gap-1">
                     <Image className="h-4 w-4" /> {arteCount}
                   </div>
                   <p className="text-xs text-muted-foreground">Artes</p>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-info/10">
+                <div
+                  onClick={() => setDesignFilter(designFilter === "video" ? "all" : "video")}
+                  className={cn(
+                    "text-center p-3 rounded-lg cursor-pointer transition-colors",
+                    designFilter === "video" ? "bg-info/20 ring-2 ring-info" : "bg-info/10 hover:bg-info/20"
+                  )}
+                  role="button"
+                >
                   <div className="text-2xl font-bold text-info flex items-center justify-center gap-1">
                     <Video className="h-4 w-4" /> {videoCount}
                   </div>
@@ -251,15 +273,24 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
 
       {/* Deliveries List */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Lista de Entregas</CardTitle>
+          {designFilter !== "all" && (
+            <Badge variant="outline" className="cursor-pointer gap-1" onClick={() => setDesignFilter("all")}>
+              {designFilter === "arte" ? "🎨 Artes" : "🎬 Vídeos"} ✕
+            </Badge>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {filteredDeliveries.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nenhuma entrega encontrada no período</p>
-            ) : (
-              filteredDeliveries.map((delivery) => {
+            {(() => {
+              const displayDeliveries = designFilter === "all"
+                ? filteredDeliveries
+                : filteredDeliveries.filter(d => d.deliverableType === designFilter);
+              if (displayDeliveries.length === 0) return (
+                <p className="text-center text-muted-foreground py-8">Nenhuma entrega encontrada</p>
+              );
+              return displayDeliveries.map((delivery) => {
                 const StatusIcon = statusConfig[delivery.status]?.icon || Clock;
                 return (
                   <div
@@ -295,8 +326,8 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                     </div>
                   </div>
                 );
-              })
-            )}
+              });
+            })()}
           </div>
         </CardContent>
       </Card>
