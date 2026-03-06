@@ -81,7 +81,79 @@ export default function Dashboard() {
 
   const isRestricted = currentMember?.restricted_view === true;
 
-  if (isLoading || !data) {
+  // Mini chart data for revenue (must be before early return)
+  const revenueChartData = useMemo(() => {
+    if (!financialData?.data) return [];
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    return financialData.data
+      .filter((_, i) => i <= currentMonth)
+      .map(d => ({
+        name: d.monthName,
+        value: d.currentYearRevenue,
+      }));
+  }, [financialData]);
+
+  // Derived data (safe even when data is null)
+  const derivedData = useMemo(() => {
+    if (!data) return null;
+    const { stats, tasks, team, clients, isAdmin, taskAssigneeMap } = data;
+
+    const isTaskAssignedToMe = (task: typeof tasks[0]) => {
+      if (!currentMember) return false;
+      if (task.assigneeName.includes(currentMember.name)) return true;
+      const assigneeIds = taskAssigneeMap?.get(task.id);
+      return assigneeIds ? assigneeIds.includes(currentMember.id) : false;
+    };
+
+    const baseTasks = isRestricted && currentMember
+      ? tasks.filter(isTaskAssignedToMe)
+      : tasks;
+
+    const filteredTeam = isRestricted && currentMember
+      ? team.filter(m => m.id === currentMember.id)
+      : team;
+
+    const displayStats = isRestricted && currentMember
+      ? {
+          ...stats,
+          overdueTasks: baseTasks.filter(t => t.isOverdue).length,
+          todayDeliveries: baseTasks.filter(t => {
+            const due = new Date(t.dueDate);
+            return due.toDateString() === new Date().toDateString();
+          }).length,
+          weekDeliveries: baseTasks.length,
+          weekCompleted: baseTasks.filter(t => t.status === "done").length,
+          totalWeight: filteredTeam[0]?.currentWeight || 0,
+          totalCapacity: filteredTeam[0]?.maxWeight || 0,
+          activeTasks: baseTasks.length,
+        }
+      : stats;
+
+    return { stats, tasks, team, clients, isAdmin, taskAssigneeMap, baseTasks, filteredTeam, displayStats };
+  }, [data, currentMember, isRestricted]);
+
+  const filteredTasks = useMemo(() => {
+    if (!derivedData) return [];
+    const { baseTasks } = derivedData;
+    const now = new Date();
+    const today = now.toDateString();
+
+    switch (taskFilter) {
+      case "overdue":
+        return baseTasks.filter(t => t.isOverdue);
+      case "today":
+        return baseTasks.filter(t => new Date(t.dueDate).toDateString() === today);
+      case "week":
+        return baseTasks;
+      case "active":
+        return baseTasks.filter(t => t.status !== "done");
+      default:
+        return baseTasks;
+    }
+  }, [derivedData, taskFilter]);
+
+  if (isLoading || !data || !derivedData) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
@@ -96,59 +168,7 @@ export default function Dashboard() {
     );
   }
 
-  const { stats, tasks, team, clients, isAdmin, taskAssigneeMap } = data;
-
-  const isTaskAssignedToMe = (task: typeof tasks[0]) => {
-    if (!currentMember) return false;
-    if (task.assigneeName.includes(currentMember.name)) return true;
-    const assigneeIds = taskAssigneeMap?.get(task.id);
-    return assigneeIds ? assigneeIds.includes(currentMember.id) : false;
-  };
-
-  const baseTasks = isRestricted && currentMember
-    ? tasks.filter(isTaskAssignedToMe)
-    : tasks;
-
-  const filteredTeam = isRestricted && currentMember
-    ? team.filter(m => m.id === currentMember.id)
-    : team;
-
-  const displayStats = isRestricted && currentMember
-    ? {
-        ...stats,
-        overdueTasks: baseTasks.filter(t => t.isOverdue).length,
-        todayDeliveries: baseTasks.filter(t => {
-          const due = new Date(t.dueDate);
-          return due.toDateString() === new Date().toDateString();
-        }).length,
-        weekDeliveries: baseTasks.length,
-        weekCompleted: baseTasks.filter(t => t.status === "done").length,
-        totalWeight: filteredTeam[0]?.currentWeight || 0,
-        totalCapacity: filteredTeam[0]?.maxWeight || 0,
-        activeTasks: baseTasks.length,
-      }
-    : stats;
-
-  // Apply pill filter
-  const filteredTasks = useMemo(() => {
-    const now = new Date();
-    const today = now.toDateString();
-    const weekEnd = new Date(now);
-    weekEnd.setDate(weekEnd.getDate() + (7 - weekEnd.getDay()));
-
-    switch (taskFilter) {
-      case "overdue":
-        return baseTasks.filter(t => t.isOverdue);
-      case "today":
-        return baseTasks.filter(t => new Date(t.dueDate).toDateString() === today);
-      case "week":
-        return baseTasks;
-      case "active":
-        return baseTasks.filter(t => t.status !== "done");
-      default:
-        return baseTasks;
-    }
-  }, [baseTasks, taskFilter]);
+  const { stats, tasks, team, clients, isAdmin, baseTasks, filteredTeam, displayStats } = derivedData;
 
   const handleTaskClick = (task: { id: string; isSubtask: boolean; parentTaskId: string | null }) => {
     if (task.isSubtask && task.parentTaskId) {
@@ -165,19 +185,6 @@ export default function Dashboard() {
       setSelectedTaskId(task.id);
     }
   };
-
-  // Mini chart data for revenue
-  const revenueChartData = useMemo(() => {
-    if (!financialData?.data) return [];
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    return financialData.data
-      .filter((_, i) => i <= currentMonth)
-      .map(d => ({
-        name: d.monthName,
-        value: d.currentYearRevenue,
-      }));
-  }, [financialData]);
 
   const OverviewContent = () => (
     <>
