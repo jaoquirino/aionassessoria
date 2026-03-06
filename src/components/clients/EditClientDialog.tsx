@@ -406,7 +406,7 @@ export function EditClientDialog({
           <Separator />
 
           {/* Contracts Section */}
-          <div className="space-y-3">
+          <div ref={contractsRef} className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4" />
