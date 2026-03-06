@@ -288,7 +288,6 @@ export default function Tasks() {
           />
         </div>
         {showContent && (
-          viewMode === "kanban" ? (
             <TaskKanbanBoard 
               tasks={filteredTasks} 
               onTaskMove={handleTaskMove} 
@@ -300,16 +299,6 @@ export default function Tasks() {
               teamMembers={teamMembers}
               clients={clients}
             />
-          ) : (
-            <TaskListView 
-              tasks={filteredTasks} 
-              onTaskClick={handleTaskClick}
-              onUpdateField={handleUpdateField}
-              onUpdateStatus={(taskId, status) => updateStatus.mutate({ taskId, status })}
-              teamMembers={teamMembers}
-              clients={clients}
-            />
-          )
         )}
       </motion.div>
 
