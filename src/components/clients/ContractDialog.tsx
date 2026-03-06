@@ -101,6 +101,19 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
     setModuleDeliverableLimits(prev => ({ ...prev, [moduleId]: limit }));
   };
 
+  const handleInternalToggle = (checked: boolean) => {
+    setIsInternal(checked);
+    if (checked) {
+      setMonthlyValue(0);
+      setNoValue(true);
+      setIsRecurring(false);
+      setSelectedModules(activeModules.map(m => m.id));
+    } else {
+      setNoValue(false);
+      setSelectedModules([]);
+    }
+  };
+
   const handleSave = async () => {
     if (!noValue && monthlyValue <= 0 || !startDate) return;
 
