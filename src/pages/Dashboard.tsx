@@ -292,7 +292,12 @@ export default function Dashboard() {
                     <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{task.clientName}</span>
+                    <span className="flex items-center gap-1.5">
+                      {task.clientLogo && (
+                        <img src={task.clientLogo} alt="" className="h-4 w-4 rounded object-contain" />
+                      )}
+                      {task.clientName}
+                    </span>
                     <span>·</span>
                     <div className="flex items-center gap-1">
                       {task.assigneeAvatar && (
