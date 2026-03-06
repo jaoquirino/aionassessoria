@@ -19,6 +19,7 @@ export interface DashboardTask {
   id: string;
   title: string;
   clientName: string;
+  clientLogo: string | null;
   assigneeName: string;
   assigneeAvatar: string | null;
   dueDate: string;
@@ -44,6 +45,7 @@ export interface DashboardTeamMember {
 export interface DashboardClientHealth {
   id: string;
   name: string;
+  logo_url: string | null;
   monthlyValue: number;
   operationalWeight: number;
   deliveriesThisMonth: number;
@@ -195,6 +197,7 @@ export function useDashboardData() {
       // Map tasks for display
       const memberMap = new Map(teamMembers.map(m => [m.id, m.name]));
       const clientMap = new Map(clients.map(c => [c.id, c.name]));
+      const clientLogoMap = new Map(clients.map(c => [c.id, c.logo_url || null]));
 
       const getAssigneeName = (task: any) => {
         const assigneeIds = taskAssigneeMap.get(task.id) || [];
@@ -210,6 +213,7 @@ export function useDashboardData() {
         id: t.id,
         title: t.title,
         clientName: clientMap.get(t.client_id) || "—",
+        clientLogo: clientLogoMap.get(t.client_id) || null,
         assigneeName: getAssigneeName(t),
         assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
@@ -293,6 +297,7 @@ export function useDashboardData() {
           return {
             id: c.id,
             name: c.name,
+            logo_url: c.logo_url || null,
             monthlyValue: revenue,
             operationalWeight: stats.weight,
             deliveriesThisMonth: stats.delivered,

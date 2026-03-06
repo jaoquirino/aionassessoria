@@ -47,6 +47,12 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
 
   const isLoading = clientsLoading || deliveriesLoading;
 
+  const clientLogoMap = useMemo(() => {
+    const map = new Map<string, string>();
+    clients?.forEach(c => { if (c.logo_url) map.set(c.id, c.logo_url); });
+    return map;
+  }, [clients]);
+
   // Filter deliveries by period
   const filteredDeliveries = useMemo(() => {
     if (!deliveries) return [];
@@ -111,7 +117,12 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                 <SelectItem value="all">Todos os clientes</SelectItem>
                 {clients?.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
-                    {client.name}
+                    <span className="flex items-center gap-2">
+                      {client.logo_url && (
+                        <img src={client.logo_url} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                      )}
+                      {client.name}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -293,7 +304,10 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                                 )}
                                 {delivery.title}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                {clientLogoMap.get(delivery.clientId) && (
+                                  <img src={clientLogoMap.get(delivery.clientId)!} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                                )}
                                 {delivery.clientName}
                                 {delivery.moduleName && ` · ${delivery.moduleName}`}
                               </p>

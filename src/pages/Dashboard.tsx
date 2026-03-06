@@ -292,7 +292,12 @@ export default function Dashboard() {
                     <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{task.clientName}</span>
+                    <span className="flex items-center gap-1.5">
+                      {task.clientLogo && (
+                        <img src={task.clientLogo} alt="" className="h-4 w-4 rounded object-contain" />
+                      )}
+                      {task.clientName}
+                    </span>
                     <span>·</span>
                     <div className="flex items-center gap-1">
                       {task.assigneeAvatar && (
@@ -497,6 +502,9 @@ export default function Dashboard() {
                             client.healthStatus === "attention" && "bg-warning",
                             client.healthStatus === "critical" && "bg-destructive"
                           )} />
+                          {client.logo_url && (
+                            <img src={client.logo_url} alt="" className="h-6 w-6 rounded object-contain shrink-0" />
+                          )}
                           <span className="font-medium text-foreground">{client.name}</span>
                         </div>
                       </td>
@@ -583,6 +591,9 @@ export default function Dashboard() {
                     selectedClientHealth.healthStatus === "attention" && "bg-warning",
                     selectedClientHealth.healthStatus === "critical" && "bg-destructive"
                   )} />
+                  {selectedClientHealth.logo_url && (
+                    <img src={selectedClientHealth.logo_url} alt="" className="h-7 w-7 rounded object-contain shrink-0" />
+                  )}
                   {selectedClientHealth.name}
                 </>
               )}
