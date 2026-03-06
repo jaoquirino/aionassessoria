@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, CalendarIcon, Image, Video, AlertTriangle } from "lucide-react";
+import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,11 +37,11 @@ interface DeliveriesDashboardProps {
 }
 
 export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
-  const navigate = useNavigate();
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [useCustomDates, setUseCustomDates] = useState(false);
   const [rangePickerOpen, setRangePickerOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   
   const { data: clients, isLoading: clientsLoading } = useAllClients();
   const { data: deliveries, isLoading: deliveriesLoading } = useDeliveriesByClient(
@@ -264,7 +264,7 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                 return (
                   <div
                     key={delivery.id}
-                    onClick={() => navigate(`/tarefas?task=${delivery.id}`)}
+                    onClick={() => setSelectedTaskId(delivery.id)}
                     className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
@@ -300,6 +300,11 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
           </div>
         </CardContent>
       </Card>
+      <TaskEditDialog
+        taskId={selectedTaskId}
+        open={!!selectedTaskId}
+        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+      />
     </div>
   );
 }
