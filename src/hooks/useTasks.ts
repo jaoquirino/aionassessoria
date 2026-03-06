@@ -181,6 +181,18 @@ export function useCreateTask() {
     mutationFn: async (input: CreateTaskInput) => {
       const { checklist, status, ...taskData } = input;
       
+      // Get current user's team member id
+      const { data: { user } } = await supabase.auth.getUser();
+      let teamMemberId: string | null = null;
+      if (user) {
+        const { data: tm } = await supabase
+          .from("team_members")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        teamMemberId = tm?.id || null;
+      }
+
       // Insert task (weight is auto-calculated by trigger)
       const { data: task, error } = await supabase
         .from("tasks")
@@ -188,6 +200,7 @@ export function useCreateTask() {
           ...taskData,
           status: status || "todo",
           weight: 0, // Will be set by trigger
+          created_by: teamMemberId,
         })
         .select()
         .single();
@@ -205,11 +218,12 @@ export function useCreateTask() {
         await supabase.from("task_checklist").insert(checklistItems);
       }
 
-      // Log creation in history
+      // Log creation in history with performer
       await supabase.from("task_history").insert({
         task_id: task.id,
         action_type: "created",
         new_value: task.title,
+        performed_by: teamMemberId,
       });
 
       return task;
