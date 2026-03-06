@@ -178,7 +178,7 @@ export function TaskKanbanBoard({ tasks, onTaskMove, onTaskClick, onAddTask, onU
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "rounded-xl border-2 border-dashed p-3 min-h-[500px] min-w-[280px] w-[280px] flex-shrink-0 snap-start transition-colors",
+              "rounded-xl border-2 border-dashed p-3 min-h-[500px] min-w-[320px] w-[320px] flex-shrink-0 snap-start transition-colors",
                getColumnColorClass(column.color_class),
                dragOverColumn === column.key && column.key !== "overdue" && "border-primary bg-primary/5"
             )}
