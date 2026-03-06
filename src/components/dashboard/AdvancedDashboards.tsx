@@ -253,10 +253,10 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                 <button
                   onClick={() => setStatusFilter(statusFilter === "overdue" ? "all" : "overdue")}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
                     statusFilter === "overdue"
-                      ? "bg-destructive text-destructive-foreground"
-                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                      ? "bg-destructive text-destructive-foreground border-destructive shadow-sm"
+                      : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
                   )}
                 >
                   <span className="flex items-center gap-1.5">
@@ -273,10 +273,10 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                 <button
                   onClick={() => setDesignFilter(designFilter === "arte" ? "all" : "arte")}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
                     designFilter === "arte"
-                      ? "bg-purple/20 text-purple ring-1 ring-purple"
-                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                      ? "bg-purple text-white border-purple shadow-sm"
+                      : "bg-purple/10 text-purple border-purple/20 hover:bg-purple/20"
                   )}
                 >
                   <span className="flex items-center gap-1.5">
@@ -289,10 +289,10 @@ export function DeliveriesDashboard({ period }: DeliveriesDashboardProps) {
                 <button
                   onClick={() => setDesignFilter(designFilter === "video" ? "all" : "video")}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
                     designFilter === "video"
-                      ? "bg-info/20 text-info ring-1 ring-info"
-                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                      ? "bg-info text-white border-info shadow-sm"
+                      : "bg-info/10 text-info border-info/20 hover:bg-info/20"
                   )}
                 >
                   <span className="flex items-center gap-1.5">
