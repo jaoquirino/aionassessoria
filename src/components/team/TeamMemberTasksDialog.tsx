@@ -324,7 +324,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                        Nenhuma tarefa ativa no período selecionado
                      </p>
                    ) : (
-                     memberTasks.active.map((task: Task, index: number) => renderTaskCard(task, index, false))
+                     memberTasks.active.filter((t: Task) => !(t as any)._isParentGroup || true).filter((t: Task) => !t.parent_task_id || !collapsedParents.has(t.parent_task_id)).map((task: Task, index: number) => renderTaskCard(task, index, false))
                    )}
                  </div>
                )}
