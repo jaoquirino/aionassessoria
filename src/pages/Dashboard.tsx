@@ -247,18 +247,14 @@ export default function Dashboard() {
                       <td className="py-4">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2.5">
-                            {client.videoCount > 0 && (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
-                                <Video className="h-3.5 w-3.5" />
-                                {client.videoCount}
-                              </span>
-                            )}
-                            {client.arteCount > 0 && (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-500">
-                                <ImageIcon className="h-3.5 w-3.5" />
-                                {client.arteCount}
-                              </span>
-                            )}
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
+                              <Video className="h-3.5 w-3.5" />
+                              {client.videoCount}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-500">
+                              <ImageIcon className="h-3.5 w-3.5" />
+                              {client.arteCount}
+                            </span>
                           </div>
                           {client.designLimit != null && (
                             <span className="text-xs font-medium text-foreground">
@@ -638,18 +634,14 @@ export default function Dashboard() {
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center justify-center gap-3">
-                      {selectedClientHealth.videoCount > 0 && (
-                        <span className="inline-flex items-center gap-1 text-sm font-bold text-info">
-                          <Video className="h-4 w-4" />
-                          {selectedClientHealth.videoCount}
-                        </span>
-                      )}
-                      {selectedClientHealth.arteCount > 0 && (
-                        <span className="inline-flex items-center gap-1 text-sm font-bold text-purple">
-                          <ImageIcon className="h-4 w-4" />
-                          {selectedClientHealth.arteCount}
-                        </span>
-                      )}
+                      <span className="inline-flex items-center gap-1 text-sm font-bold text-info">
+                        <Video className="h-4 w-4" />
+                        {selectedClientHealth.videoCount}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-sm font-bold text-purple-500">
+                        <ImageIcon className="h-4 w-4" />
+                        {selectedClientHealth.arteCount}
+                      </span>
                     </div>
                     <p className="text-xs text-muted-foreground">Vídeos / Artes</p>
                   </div>
