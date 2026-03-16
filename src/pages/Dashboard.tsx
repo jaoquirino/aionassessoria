@@ -218,14 +218,13 @@ export default function Dashboard() {
                 <tr className="border-b border-border text-left">
                   <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Cliente</th>
                   <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Receita</th>
-                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Peso</th>
                   <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Entregas</th>
                   <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {clients.length === 0 ? (
-                  <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Nenhum cliente ativo</td></tr>
+                  <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">Nenhum cliente ativo</td></tr>
                 ) : (
                   clients.map((client) => (
                     <tr key={client.id} className="group cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedClientHealth(client)}>
@@ -244,16 +243,26 @@ export default function Dashboard() {
                       </td>
                       <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
                       <td className="py-4">
-                        <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                          client.operationalWeight > 15 ? "bg-destructive/10 text-destructive" :
-                          client.operationalWeight > 10 ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
-                        )}>{client.operationalWeight}</span>
-                      </td>
-                      <td className="py-4">
-                        <span className="text-sm text-foreground">{client.deliveriesThisMonth}</span>
-                        {client.designLimit != null && (
-                          <span className="text-xs text-muted-foreground"> / {client.designLimit}</span>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {client.videoCount > 0 && (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
+                              <Video className="h-3.5 w-3.5" />
+                              {client.videoCount}
+                            </span>
+                          )}
+                          {client.arteCount > 0 && (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-purple">
+                              <ImageIcon className="h-3.5 w-3.5" />
+                              {client.arteCount}
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {client.delivered}/{client.designDeliverables}
+                            {client.designLimit != null && (
+                              <span className="text-muted-foreground/60"> de {client.designLimit}</span>
+                            )}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-4">
                         <span className={cn("text-xs font-medium capitalize",
