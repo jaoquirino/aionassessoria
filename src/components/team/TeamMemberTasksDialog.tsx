@@ -17,7 +17,10 @@ import { useTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
 import { useTasksAssignees } from "@/hooks/useTaskAssignees";
 import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { Task } from "@/types/tasks";
+import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar, CornerDownRight } from "lucide-react";
 import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
 import { cn, parseLocalDate } from "@/lib/utils";
 
