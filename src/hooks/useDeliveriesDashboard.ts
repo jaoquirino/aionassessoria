@@ -15,6 +15,7 @@ export interface DeliveryItem {
   type: string;
   isSubtask: boolean;
   parentTaskId: string | null;
+  isParentGroup?: boolean;
 }
 
 export interface FinancialComparison {
