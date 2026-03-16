@@ -334,9 +334,9 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                             {delivery.deliverableType && (
                               <Badge variant="outline" className={cn(
                                 "text-xs shrink-0",
-                                delivery.deliverableType === "arte" ? "border-purple/30 text-purple" : "border-info/30 text-info"
+                                delivery.deliverableType === "arte" ? "border-purple/30 text-purple" : delivery.deliverableType === "carrossel" ? "border-orange-500/30 text-orange-500" : "border-info/30 text-info"
                               )}>
-                                {delivery.deliverableType === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
+                                {delivery.deliverableType === "arte" ? "🎨 Arte" : delivery.deliverableType === "carrossel" ? "📸 Carrossel" : "🎬 Vídeo"}
                               </Badge>
                             )}
                             <Badge className={cn("shrink-0", statusConfig[delivery.status]?.color)}>

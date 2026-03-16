@@ -342,6 +342,7 @@ export function useDashboardData() {
             designLimit,
             arteCount: stats.arteCount,
             videoCount: stats.videoCount,
+            carrosselCount: stats.carrosselCount,
             delivered: stats.delivered,
             tasks: stats.tasks,
           };

@@ -693,9 +693,9 @@ export default function Dashboard() {
                             {task.deliverableType && (
                               <Badge variant="outline" className={cn(
                                 "text-xs",
-                                (task.deliverableType as string).toLowerCase() === "arte" ? "border-purple-500/30 text-purple-500" : "border-info/30 text-info"
+                                (task.deliverableType as string).toLowerCase() === "arte" ? "border-purple-500/30 text-purple-500" : (task.deliverableType as string).toLowerCase() === "carrossel" ? "border-orange-500/30 text-orange-500" : "border-info/30 text-info"
                               )}>
-                                {(task.deliverableType as string).toLowerCase() === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
+                                {(task.deliverableType as string).toLowerCase() === "arte" ? "🎨 Arte" : (task.deliverableType as string).toLowerCase() === "carrossel" ? "📸 Carrossel" : "🎬 Vídeo"}
                               </Badge>
                             )}
                             <Badge className={cn("text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
