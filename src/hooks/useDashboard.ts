@@ -260,7 +260,7 @@ export function useDashboardData() {
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
         const deliverableType = (t.deliverable_type || "").toLowerCase();
-        const isDesignDeliverable = deliverableType === "arte" || deliverableType === "video" || deliverableType === "vídeo";
+        const isDesignDeliverable = deliverableType === "arte" || deliverableType === "video" || deliverableType === "vídeo" || deliverableType === "carrossel";
 
         // Keep operational weight behavior
         if (t.status !== "done") {
