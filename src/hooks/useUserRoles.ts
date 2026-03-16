@@ -167,12 +167,15 @@ export function useSetUserRole() {
         .maybeSingle();
 
       if (existingTeamMember) {
-        // Reactivate the team member and update permission
+        // Reactivate the team member and update permission + team config
         await supabase
           .from("team_members")
           .update({ 
             is_active: true,
-            permission: role === "admin" ? "admin" : "operational"
+            permission: role === "admin" ? "admin" : "operational",
+            ...(teamConfig?.roles && { role: teamConfig.roles }),
+            ...(teamConfig?.capacityLimit !== undefined && { capacity_limit: teamConfig.capacityLimit }),
+            ...(teamConfig?.restrictedView !== undefined && { restricted_view: teamConfig.restrictedView }),
           })
           .eq("id", existingTeamMember.id);
       } else {
@@ -189,10 +192,12 @@ export function useSetUserRole() {
             .insert({
               user_id: userId,
               name: profile.full_name || "Novo Integrante",
-              role: "A definir",
+              role: teamConfig?.roles || "A definir",
               permission: role === "admin" ? "admin" : "operational",
               avatar_url: profile.avatar_url,
               is_active: true,
+              capacity_limit: teamConfig?.capacityLimit ?? 15,
+              restricted_view: teamConfig?.restrictedView ?? false,
             });
         }
       }
