@@ -1,46 +1,36 @@
 
-# Plano de Correções: Cards da Equipe, Aba de Cargos e Saúde dos Clientes
 
-## Problema 1: Layout dos cards da Equipe
-O card atual mostra todos os cargos diretamente, ficando visualmente poluído. O novo layout solicitado:
-- **Linha 1**: Foto + Nome + (Admin/Operacional) + botoes editar/deletar no final
-- **Cargos**: Nao mostrar no card, apenas ao abrir o funcionario
-- **Barra de carga**: Sempre alinhada ao final do card
+## Plano: Adicionar "Carrossel" como tipo de entregável de Design
 
-### Alteracao
-- **src/pages/Team.tsx**: Reestruturar o card para usar `flex flex-col h-full` com a barra de capacidade em `mt-auto`, remover os badges de cargo do card, e colocar o badge Admin/Operacional ao lado do nome na primeira linha.
+### Objetivo
+Adicionar `carrossel` como terceiro tipo de entregável de design (ao lado de `arte` e `video`), para que seja contabilizado nos dashboards, filtros e seletores.
 
----
+### Arquivos a editar
 
-## Problema 2: Aba de Cargos nao aparece nas Configuracoes
-A aba existe no codigo (linha 477-482 de Settings.tsx), mas com muitas abas na TabsList, ela pode estar sendo cortada visualmente em telas menores ou o scroll nao esta funcionando. 
+**1. `src/components/tasks/TaskEditDialog.tsx`** (~linha 787-790 e 815-818)
+- Adicionar `<SelectItem value="carrossel">🎠 Carrossel</SelectItem>` nos dois seletores de deliverable_type
 
-### Alteracao
-- **src/pages/Settings.tsx**: Garantir que a TabsList tenha `overflow-x-auto` e `flex-nowrap` para que todas as abas fiquem visiveis com scroll horizontal. Tambem reorganizar a ordem das abas para que "Cargos" fique mais acessivel.
+**2. `src/components/tasks/SubtaskRow.tsx`** (~linha 117-123)
+- Adicionar opção "carrossel" no Select e atualizar o display ternário para incluir `carrossel`
 
----
+**3. `src/components/tasks/TaskKanbanBoard.tsx`** (~linha 410-418)
+- Adicionar tratamento para `carrossel` no badge (icone `GalleryHorizontal` ou similar, cor distinta)
 
-## Problema 3: Tabela "Saude dos Clientes" sempre mostra "Critico"
-O bug esta na logica de calculo do `healthStatus` em `src/hooks/useDashboard.ts` (linha 220):
+**4. `src/hooks/useDashboard.ts`** (~linha 258-275)
+- Incluir `deliverableType === "carrossel"` na condição `isDesignDeliverable`
+- Adicionar `carrosselCount` ao tracking por cliente
 
-```text
-const ratio = revenue > 0 && stats.weight > 0 ? revenue / stats.weight : 1;
-```
+**5. `src/components/dashboard/AdvancedDashboards.tsx`** (~linha 41, 138-139, 214-244, 320-323)
+- Expandir `designFilter` type para incluir `"carrossel"`
+- Contar `carrosselCount` nos filtros
+- Adicionar botão de filtro para carrossel
+- Atualizar badge de exibição para incluir carrossel
 
-Quando o peso operacional e 0 (sem tarefas ativas), o ratio cai para 1, que e menor que 200 e portanto "critico". O correto e: se nao ha peso operacional, o cliente esta saudavel (sem carga = sem problema).
+**6. `src/pages/Dashboard.tsx`** (~linha 696-699)
+- Atualizar badge de deliverableType para tratar `carrossel`
 
-### Alteracao
-- **src/hooks/useDashboard.ts**: Corrigir a logica para que `stats.weight === 0` resulte em status "normal" em vez de "critico":
+### Detalhes
+- Valor no banco: `"carrossel"` (string, sem migração necessaria pois `deliverable_type` e `text`)
+- Emoji/icone: `📸 Carrossel` ou icone `GalleryHorizontal` do Lucide
+- Cor: `border-orange/30 text-orange` (distinta de purple/arte e info/video)
 
-```text
-if (stats.weight === 0) healthStatus = "normal"
-else if (ratio < 200) healthStatus = "critical"
-else if (ratio < 400) healthStatus = "attention"
-```
-
----
-
-## Resumo dos arquivos a editar
-1. `src/pages/Team.tsx` - Redesign do card (foto+nome+permissao na linha 1, sem cargos, carga no final)
-2. `src/pages/Settings.tsx` - Corrigir visibilidade da aba Cargos com scroll horizontal
-3. `src/hooks/useDashboard.ts` - Corrigir logica de saude quando peso = 0
