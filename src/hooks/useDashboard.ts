@@ -328,6 +328,7 @@ export function useDashboardData() {
             designLimit,
             arteCount: stats.arteCount,
             videoCount: stats.videoCount,
+            delivered: stats.delivered,
             tasks: stats.tasks,
           };
         })
