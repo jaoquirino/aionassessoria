@@ -655,12 +655,12 @@ export default function Dashboard() {
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <p className="text-lg font-bold text-foreground">
-                      {selectedClientHealth.delivered}/{selectedClientHealth.designDeliverables}
+                      {selectedClientHealth.delivered}
                       {selectedClientHealth.designLimit != null && (
-                        <span className="text-sm font-normal text-muted-foreground"> de {selectedClientHealth.designLimit}</span>
+                        <span className="text-sm font-normal text-muted-foreground">/{selectedClientHealth.designLimit}</span>
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground">Entregue / Total</p>
+                    <p className="text-xs text-muted-foreground">Entregue / Limite</p>
                   </div>
                 </div>
                 <div>
