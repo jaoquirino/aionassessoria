@@ -647,8 +647,12 @@ export default function Dashboard() {
                         <ImageIcon className="h-4 w-4" />
                         {selectedClientHealth.arteCount}
                       </span>
+                      <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-500">
+                        <GalleryHorizontal className="h-4 w-4" />
+                        {selectedClientHealth.carrosselCount}
+                      </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Vídeos / Artes</p>
+                    <p className="text-xs text-muted-foreground">Vídeos / Artes / Carrosséis</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <p className="text-lg font-bold text-foreground">
