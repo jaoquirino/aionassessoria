@@ -239,6 +239,11 @@ export function useDashboardData() {
 
       // Client health - fixed to current month and only design deliveries (arte/vídeo), including subtasks
       const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; tasks: ClientTask[] }>();
+      
+      // DEBUG: count design deliverables
+      let debugDesignCount = 0;
+      const debugDesignTasks: any[] = [];
+      
       operationalTasksForWeight.forEach(t => {
         const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
@@ -255,6 +260,8 @@ export function useDashboardData() {
         if (isCompletedDesignDeliveryThisMonth) {
           curr.designDeliverables += 1;
           curr.delivered += 1;
+          debugDesignCount++;
+          debugDesignTasks.push({ id: t.id, title: t.title, client_id: t.client_id, deliverable_type: t.deliverable_type, due_date: t.due_date });
         }
 
         // Keep drill-down list behavior (tasks in current month + overdue pending)
@@ -272,6 +279,16 @@ export function useDashboardData() {
         }
 
         clientTaskStats2.set(t.client_id, curr);
+      });
+      
+      console.log("[Dashboard Health Debug]", {
+        totalOperationalTasks: operationalTasksForWeight.length,
+        totalDoneTasks: operationalTasksForWeight.filter(t => t.status === "done").length,
+        doneWithDeliverableType: operationalTasksForWeight.filter(t => t.status === "done" && t.deliverable_type).map(t => ({ id: t.id, type: t.deliverable_type, due: t.due_date })),
+        startOfMonth: startOfMonth.toISOString(),
+        endOfMonth: endOfMonth.toISOString(),
+        designDeliverableCount: debugDesignCount,
+        designTasks: debugDesignTasks,
       });
 
       const clientRevenueMap = new Map<string, number>();
