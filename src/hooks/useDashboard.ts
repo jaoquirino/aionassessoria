@@ -67,6 +67,10 @@ export interface ClientTask {
   isSubtask: boolean;
   parentTaskId: string | null;
   assigneeName: string;
+  deliverableType: string | null;
+  clientName: string;
+  clientLogo: string | null;
+  moduleName: string | null;
 }
 
 export function useDashboardData() {
