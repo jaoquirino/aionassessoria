@@ -94,7 +94,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
             Entregas por Cliente
           </h2>
           <p className="text-sm text-muted-foreground">
-            {filteredDeliveries.length} entregáveis no período
+            {filteredDeliveries.filter(d => !d.isParentGroup).length} entregáveis no período
           </p>
         </div>
         
@@ -134,21 +134,23 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
 
       {/* Unified Filter Bar */}
       {(() => {
-        const overdue = filteredDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
-        const arteCount = filteredDeliveries.filter(d => d.deliverableType === "arte").length;
-        const videoCount = filteredDeliveries.filter(d => d.deliverableType === "video").length;
-        const carrosselCount = filteredDeliveries.filter(d => d.deliverableType === "carrossel").length;
+        // Exclude parent groups from counts (children are the actual deliverables)
+        const countable = filteredDeliveries.filter(d => !d.isParentGroup);
+        const overdue = countable.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
+        const arteCount = countable.filter(d => d.deliverableType === "arte").length;
+        const videoCount = countable.filter(d => d.deliverableType === "video").length;
+        const carrosselCount = countable.filter(d => d.deliverableType === "carrossel").length;
 
-
-
-
-        // Apply all filters
+        // Apply all filters — keep parent groups visible if any of their children match
         let displayDeliveries = filteredDeliveries;
-        if (statusFilter === "done") displayDeliveries = displayDeliveries.filter(d => d.status === "done");
-        else if (statusFilter === "pending") displayDeliveries = displayDeliveries.filter(d => d.status !== "done");
-        else if (statusFilter === "overdue") displayDeliveries = displayDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
-        if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.deliverableType === designFilter);
+        if (statusFilter === "done") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || d.status === "done");
+        else if (statusFilter === "pending") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || d.status !== "done");
+        else if (statusFilter === "overdue") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || (d.status !== "done" && new Date(d.dueDate) < new Date()));
+        if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || d.deliverableType === designFilter);
         
+        // Remove parent groups that have no visible children after filtering
+        const visibleChildParents = new Set(displayDeliveries.filter(d => d.isSubtask && d.parentTaskId).map(d => d.parentTaskId));
+        displayDeliveries = displayDeliveries.filter(d => !d.isParentGroup || visibleChildParents.has(d.id));
 
         const hasActiveFilter = statusFilter !== "all" || designFilter !== "all";
 
@@ -165,7 +167,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                     : "bg-muted hover:bg-muted/80 text-muted-foreground"
                 )}
               >
-                Total ({filteredDeliveries.length})
+                Total ({countable.length})
               </button>
               <button
                 onClick={() => setStatusFilter(statusFilter === "done" ? "all" : "done")}
@@ -288,6 +290,34 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                   ) : (
                     displayDeliveries.map((delivery) => {
                       const StatusIcon = statusConfig[delivery.status]?.icon || Clock;
+                      
+                      // Parent group header
+                      if (delivery.isParentGroup) {
+                        return (
+                          <div
+                            key={delivery.id}
+                            onClick={() => {
+                              setSelectedTaskId(delivery.id);
+                              setSelectedSubtaskId(null);
+                            }}
+                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {clientLogoMap.get(delivery.clientId) && (
+                                <img src={clientLogoMap.get(delivery.clientId)!} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
+                              )}
+                              <div className="min-w-0">
+                                <p className="font-semibold text-sm text-foreground truncate">{delivery.title}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {delivery.clientName}
+                                  {delivery.moduleName && ` · ${delivery.moduleName}`}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div
                           key={delivery.id}
@@ -302,6 +332,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                           }}
                           className={cn(
                             "flex items-center justify-between p-3 rounded-lg border-l-4 border hover:bg-muted/50 transition-colors cursor-pointer",
+                            delivery.isSubtask && "ml-6",
                             delivery.status === "done" ? "border-l-success" :
                             delivery.status === "review" ? "border-l-warning" :
                             delivery.status === "in_progress" ? "border-l-primary" :
@@ -321,13 +352,15 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                                 )}
                                 {delivery.title}
                               </p>
-                              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                {clientLogoMap.get(delivery.clientId) && (
-                                  <img src={clientLogoMap.get(delivery.clientId)!} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
-                                )}
-                                {delivery.clientName}
-                                {delivery.moduleName && ` · ${delivery.moduleName}`}
-                              </p>
+                              {!delivery.isSubtask && (
+                                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                  {clientLogoMap.get(delivery.clientId) && (
+                                    <img src={clientLogoMap.get(delivery.clientId)!} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                                  )}
+                                  {delivery.clientName}
+                                  {delivery.moduleName && ` · ${delivery.moduleName}`}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

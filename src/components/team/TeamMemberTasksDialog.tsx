@@ -99,9 +99,47 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
       return taskDate >= start && taskDate <= end;
     });
 
+    // Group tasks: parent → children
+    const groupTasks = (tasks: Task[]) => {
+      const parentIdsWithChildren = new Set(
+        tasks.filter(t => t.parent_task_id).map(t => t.parent_task_id!)
+      );
+      // Find parent tasks that have children but might not be in the filtered list
+      const missingParents: Task[] = [];
+      parentIdsWithChildren.forEach(pid => {
+        if (!tasks.some(t => t.id === pid)) {
+          const parent = combinedTasks.find(t => t.id === pid);
+          if (parent) missingParents.push({ ...parent, _isParentGroup: true } as any);
+        }
+      });
+      // Mark existing parents
+      const allTasks = [...missingParents, ...tasks].map(t => ({
+        ...t,
+        _isParentGroup: parentIdsWithChildren.has(t.id) ? true : (t as any)._isParentGroup || false,
+      }));
+
+      const grouped: Task[] = [];
+      const childMap = new Map<string, Task[]>();
+      allTasks.forEach(t => {
+        if (t.parent_task_id && parentIdsWithChildren.has(t.parent_task_id)) {
+          const children = childMap.get(t.parent_task_id) || [];
+          children.push(t);
+          childMap.set(t.parent_task_id, children);
+        }
+      });
+      const parents = allTasks.filter(t => (t as any)._isParentGroup);
+      const standalone = allTasks.filter(t => !(t as any)._isParentGroup && (!t.parent_task_id || !parentIdsWithChildren.has(t.parent_task_id)));
+      parents.forEach(p => {
+        grouped.push(p);
+        grouped.push(...(childMap.get(p.id) || []));
+      });
+      grouped.push(...standalone);
+      return grouped;
+    };
+
     return {
-      active: filteredTasks.filter((t: Task) => t.status !== "done"),
-      completed: filteredTasks.filter((t: Task) => t.status === "done"),
+      active: groupTasks(filteredTasks.filter((t: Task) => t.status !== "done")),
+      completed: groupTasks(filteredTasks.filter((t: Task) => t.status === "done")),
     };
   }, [combinedTasks, member, period, customRange, assigneesMap]);
  
@@ -110,10 +148,33 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
    if (!member) return null;
 
    const renderTaskCard = (task: Task, index: number, isCompletedTab: boolean) => {
-     const isOverdue = !isCompletedTab && parseLocalDate(task.due_date) < now;
+     const isParentGroup = (task as any)._isParentGroup;
+     const isOverdue = !isCompletedTab && !isParentGroup && parseLocalDate(task.due_date) < now;
      const client = clientMap.get(task.client_id);
      const status = statusConfig[task.status] || statusConfig.todo;
      const deliverableType = (task.deliverable_type || "").toLowerCase();
+
+     // Parent group header
+     if (isParentGroup) {
+       return (
+         <motion.div
+           key={task.id}
+           initial={{ opacity: 0, y: 10 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.03 * index }}
+           onClick={() => handleTaskClick(task.id)}
+           className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
+         >
+           {client?.logo_url && (
+             <img src={client.logo_url} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
+           )}
+           <div className="min-w-0">
+             <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
+             <p className="text-xs text-muted-foreground">{client?.name || "—"}</p>
+           </div>
+         </motion.div>
+       );
+     }
 
      return (
        <motion.div
@@ -122,26 +183,29 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
          animate={{ opacity: 1, y: 0 }}
          transition={{ delay: 0.03 * index }}
          onClick={() => handleTaskClick(task.parent_task_id || task.id)}
-         className={cn(
-           "rounded-lg border border-l-4 p-4 transition-all cursor-pointer hover:shadow-md",
-           status.borderColor,
-           isOverdue ? "border-destructive/30 bg-destructive/5 border-l-destructive" : "border-border hover:border-primary/30"
-         )}
-       >
-         <div className="flex items-start justify-between gap-3">
-           <div className="flex-1 min-w-0">
-             <div className="flex items-center gap-2">
-               {task.parent_task_id && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-               <p className="font-medium text-foreground truncate">{task.title}</p>
-             </div>
-             <div className="flex items-center gap-1.5 mt-1">
-               {client?.logo_url && (
-                 <img src={client.logo_url} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
-               )}
-               <p className="text-sm text-muted-foreground truncate">
-                 {client?.name || "—"}
-               </p>
-             </div>
+          className={cn(
+            "rounded-lg border border-l-4 p-4 transition-all cursor-pointer hover:shadow-md",
+            task.parent_task_id && "ml-6",
+            status.borderColor,
+            isOverdue ? "border-destructive/30 bg-destructive/5 border-l-destructive" : "border-border hover:border-primary/30"
+          )}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                {task.parent_task_id && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                <p className="font-medium text-foreground truncate">{task.title}</p>
+              </div>
+              {!task.parent_task_id && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  {client?.logo_url && (
+                    <img src={client.logo_url} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                  )}
+                  <p className="text-sm text-muted-foreground truncate">
+                    {client?.name || "—"}
+                  </p>
+                </div>
+              )}
            </div>
            <div className="flex items-center gap-2 shrink-0">
              {deliverableType && (
