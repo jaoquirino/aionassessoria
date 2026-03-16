@@ -166,20 +166,28 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
 
      // Parent group header
      if (isParentGroup) {
+       const isCollapsed = collapsedParents.has(task.id);
        return (
          <motion.div
            key={task.id}
            initial={{ opacity: 0, y: 10 }}
            animate={{ opacity: 1, y: 0 }}
            transition={{ delay: 0.03 * index }}
-           onClick={() => handleTaskClick(task.id)}
            className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
          >
-           {client?.logo_url && (
-             <img src={client.logo_url} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
-           )}
-           <div className="min-w-0">
-             <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
+           <button
+             onClick={(e) => { e.stopPropagation(); toggleParentCollapse(task.id); }}
+             className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+           >
+             {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+           </button>
+           <div className="flex-1 min-w-0" onClick={() => handleTaskClick(task.id)}>
+             <div className="flex items-center gap-2">
+               {client?.logo_url && (
+                 <img src={client.logo_url} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
+               )}
+               <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
+             </div>
              <p className="text-xs text-muted-foreground">{client?.name || "—"}</p>
            </div>
          </motion.div>
