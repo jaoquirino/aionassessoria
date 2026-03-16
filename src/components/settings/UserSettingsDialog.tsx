@@ -32,7 +32,7 @@ interface UserSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentUserId?: string;
-  onRoleChange: (userId: string, role: string) => void;
+  onRoleChange: (userId: string, role: string, teamConfig?: { roles?: string; capacityLimit?: number; restrictedView?: boolean }) => void;
   onDelete: (userId: string) => void;
   isDeletingUserId: string | null;
 }
