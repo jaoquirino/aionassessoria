@@ -178,7 +178,7 @@ export function useDashboardData() {
         .reduce((sum: number, c: { monthly_value: number }) => sum + Number(c.monthly_value), 0);
 
       // Member weights: match Team page logic exactly (exclude project type, include all clients, include subtask weights)
-      const memberWeightTasks = operationalTasksFiltered.filter(t => t.type !== "project" && t.status !== "done");
+      const memberWeightTasks = operationalTasks.filter(t => t.type !== "project" && t.status !== "done");
       const memberTaskStats = new Map<string, { weight: number; count: number; overdue: number }>();
       memberWeightTasks.forEach(t => {
         const assignedMembers = new Set<string>();
