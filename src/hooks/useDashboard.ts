@@ -239,7 +239,12 @@ export function useDashboardData() {
 
       // Client health - fixed to current month and only design deliveries (arte/vídeo), including subtasks
       const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; tasks: ClientTask[] }>();
-      operationalTasksForWeight.forEach(t => {
+      
+      // Use ALL operational tasks (not filtered by parent/subtask) for health counting
+      // Only exclude internal clients
+      const healthTasks = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
+      
+      healthTasks.forEach(t => {
         const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
