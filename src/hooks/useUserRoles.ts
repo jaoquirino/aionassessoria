@@ -87,9 +87,10 @@ export function useUsersWithRoles() {
         const userRole = roles.find((r) => r.user_id === profile.user_id);
         return {
           id: profile.user_id,
-          email: "", // We don't have email in profiles
+          email: "",
           full_name: profile.full_name,
           avatar_url: profile.avatar_url,
+          username: profile.username,
           role: userRole?.role as AppRole | null,
           created_at: profile.created_at,
         };
