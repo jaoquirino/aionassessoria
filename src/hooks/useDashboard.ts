@@ -297,6 +297,73 @@ export function useDashboardData() {
         clientTaskStats2.set(t.client_id, curr);
       });
 
+      // Group tasks by parent → children for each client
+      clientTaskStats2.forEach((stats, clientId) => {
+        const parentIdsWithChildren = new Set(
+          stats.tasks.filter(t => t.isSubtask && t.parentTaskId).map(t => t.parentTaskId!)
+        );
+        
+        if (parentIdsWithChildren.size === 0) return;
+        
+        // Find parent tasks from operationalTasksFiltered that have children in the list
+        const parentTasksToAdd: ClientTask[] = [];
+        parentIdsWithChildren.forEach(parentId => {
+          // Check if parent is already in the tasks list
+          if (stats.tasks.some(t => t.id === parentId)) return;
+          // Find parent task data
+          const parentTask = healthTasks.find(t => t.id === parentId);
+          if (parentTask) {
+            parentTasksToAdd.push({
+              id: parentTask.id,
+              title: parentTask.title,
+              status: parentTask.status,
+              dueDate: parentTask.due_date,
+              type: parentTask.type,
+              isSubtask: false,
+              parentTaskId: null,
+              isParentGroup: true,
+              assigneeName: getAssigneeName(parentTask),
+              deliverableType: parentTask.deliverable_type || null,
+              clientName: clientMap.get(parentTask.client_id) || "—",
+              clientLogo: clientLogoMap.get(parentTask.client_id) || null,
+              moduleName: contractModuleNameMap.get(parentTask.contract_module_id) || null,
+            });
+          }
+        });
+
+        // Mark existing parent tasks as parent groups
+        stats.tasks.forEach(t => {
+          if (parentIdsWithChildren.has(t.id)) t.isParentGroup = true;
+        });
+
+        // Build grouped list
+        const grouped: ClientTask[] = [];
+        const taskMap = new Map<string, ClientTask[]>();
+        const allTasks = [...parentTasksToAdd, ...stats.tasks];
+        
+        allTasks.forEach(t => {
+          if (t.isSubtask && t.parentTaskId) {
+            const children = taskMap.get(t.parentTaskId) || [];
+            children.push(t);
+            taskMap.set(t.parentTaskId, children);
+          }
+        });
+
+        const parents = allTasks.filter(t => t.isParentGroup);
+        const standalone = allTasks.filter(t => !t.isParentGroup && !t.isSubtask);
+        
+        parents.forEach(p => {
+          grouped.push(p);
+          grouped.push(...(taskMap.get(p.id) || []));
+        });
+        // Add subtasks whose parents aren't in the list
+        allTasks.filter(t => t.isSubtask && t.parentTaskId && !parentIdsWithChildren.has(t.parentTaskId))
+          .forEach(t => grouped.push(t));
+        grouped.push(...standalone);
+        
+        stats.tasks = grouped;
+      });
+
       const clientRevenueMap = new Map<string, number>();
       contracts.filter((c: { client_id: string }) => !internalClientIds.has(c.client_id)).forEach((c: { client_id: string; monthly_value: number }) => {
         const curr = clientRevenueMap.get(c.client_id) || 0;
