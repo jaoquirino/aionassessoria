@@ -237,24 +237,27 @@ export function useDashboardData() {
         parentTaskId: t.parent_task_id || null,
       }));
 
-      // Client health - current month only, counting only design deliverables (arte/vídeo)
+      // Client health - fixed to current month and only design deliveries (arte/vídeo), including subtasks
       const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; tasks: ClientTask[] }>();
       operationalTasksForWeight.forEach(t => {
         const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
-        const isDesign = t.deliverable_type === "arte" || t.deliverable_type === "video";
+        const deliverableType = (t.deliverable_type || "").toLowerCase();
+        const isDesignDeliverable = deliverableType === "arte" || deliverableType === "video" || deliverableType === "vídeo";
+        const isCompletedDesignDeliveryThisMonth = t.status === "done" && isCurrentMonth && isDesignDeliverable;
 
         if (t.status !== "done") {
           curr.weight += t.weight;
           curr.pending += 1;
-        } else if (isCurrentMonth && isDesign) {
-          // Only count design deliverables with due_date in current month
+        }
+
+        if (isCompletedDesignDeliveryThisMonth) {
           curr.designDeliverables += 1;
           curr.delivered += 1;
         }
 
-        // Collect current month tasks for drill-down
+        // Keep drill-down list behavior (tasks in current month + overdue pending)
         if (isCurrentMonth || (t.status !== "done" && taskDue < todayMidnight)) {
           curr.tasks.push({
             id: t.id,
