@@ -17,8 +17,11 @@ import { useTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
 import { useTasksAssignees } from "@/hooks/useTaskAssignees";
 import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { Task } from "@/types/tasks";
-import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar } from "lucide-react";
+import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar, CornerDownRight } from "lucide-react";
+
 import { cn, parseLocalDate } from "@/lib/utils";
 
 interface TeamMemberTasksDialogProps {
@@ -57,9 +60,27 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
 
   const { data: allTasks = [], isLoading: tasksLoading } = useTasks();
   const { data: clients = [] } = useAllClients();
+
+  // Fetch subtasks (tasks with parent_task_id) separately since useTasks excludes them
+  const { data: subtasks = [], isLoading: subtasksLoading } = useQuery({
+    queryKey: ["member_subtasks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .is("archived_at", null)
+        .not("parent_task_id", "is", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as Task[];
+    },
+  });
+
+  // Combine parent tasks and subtasks
+  const combinedTasks = useMemo(() => [...allTasks, ...subtasks], [allTasks, subtasks]);
   
   // Get all task IDs to fetch assignees
-  const taskIds = useMemo(() => allTasks.map((t: Task) => t.id), [allTasks]);
+  const taskIds = useMemo(() => combinedTasks.map((t: Task) => t.id), [combinedTasks]);
   const { data: assigneesMap = {}, isLoading: assigneesLoading } = useTasksAssignees(taskIds);
   const { data: subtaskCounts = {} } = useTasksSubtaskCounts(taskIds);
 
@@ -75,7 +96,10 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
 
     const { start, end } = getPeriodDates(period, customRange);
     
-    const filteredTasks = allTasks.filter((task: Task) => {
+    const filteredTasks = combinedTasks.filter((task: Task) => {
+      // Exclude onboarding tasks
+      if (task.type === "onboarding") return false;
+      
       // Check if member is assigned via legacy field OR via task_assignees table
       const isAssignedLegacy = task.assigned_to === member.id;
       const taskAssignees = assigneesMap[task.id] || [];
@@ -91,7 +115,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
       active: filteredTasks.filter((t: Task) => t.status !== "done"),
       completed: filteredTasks.filter((t: Task) => t.status === "done"),
     };
-  }, [allTasks, member, period, customRange, assigneesMap]);
+  }, [combinedTasks, member, period, customRange, assigneesMap]);
  
    const now = new Date();
  
@@ -140,7 +164,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
          </div>
  
          <div className="flex-1 overflow-y-auto min-h-0">
-            {tasksLoading || assigneesLoading ? (
+            {tasksLoading || subtasksLoading || assigneesLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
@@ -161,7 +185,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.03 * index }}
-                            onClick={() => handleTaskClick(task.id)}
+                            onClick={() => handleTaskClick(task.parent_task_id || task.id)}
                             className={cn(
                               "rounded-lg border p-4 transition-all cursor-pointer hover:shadow-md",
                               isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border hover:border-primary/30"
@@ -169,8 +193,9 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                           >
                            <div className="flex items-start justify-between gap-4">
                              <div className="flex-1 min-w-0">
-                               <div className="flex items-center gap-2">
-                                 <p className="font-medium text-foreground truncate">{task.title}</p>
+                                <div className="flex items-center gap-2">
+                                  {task.parent_task_id && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                  <p className="font-medium text-foreground truncate">{task.title}</p>
                                   <Badge variant="outline" className="text-xs shrink-0">
                                     Peso: {task.weight + (subtaskCounts[task.id]?.weight || 0)}
                                   </Badge>
