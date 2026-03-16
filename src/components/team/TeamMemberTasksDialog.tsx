@@ -185,7 +185,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.03 * index }}
-                            onClick={() => handleTaskClick(task.id)}
+                            onClick={() => handleTaskClick(task.parent_task_id || task.id)}
                             className={cn(
                               "rounded-lg border p-4 transition-all cursor-pointer hover:shadow-md",
                               isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border hover:border-primary/30"
