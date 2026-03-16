@@ -38,7 +38,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
-  const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video">("all");
+  const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video" | "carrossel">("all");
   
   
   const { data: clients, isLoading: clientsLoading } = useAllClients();
