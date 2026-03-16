@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from "react";
-
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
@@ -14,6 +14,7 @@ import {
   Heart,
   Eye,
   EyeOff,
+  RefreshCw,
 } from "lucide-react";
 import {
   Dialog,
@@ -71,6 +72,7 @@ function getCapacityStatus(current: number, max: number) {
 type TaskFilter = "all" | "overdue" | "today" | "week" | "active";
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data, isLoading } = useDashboardData();
   const { data: currentMember } = useCurrentTeamMember();
@@ -558,13 +560,22 @@ export default function Dashboard() {
             {isRestricted ? "Suas tarefas e capacidade" : isAdmin ? "Visão geral da operação em tempo real" : "Sua visão operacional"}
           </p>
         </div>
-        <button
-          onClick={toggleHideValues}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          title={hideValues ? "Mostrar valores" : "Ocultar valores"}
-        >
-          {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => queryClient.invalidateQueries()}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title="Atualizar dados"
+          >
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </button>
+          <button
+            onClick={toggleHideValues}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={hideValues ? "Mostrar valores" : "Ocultar valores"}
+          >
+            {hideValues ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {isAdmin ? (

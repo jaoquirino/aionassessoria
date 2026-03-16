@@ -111,7 +111,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={selectedClient} onValueChange={setSelectedClient}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-auto min-w-[12rem] max-w-[20rem]">
                 <SelectValue placeholder="Filtrar por cliente" />
               </SelectTrigger>
               <SelectContent>
