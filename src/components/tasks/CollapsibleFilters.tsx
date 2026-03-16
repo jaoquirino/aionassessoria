@@ -35,7 +35,7 @@ interface CollapsibleFiltersProps {
   statusOptions: { value: string; label: string }[];
   
   assigneeOptions: { value: string; label: string }[];
-  clientOptions: { value: string; label: string }[];
+  clientOptions: { value: string; label: string; logo_url?: string | null }[];
 }
 
 export function CollapsibleFilters({

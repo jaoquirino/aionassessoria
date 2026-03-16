@@ -69,7 +69,7 @@ export default function Tasks() {
   }, [teamMembers]);
 
   const clientOptions = useMemo(() => {
-    return clients.map((c) => ({ value: c.id, label: c.name }));
+    return clients.map((c) => ({ value: c.id, label: c.name, logo_url: c.logo_url || null }));
   }, [clients]);
 
   // Filter out project/onboarding tasks and apply restricted view
