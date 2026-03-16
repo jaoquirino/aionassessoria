@@ -96,7 +96,10 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
 
     const { start, end } = getPeriodDates(period, customRange);
     
-    const filteredTasks = allTasks.filter((task: Task) => {
+    const filteredTasks = combinedTasks.filter((task: Task) => {
+      // Exclude onboarding tasks
+      if (task.type === "onboarding") return false;
+      
       // Check if member is assigned via legacy field OR via task_assignees table
       const isAssignedLegacy = task.assigned_to === member.id;
       const taskAssignees = assigneesMap[task.id] || [];
@@ -112,7 +115,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
       active: filteredTasks.filter((t: Task) => t.status !== "done"),
       completed: filteredTasks.filter((t: Task) => t.status === "done"),
     };
-  }, [allTasks, member, period, customRange, assigneesMap]);
+  }, [combinedTasks, member, period, customRange, assigneesMap]);
  
    const now = new Date();
  
