@@ -682,24 +682,35 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa no período</p>
                   ) : (
                     <div className="space-y-1.5">
-                      {clientTasks.map(task => {
+                      {clientTasks.filter(task => !task.isSubtask || !task.parentTaskId || !collapsedParents.has(task.parentTaskId)).map(task => {
                         // Parent group header
                         if (task.isParentGroup) {
+                          const isCollapsed = collapsedParents.has(task.id);
                           return (
                             <div
                               key={task.id}
-                              onClick={() => { setSelectedClientHealth(null); handleClientTaskClick(task); }}
                               className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
                             >
-                              {task.clientLogo && (
-                                <img src={task.clientLogo} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
-                              )}
-                              <div className="min-w-0">
-                                <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {task.clientName}
-                                  {task.moduleName && ` · ${task.moduleName}`}
-                                </p>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleParentCollapse(task.id); }}
+                                className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+                              >
+                                {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                              </button>
+                              <div
+                                className="flex items-center gap-3 flex-1 min-w-0"
+                                onClick={() => { setSelectedClientHealth(null); handleClientTaskClick(task); }}
+                              >
+                                {task.clientLogo && (
+                                  <img src={task.clientLogo} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
+                                )}
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {task.clientName}
+                                    {task.moduleName && ` · ${task.moduleName}`}
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           );
