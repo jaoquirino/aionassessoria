@@ -183,26 +183,29 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
          animate={{ opacity: 1, y: 0 }}
          transition={{ delay: 0.03 * index }}
          onClick={() => handleTaskClick(task.parent_task_id || task.id)}
-         className={cn(
-           "rounded-lg border border-l-4 p-4 transition-all cursor-pointer hover:shadow-md",
-           status.borderColor,
-           isOverdue ? "border-destructive/30 bg-destructive/5 border-l-destructive" : "border-border hover:border-primary/30"
-         )}
-       >
-         <div className="flex items-start justify-between gap-3">
-           <div className="flex-1 min-w-0">
-             <div className="flex items-center gap-2">
-               {task.parent_task_id && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-               <p className="font-medium text-foreground truncate">{task.title}</p>
-             </div>
-             <div className="flex items-center gap-1.5 mt-1">
-               {client?.logo_url && (
-                 <img src={client.logo_url} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
-               )}
-               <p className="text-sm text-muted-foreground truncate">
-                 {client?.name || "—"}
-               </p>
-             </div>
+          className={cn(
+            "rounded-lg border border-l-4 p-4 transition-all cursor-pointer hover:shadow-md",
+            task.parent_task_id && "ml-6",
+            status.borderColor,
+            isOverdue ? "border-destructive/30 bg-destructive/5 border-l-destructive" : "border-border hover:border-primary/30"
+          )}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                {task.parent_task_id && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                <p className="font-medium text-foreground truncate">{task.title}</p>
+              </div>
+              {!task.parent_task_id && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  {client?.logo_url && (
+                    <img src={client.logo_url} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                  )}
+                  <p className="text-sm text-muted-foreground truncate">
+                    {client?.name || "—"}
+                  </p>
+                </div>
+              )}
            </div>
            <div className="flex items-center gap-2 shrink-0">
              {deliverableType && (
