@@ -18,6 +18,8 @@ import {
   Video,
   Image as ImageIcon,
   GalleryHorizontal,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import {
   Dialog,

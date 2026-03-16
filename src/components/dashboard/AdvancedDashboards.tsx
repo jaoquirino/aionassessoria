@@ -306,16 +306,25 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                       
                       // Parent group header
                       if (delivery.isParentGroup) {
+                        const isCollapsed = collapsedParents.has(delivery.id);
                         return (
                           <div
                             key={delivery.id}
-                            onClick={() => {
-                              setSelectedTaskId(delivery.id);
-                              setSelectedSubtaskId(null);
-                            }}
                             className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
                           >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleParentCollapse(delivery.id); }}
+                              className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+                            >
+                              {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                            </button>
+                            <div
+                              className="flex items-center gap-3 flex-1 min-w-0"
+                              onClick={() => {
+                                setSelectedTaskId(delivery.id);
+                                setSelectedSubtaskId(null);
+                              }}
+                            >
                               {clientLogoMap.get(delivery.clientId) && (
                                 <img src={clientLogoMap.get(delivery.clientId)!} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
                               )}
