@@ -228,6 +228,22 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                   </span>
                 </button>
               )}
+              {carrosselCount > 0 && (
+                <button
+                  onClick={() => setDesignFilter(designFilter === "carrossel" ? "all" : "carrossel")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
+                    designFilter === "carrossel"
+                      ? "bg-orange-500 text-white border-orange-500 shadow-sm"
+                      : "bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500/20"
+                  )}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <GalleryHorizontal className="h-3.5 w-3.5" />
+                    Carrosséis ({carrosselCount})
+                  </span>
+                </button>
+              )}
               {videoCount > 0 && (
                 <button
                   onClick={() => setDesignFilter(designFilter === "video" ? "all" : "video")}
