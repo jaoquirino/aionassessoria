@@ -247,18 +247,14 @@ export default function Dashboard() {
                       <td className="py-4">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2.5">
-                            {client.videoCount > 0 && (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
-                                <Video className="h-3.5 w-3.5" />
-                                {client.videoCount}
-                              </span>
-                            )}
-                            {client.arteCount > 0 && (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-500">
-                                <ImageIcon className="h-3.5 w-3.5" />
-                                {client.arteCount}
-                              </span>
-                            )}
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
+                              <Video className="h-3.5 w-3.5" />
+                              {client.videoCount}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-500">
+                              <ImageIcon className="h-3.5 w-3.5" />
+                              {client.arteCount}
+                            </span>
                           </div>
                           {client.designLimit != null && (
                             <span className="text-xs font-medium text-foreground">
