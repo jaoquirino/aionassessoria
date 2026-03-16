@@ -225,6 +225,18 @@ export function UserSettingsDialog({
         </DialogHeader>
 
         <div className="space-y-5">
+          {/* Pending Approval Banner */}
+          {isPendingApproval && !user.role && (
+            <div className="p-3 rounded-lg border border-warning/50 bg-warning/5">
+              <p className="text-sm font-medium text-warning flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                Usuário aguardando aprovação
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Defina o nível de acesso e os cargos abaixo para aprovar.
+              </p>
+            </div>
+          )}
           {/* User Info */}
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14">
