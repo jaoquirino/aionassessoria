@@ -237,24 +237,21 @@ export function useDashboardData() {
         parentTaskId: t.parent_task_id || null,
       }));
 
-      // Client health - current month only
+      // Client health - current month only, counting only design deliverables (arte/vídeo)
       const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; tasks: ClientTask[] }>();
       operationalTasksForWeight.forEach(t => {
         const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
+        const isDesign = t.deliverable_type === "arte" || t.deliverable_type === "video";
 
         if (t.status !== "done") {
           curr.weight += t.weight;
           curr.pending += 1;
-        } else {
-          const doneDate = new Date(t.updated_at);
-          if (doneDate >= startOfMonth) {
-            curr.delivered += 1;
-            if (t.deliverable_type === "arte" || t.deliverable_type === "video") {
-              curr.designDeliverables += 1;
-            }
-          }
+        } else if (isCurrentMonth && isDesign) {
+          // Only count design deliverables with due_date in current month
+          curr.designDeliverables += 1;
+          curr.delivered += 1;
         }
 
         // Collect current month tasks for drill-down
