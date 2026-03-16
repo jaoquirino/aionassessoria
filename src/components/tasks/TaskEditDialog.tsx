@@ -733,10 +733,43 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                   )}
 
 
-                  {/* Deliverable Type for subtasks */}
+                  {/* Module + Deliverable Type for subtasks */}
                   {isSubtask && (
                     <div className="space-y-4">
-                      {/* Only show deliverable type if parent module is design */}
+                      {/* Module selector for subtasks */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-1">
+                          <Package className="h-3 w-3" /> Módulo
+                        </Label>
+                        <Select
+                          value={contractModuleId || ""}
+                          onValueChange={async (val) => {
+                            setContractModuleId(val);
+                            const selectedMod = clientModules.find(m => m.contractModuleId === val);
+                            if (selectedMod) {
+                              setWeight(selectedMod.defaultWeight);
+                            }
+                            const selIsDesign = selectedMod?.moduleName?.toLowerCase().includes("design");
+                            if (!selIsDesign) {
+                              setDeliverableType(null);
+                            }
+                            markDirty();
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o módulo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {clientModules.map((module) => (
+                              <SelectItem key={module.contractModuleId} value={module.contractModuleId}>
+                                {module.moduleName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Only show deliverable type if module is design */}
                       {(() => {
                         const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);
                         const isDesignModule = selectedModule?.moduleName?.toLowerCase().includes("design");
