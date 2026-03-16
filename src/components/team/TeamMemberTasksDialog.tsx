@@ -50,6 +50,16 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
   const [activeTab, setActiveTab] = useState("active");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(new Set());
+
+  const toggleParentCollapse = (parentId: string) => {
+    setCollapsedParents(prev => {
+      const next = new Set(prev);
+      if (next.has(parentId)) next.delete(parentId);
+      else next.add(parentId);
+      return next;
+    });
+  };
 
   const { data: allTasks = [], isLoading: tasksLoading } = useTasks();
   const { data: clients = [] } = useAllClients();
