@@ -15,6 +15,8 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  Video,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   Dialog,

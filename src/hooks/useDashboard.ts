@@ -55,6 +55,7 @@ export interface DashboardClientHealth {
   designLimit: number | null;
   arteCount: number;
   videoCount: number;
+  delivered: number;
 }
 
 export interface ClientTask {
