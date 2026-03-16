@@ -662,15 +662,46 @@ export default function Dashboard() {
                   ) : (
                     <div className="space-y-1.5">
                       {clientTasks.map(task => (
-                        <div key={task.id} onClick={() => { setSelectedClientHealth(null); handleClientTaskClick(task); }}
-                          className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-muted/50 border border-transparent hover:border-border"
+                        <div
+                          key={task.id}
+                          onClick={() => { setSelectedClientHealth(null); handleClientTaskClick(task); }}
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-lg border-l-4 border hover:bg-muted/50 transition-colors cursor-pointer",
+                            task.status === "done" ? "border-l-success" :
+                            task.status === "review" ? "border-l-warning" :
+                            task.status === "in_progress" ? "border-l-primary" :
+                            task.status === "waiting_client" ? "border-l-info" :
+                            "border-l-muted-foreground"
+                          )}
                         >
-                          {task.isSubtask && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                          <span className="text-sm font-medium text-foreground flex-1 min-w-0 truncate">{task.title}</span>
-                          <span className="text-xs text-muted-foreground shrink-0">{task.assigneeName}</span>
-                          <Badge className={cn("shrink-0 text-[10px] whitespace-nowrap", statusConfig[task.status]?.color || "bg-muted")}>
-                            {statusConfig[task.status]?.label || task.status}
-                          </Badge>
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm flex items-center gap-1.5 truncate">
+                                {task.isSubtask && <CornerDownRight className="h-3 w-3 text-muted-foreground shrink-0" />}
+                                {task.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                {task.clientLogo && (
+                                  <img src={task.clientLogo} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                                )}
+                                {task.clientName}
+                                {task.moduleName && ` · ${task.moduleName}`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {task.deliverableType && (
+                              <Badge variant="outline" className={cn(
+                                "text-xs",
+                                (task.deliverableType as string).toLowerCase() === "arte" ? "border-purple-500/30 text-purple-500" : "border-info/30 text-info"
+                              )}>
+                                {(task.deliverableType as string).toLowerCase() === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
+                              </Badge>
+                            )}
+                            <Badge className={cn("text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
+                              {statusConfig[task.status]?.label || task.status}
+                            </Badge>
+                          </div>
                         </div>
                       ))}
                     </div>
