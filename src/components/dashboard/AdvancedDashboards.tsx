@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, Image, Video, GalleryHorizontal, AlertTriangle, X, CornerDownRight } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, Image, Video, GalleryHorizontal, AlertTriangle, X, CornerDownRight, ChevronDown, ChevronRight } from "lucide-react";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
