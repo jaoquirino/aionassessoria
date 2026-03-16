@@ -251,7 +251,7 @@ export function useDashboardData() {
 
       // Client health - fixed to current month, only design deliveries (arte/vídeo),
       // matching Deliveries dashboard logic (subtasks count, parent with subtasks does not duplicate)
-      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; arteCount: number; videoCount: number; tasks: ClientTask[] }>();
+      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; arteCount: number; videoCount: number; carrosselCount: number; tasks: ClientTask[] }>();
 
       const healthTasks = operationalTasksFiltered.filter(t => !internalClientIds.has(t.client_id));
 
