@@ -635,17 +635,30 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground">Receita</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <p className="text-lg font-bold text-foreground">{selectedClientHealth.operationalWeight}</p>
-                    <p className="text-xs text-muted-foreground">Peso</p>
+                    <div className="flex items-center justify-center gap-3">
+                      {selectedClientHealth.videoCount > 0 && (
+                        <span className="inline-flex items-center gap-1 text-sm font-bold text-info">
+                          <Video className="h-4 w-4" />
+                          {selectedClientHealth.videoCount}
+                        </span>
+                      )}
+                      {selectedClientHealth.arteCount > 0 && (
+                        <span className="inline-flex items-center gap-1 text-sm font-bold text-purple">
+                          <ImageIcon className="h-4 w-4" />
+                          {selectedClientHealth.arteCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Vídeos / Artes</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <p className="text-lg font-bold text-foreground">
-                      {selectedClientHealth.deliveriesThisMonth}
+                      {selectedClientHealth.delivered}/{selectedClientHealth.designDeliverables}
                       {selectedClientHealth.designLimit != null && (
-                        <span className="text-sm font-normal text-muted-foreground"> / {selectedClientHealth.designLimit}</span>
+                        <span className="text-sm font-normal text-muted-foreground"> de {selectedClientHealth.designLimit}</span>
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground">Entregas</p>
+                    <p className="text-xs text-muted-foreground">Entregue / Total</p>
                   </div>
                 </div>
                 <div>
