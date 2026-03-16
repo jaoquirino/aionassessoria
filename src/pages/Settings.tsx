@@ -490,9 +490,14 @@ export default function Settings() {
               </TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="permissions" className="gap-2">
+              <TabsTrigger value="permissions" className="gap-2 relative">
                 <Shield className="h-4 w-4" />
                 <span className="hidden sm:inline">Permissões</span>
+                {(users?.filter(u => !u.role).length ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-[10px] font-bold text-warning-foreground">
+                    {users?.filter(u => !u.role).length}
+                  </span>
+                )}
               </TabsTrigger>
             )}
           </TabsList>
