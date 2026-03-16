@@ -521,12 +521,12 @@ export default function Dashboard() {
                 className={cn(
                   "group flex items-center gap-4 rounded-lg border border-l-4 p-3 transition-all hover:bg-muted/50 cursor-pointer",
                   task.isOverdue
-                    ? "border-destructive/30 bg-destructive/5 border-l-destructive"
-                    : task.status === "done" ? "border-border border-l-success"
-                    : task.status === "review" ? "border-border border-l-warning"
-                    : task.status === "in_progress" ? "border-border border-l-primary"
-                    : task.status === "waiting_client" ? "border-border border-l-info"
-                    : "border-border border-l-muted-foreground"
+                    ? "border-destructive/30 bg-destructive/5 !border-l-destructive"
+                    : task.status === "done" ? "border-border !border-l-success"
+                    : task.status === "review" ? "border-border !border-l-warning"
+                    : task.status === "in_progress" ? "border-border !border-l-primary"
+                    : task.status === "waiting_client" ? "border-border !border-l-info"
+                    : "border-border !border-l-muted-foreground"
                 )}
                 onClick={() => handleTaskClick(task)}
               >
