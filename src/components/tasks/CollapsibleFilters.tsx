@@ -35,7 +35,7 @@ interface CollapsibleFiltersProps {
   statusOptions: { value: string; label: string }[];
   
   assigneeOptions: { value: string; label: string }[];
-  clientOptions: { value: string; label: string }[];
+  clientOptions: { value: string; label: string; logo_url?: string | null }[];
 }
 
 export function CollapsibleFilters({
@@ -158,7 +158,14 @@ export function CollapsibleFilters({
                     <SelectItem value="all">Todos os clientes</SelectItem>
                     {clientOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
+                        <span className="flex items-center gap-2">
+                          {opt.logo_url ? (
+                            <img src={opt.logo_url} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                          ) : (
+                            <span className="h-4 w-4 rounded bg-muted shrink-0" />
+                          )}
+                          {opt.label}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
