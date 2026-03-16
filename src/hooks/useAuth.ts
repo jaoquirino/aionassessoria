@@ -81,9 +81,8 @@ export function useAuth() {
       },
     });
     
-    // If signup successful, auto sign in (since we're using username-based auth without email confirmation)
-    if (!error && data?.user) {
-      // Auto sign in after signup
+    // Only auto sign in for setup mode (first admin)
+    if (!error && data?.user && makeAdmin) {
       await supabase.auth.signInWithPassword({ email, password });
     }
     
