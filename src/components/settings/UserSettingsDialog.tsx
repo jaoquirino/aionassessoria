@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pencil, Key, Loader2, ShieldCheck, Shield, UserX, Save, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Pencil, Key, Loader2, ShieldCheck, Shield, UserX, Save, X, EyeOff } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -20,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { type UserWithRole, type AppRole } from "@/hooks/useUserRoles";
+import { useRoleNames } from "@/hooks/useAvailableRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { strongPasswordSchema, getPasswordRequirements } from "@/lib/passwordValidation";
@@ -45,12 +47,32 @@ export function UserSettingsDialog({
   isDeletingUserId,
 }: UserSettingsDialogProps) {
   const queryClient = useQueryClient();
+  const roleOptions = useRoleNames();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [editedUsername, setEditedUsername] = useState("");
   const [isSavingUsername, setIsSavingUsername] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  // Team member fields
+  const [teamRoles, setTeamRoles] = useState<string[]>([]);
+  const [capacityLimit, setCapacityLimit] = useState(15);
+  const [restrictedView, setRestrictedView] = useState(false);
+  const [isSavingTeamFields, setIsSavingTeamFields] = useState(false);
+
+  // Reset team fields when user changes
+  useEffect(() => {
+    if (user) {
+      const roles = user.team_roles?.split(",").map(r => r.trim()).filter(Boolean) || [];
+      setTeamRoles(roles);
+      setCapacityLimit(user.capacity_limit ?? 15);
+      setRestrictedView(user.restricted_view ?? false);
+      setIsEditingUsername(false);
+      setShowResetPassword(false);
+      setNewPassword("");
+    }
+  }, [user]);
 
   if (!user) return null;
 
@@ -78,7 +100,6 @@ export function UserSettingsDialog({
 
     setIsSavingUsername(true);
     try {
-      // Check if username is taken
       const { data: existing } = await supabase
         .from("profiles")
         .select("user_id")
@@ -139,16 +160,62 @@ export function UserSettingsDialog({
     }
   };
 
+  const handleAddRole = (role: string) => {
+    if (!teamRoles.includes(role)) {
+      setTeamRoles([...teamRoles, role]);
+    }
+  };
+
+  const handleRemoveRole = (role: string) => {
+    if (teamRoles.length > 1) {
+      setTeamRoles(teamRoles.filter(r => r !== role));
+    }
+  };
+
+  const handleSaveTeamFields = async () => {
+    if (!user.team_member_id) return;
+    setIsSavingTeamFields(true);
+    try {
+      const { error } = await supabase
+        .from("team_members")
+        .update({
+          role: teamRoles.join(", "),
+          capacity_limit: capacityLimit,
+          restricted_view: restrictedView,
+        })
+        .eq("id", user.team_member_id);
+
+      if (error) throw error;
+
+      toast.success("Configurações da equipe atualizadas");
+      queryClient.invalidateQueries({ queryKey: ["users_with_roles"] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
+      queryClient.invalidateQueries({ queryKey: ["team_members"] });
+    } catch (error: any) {
+      toast.error("Erro ao salvar: " + error.message);
+    } finally {
+      setIsSavingTeamFields(false);
+    }
+  };
+
   const isSelf = user.id === currentUserId;
+  const availableRoles = roleOptions.filter(r => !teamRoles.includes(r));
+
+  // Check if team fields changed
+  const originalRoles = user.team_roles?.split(",").map(r => r.trim()).filter(Boolean) || [];
+  const teamFieldsChanged =
+    JSON.stringify(teamRoles.sort()) !== JSON.stringify([...originalRoles].sort()) ||
+    capacityLimit !== (user.capacity_limit ?? 15) ||
+    restrictedView !== (user.restricted_view ?? false);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Configurações do Usuário</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* User Info */}
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14">
@@ -200,7 +267,7 @@ export function UserSettingsDialog({
 
           <Separator />
 
-          {/* Role */}
+          {/* Role (Access Level) */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Nível de acesso</Label>
             <Select
@@ -236,6 +303,86 @@ export function UserSettingsDialog({
               <p className="text-xs text-muted-foreground">Você não pode alterar sua própria permissão</p>
             )}
           </div>
+
+          {/* Team Member Fields - only show if user has access (role) */}
+          {user.team_member_id && (
+            <>
+              <Separator />
+
+              {/* Team Roles (Cargos) */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Cargos</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {teamRoles.map((role) => (
+                    <Badge key={role} variant="secondary" className="gap-1 pr-1">
+                      {role}
+                      {teamRoles.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveRole(role)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
+                {availableRoles.length > 0 && (
+                  <Select onValueChange={handleAddRole}>
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Adicionar cargo..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRoles.map((role) => (
+                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              {/* Capacity */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Limite de capacidade</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={capacityLimit}
+                  onChange={(e) => setCapacityLimit(parseInt(e.target.value) || 15)}
+                  className="w-24"
+                />
+              </div>
+
+              {/* Restricted View */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <EyeOff className="h-3.5 w-3.5" />
+                    Visão restrita
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Só consegue ver tarefas atribuídas a ele
+                  </p>
+                </div>
+                <Switch checked={restrictedView} onCheckedChange={setRestrictedView} />
+              </div>
+
+              {/* Save team fields button */}
+              {teamFieldsChanged && (
+                <Button
+                  size="sm"
+                  onClick={handleSaveTeamFields}
+                  disabled={isSavingTeamFields}
+                  className="gap-1 w-full"
+                >
+                  {isSavingTeamFields ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                  Salvar alterações da equipe
+                </Button>
+              )}
+            </>
+          )}
 
           <Separator />
 
