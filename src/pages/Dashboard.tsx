@@ -647,12 +647,12 @@ export default function Dashboard() {
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <p className="text-lg font-bold text-foreground">
-                      {selectedClientHealth.delivered}
+                      {selectedClientHealth.designDeliverables}
                       {selectedClientHealth.designLimit != null && (
                         <span className="text-sm font-normal text-muted-foreground">/{selectedClientHealth.designLimit}</span>
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground">Entregue / Limite</p>
+                    <p className="text-xs text-muted-foreground">Consumido / Limite</p>
                   </div>
                 </div>
                 <div>
