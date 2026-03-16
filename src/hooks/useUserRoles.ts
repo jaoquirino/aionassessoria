@@ -19,6 +19,13 @@ export interface UserWithRole {
   username: string | null;
   role: AppRole | null;
   created_at: string;
+  // Team member fields
+  team_member_id: string | null;
+  team_roles: string | null;
+  permission: string | null;
+  capacity_limit: number | null;
+  restricted_view: boolean | null;
+  is_active: boolean | null;
 }
 
 // Check if current user is admin
