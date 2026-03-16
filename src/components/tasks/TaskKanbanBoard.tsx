@@ -1,6 +1,6 @@
  import { useState, useMemo, useEffect } from "react";
  import { motion, Reorder } from "framer-motion";
- import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare, Image, Video, CheckCircle2, RotateCcw } from "lucide-react";
+ import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare, Image, Video, GalleryHorizontal, CheckCircle2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
