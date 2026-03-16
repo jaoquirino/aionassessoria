@@ -56,6 +56,7 @@ export default function Settings() {
   const [searchTerm, setSearchTerm] = useState("");
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [isDeletingUserId, setIsDeletingUserId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<import("@/hooks/useUserRoles").UserWithRole | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // User profile state
