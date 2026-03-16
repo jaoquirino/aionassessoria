@@ -148,10 +148,33 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
    if (!member) return null;
 
    const renderTaskCard = (task: Task, index: number, isCompletedTab: boolean) => {
-     const isOverdue = !isCompletedTab && parseLocalDate(task.due_date) < now;
+     const isParentGroup = (task as any)._isParentGroup;
+     const isOverdue = !isCompletedTab && !isParentGroup && parseLocalDate(task.due_date) < now;
      const client = clientMap.get(task.client_id);
      const status = statusConfig[task.status] || statusConfig.todo;
      const deliverableType = (task.deliverable_type || "").toLowerCase();
+
+     // Parent group header
+     if (isParentGroup) {
+       return (
+         <motion.div
+           key={task.id}
+           initial={{ opacity: 0, y: 10 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.03 * index }}
+           onClick={() => handleTaskClick(task.id)}
+           className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
+         >
+           {client?.logo_url && (
+             <img src={client.logo_url} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
+           )}
+           <div className="min-w-0">
+             <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
+             <p className="text-xs text-muted-foreground">{client?.name || "—"}</p>
+           </div>
+         </motion.div>
+       );
+     }
 
      return (
        <motion.div
