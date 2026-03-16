@@ -134,21 +134,23 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
 
       {/* Unified Filter Bar */}
       {(() => {
-        const overdue = filteredDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
-        const arteCount = filteredDeliveries.filter(d => d.deliverableType === "arte").length;
-        const videoCount = filteredDeliveries.filter(d => d.deliverableType === "video").length;
-        const carrosselCount = filteredDeliveries.filter(d => d.deliverableType === "carrossel").length;
+        // Exclude parent groups from counts (children are the actual deliverables)
+        const countable = filteredDeliveries.filter(d => !d.isParentGroup);
+        const overdue = countable.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
+        const arteCount = countable.filter(d => d.deliverableType === "arte").length;
+        const videoCount = countable.filter(d => d.deliverableType === "video").length;
+        const carrosselCount = countable.filter(d => d.deliverableType === "carrossel").length;
 
-
-
-
-        // Apply all filters
+        // Apply all filters — keep parent groups visible if any of their children match
         let displayDeliveries = filteredDeliveries;
-        if (statusFilter === "done") displayDeliveries = displayDeliveries.filter(d => d.status === "done");
-        else if (statusFilter === "pending") displayDeliveries = displayDeliveries.filter(d => d.status !== "done");
-        else if (statusFilter === "overdue") displayDeliveries = displayDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
-        if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.deliverableType === designFilter);
+        if (statusFilter === "done") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || d.status === "done");
+        else if (statusFilter === "pending") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || d.status !== "done");
+        else if (statusFilter === "overdue") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || (d.status !== "done" && new Date(d.dueDate) < new Date()));
+        if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || d.deliverableType === designFilter);
         
+        // Remove parent groups that have no visible children after filtering
+        const visibleChildParents = new Set(displayDeliveries.filter(d => d.isSubtask && d.parentTaskId).map(d => d.parentTaskId));
+        displayDeliveries = displayDeliveries.filter(d => !d.isParentGroup || visibleChildParents.has(d.id));
 
         const hasActiveFilter = statusFilter !== "all" || designFilter !== "all";
 
