@@ -99,9 +99,47 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
       return taskDate >= start && taskDate <= end;
     });
 
+    // Group tasks: parent → children
+    const groupTasks = (tasks: Task[]) => {
+      const parentIdsWithChildren = new Set(
+        tasks.filter(t => t.parent_task_id).map(t => t.parent_task_id!)
+      );
+      // Find parent tasks that have children but might not be in the filtered list
+      const missingParents: Task[] = [];
+      parentIdsWithChildren.forEach(pid => {
+        if (!tasks.some(t => t.id === pid)) {
+          const parent = combinedTasks.find(t => t.id === pid);
+          if (parent) missingParents.push({ ...parent, _isParentGroup: true } as any);
+        }
+      });
+      // Mark existing parents
+      const allTasks = [...missingParents, ...tasks].map(t => ({
+        ...t,
+        _isParentGroup: parentIdsWithChildren.has(t.id) ? true : (t as any)._isParentGroup || false,
+      }));
+
+      const grouped: Task[] = [];
+      const childMap = new Map<string, Task[]>();
+      allTasks.forEach(t => {
+        if (t.parent_task_id && parentIdsWithChildren.has(t.parent_task_id)) {
+          const children = childMap.get(t.parent_task_id) || [];
+          children.push(t);
+          childMap.set(t.parent_task_id, children);
+        }
+      });
+      const parents = allTasks.filter(t => (t as any)._isParentGroup);
+      const standalone = allTasks.filter(t => !(t as any)._isParentGroup && (!t.parent_task_id || !parentIdsWithChildren.has(t.parent_task_id)));
+      parents.forEach(p => {
+        grouped.push(p);
+        grouped.push(...(childMap.get(p.id) || []));
+      });
+      grouped.push(...standalone);
+      return grouped;
+    };
+
     return {
-      active: filteredTasks.filter((t: Task) => t.status !== "done"),
-      completed: filteredTasks.filter((t: Task) => t.status === "done"),
+      active: groupTasks(filteredTasks.filter((t: Task) => t.status !== "done")),
+      completed: groupTasks(filteredTasks.filter((t: Task) => t.status === "done")),
     };
   }, [combinedTasks, member, period, customRange, assigneesMap]);
  
