@@ -321,8 +321,8 @@ export function useDashboardData() {
         parentIdsWithChildren.forEach(parentId => {
           // Check if parent is already in the tasks list
           if (stats.tasks.some(t => t.id === parentId)) return;
-          // Find parent task data
-          const parentTask = healthTasks.find(t => t.id === parentId);
+        // Find parent task data (search in all operational tasks since parents with subtasks are excluded from healthTasks)
+          const parentTask = operationalTasks.find(t => t.id === parentId);
           if (parentTask) {
             parentTasksToAdd.push({
               id: parentTask.id,
