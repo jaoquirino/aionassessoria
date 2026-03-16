@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Video,
   Image as ImageIcon,
+  GalleryHorizontal,
 } from "lucide-react";
 import {
   Dialog,
