@@ -147,20 +147,16 @@ export function SubtaskRow({
           <div onClick={(e) => e.stopPropagation()} className="inline-flex">
             <Select
               value={sub.contract_module_id || ""}
-              onValueChange={(val) => {
+              onValueChange={async (val) => {
                 const selectedMod = clientModules.find(m => m.contractModuleId === val);
                 const selIsDesign = selectedMod?.moduleName?.toLowerCase().includes("design");
-                // Optimistic update immediately
+                // Fetch contract_id first, then do a single update
+                const { data: cmData } = await supabase.from("contract_modules").select("contract_id").eq("id", val).single();
                 onUpdate(sub.id, parentId, {
                   contract_module_id: val,
                   deliverable_type: selIsDesign ? (sub.deliverable_type || null) : null,
+                  ...(cmData?.contract_id ? { contract_id: cmData.contract_id } : {}),
                 } as any);
-                // Fetch contract_id in background
-                supabase.from("contract_modules").select("contract_id").eq("id", val).single().then(({ data: cmData }) => {
-                  if (cmData?.contract_id) {
-                    onUpdate(sub.id, parentId, { contract_id: cmData.contract_id } as any);
-                  }
-                });
               }}
             >
               <SelectTrigger className="h-5 text-[10px] px-1.5 py-0 w-auto border-dashed gap-0.5 inline-flex">
