@@ -271,6 +271,7 @@ export function useDashboardData() {
         if (isCurrentMonth && isDesignDeliverable) {
           curr.designDeliverables += 1;
           if (deliverableType === "arte") curr.arteCount += 1;
+          else if (deliverableType === "carrossel") curr.carrosselCount += 1;
           else curr.videoCount += 1;
           if (t.status === "done") curr.delivered += 1;
           else curr.pending += 1;
