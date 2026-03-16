@@ -167,7 +167,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                     : "bg-muted hover:bg-muted/80 text-muted-foreground"
                 )}
               >
-                Total ({filteredDeliveries.length})
+                Total ({countable.length})
               </button>
               <button
                 onClick={() => setStatusFilter(statusFilter === "done" ? "all" : "done")}
