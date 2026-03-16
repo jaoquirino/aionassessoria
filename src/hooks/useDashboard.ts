@@ -250,17 +250,28 @@ export function useDashboardData() {
         parentTaskId: t.parent_task_id || null,
       }));
 
-      // Client health - fixed to current month, only design deliveries (arte/vídeo),
+      // Client health - fixed to current month, only design deliveries (arte/vídeo/carrossel),
       // matching Deliveries dashboard logic (subtasks count, parent with subtasks does not duplicate)
       const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; arteCount: number; videoCount: number; carrosselCount: number; tasks: ClientTask[] }>();
 
       const healthTasks = operationalTasksFiltered.filter(t => !internalClientIds.has(t.client_id));
 
+      // Build a map of parent task deliverable_type so subtasks can inherit
+      const parentDeliverableTypeMap = new Map<string, string>();
+      operationalTasks.forEach(t => {
+        if (t.deliverable_type) {
+          parentDeliverableTypeMap.set(t.id, t.deliverable_type);
+        }
+      });
+
       healthTasks.forEach(t => {
         const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, arteCount: 0, videoCount: 0, carrosselCount: 0, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
-        const deliverableType = (t.deliverable_type || "").toLowerCase();
+        
+        // Inherit deliverable_type from parent if subtask doesn't have one
+        const rawDeliverableType = t.deliverable_type || (t.parent_task_id ? parentDeliverableTypeMap.get(t.parent_task_id) : null) || "";
+        const deliverableType = rawDeliverableType.toLowerCase();
         const isDesignDeliverable = deliverableType === "arte" || deliverableType === "video" || deliverableType === "vídeo" || deliverableType === "carrossel";
 
         // Keep operational weight behavior
@@ -287,7 +298,7 @@ export function useDashboardData() {
             isSubtask: !!t.parent_task_id,
             parentTaskId: t.parent_task_id || null,
             assigneeName: getAssigneeName(t),
-            deliverableType: t.deliverable_type || null,
+            deliverableType: rawDeliverableType || null,
             clientName: clientMap.get(t.client_id) || "—",
             clientLogo: clientLogoMap.get(t.client_id) || null,
             moduleName: contractModuleNameMap.get(t.contract_module_id) || null,
