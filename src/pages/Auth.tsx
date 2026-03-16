@@ -319,7 +319,7 @@ export default function Auth() {
                   type="text"
                   placeholder="seu_usuario"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
                   className="pl-10"
                   autoComplete="username"
                 />
