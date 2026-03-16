@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const usernameSchema = z.string()
   .min(3, "Username deve ter no mínimo 3 caracteres")
-  .regex(/^[a-zA-Z0-9_]+$/, "Username pode conter apenas letras, números e _");
+  .regex(/^[a-zA-Z0-9_.]+$/, "Username pode conter apenas letras, números, _ e .");
 
 // Generate internal email from username  
 // Try both formats for backwards compatibility
@@ -319,7 +319,7 @@ export default function Auth() {
                   type="text"
                   placeholder="seu_usuario"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
                   className="pl-10"
                   autoComplete="username"
                 />
