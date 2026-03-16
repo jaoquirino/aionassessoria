@@ -260,6 +260,8 @@ export function useDashboardData() {
         // Health deliveries = design tasks in current month (any status), same as Deliveries total
         if (isCurrentMonth && isDesignDeliverable) {
           curr.designDeliverables += 1;
+          if (deliverableType === "arte") curr.arteCount += 1;
+          else curr.videoCount += 1;
           if (t.status === "done") curr.delivered += 1;
           else curr.pending += 1;
 
