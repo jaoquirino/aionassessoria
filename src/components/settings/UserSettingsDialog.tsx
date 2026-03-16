@@ -325,8 +325,8 @@ export function UserSettingsDialog({
             )}
           </div>
 
-          {/* Team Member Fields - only show if user has access (role) */}
-          {user.team_member_id && (
+          {/* Team Member Fields - show for existing team members or pending approval */}
+          {(user.team_member_id || isPendingApproval) && (
             <>
               <Separator />
 
@@ -334,6 +334,9 @@ export function UserSettingsDialog({
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Cargos</Label>
                 <div className="flex flex-wrap gap-1.5">
+                  {teamRoles.length === 0 && (
+                    <span className="text-xs text-muted-foreground">Nenhum cargo definido</span>
+                  )}
                   {teamRoles.map((role) => (
                     <Badge key={role} variant="secondary" className="gap-1 pr-1">
                       {role}
@@ -390,8 +393,8 @@ export function UserSettingsDialog({
                 <Switch checked={restrictedView} onCheckedChange={setRestrictedView} />
               </div>
 
-              {/* Save team fields button */}
-              {teamFieldsChanged && (
+              {/* Save team fields button - only for existing team members */}
+              {user.team_member_id && teamFieldsChanged && (
                 <Button
                   size="sm"
                   onClick={handleSaveTeamFields}
