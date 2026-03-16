@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Video,
   Image as ImageIcon,
+  GalleryHorizontal,
 } from "lucide-react";
 import {
   Dialog,
@@ -254,6 +255,10 @@ export default function Dashboard() {
                             <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-500">
                               <ImageIcon className="h-3.5 w-3.5" />
                               {client.arteCount}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-500">
+                              <GalleryHorizontal className="h-3.5 w-3.5" />
+                              {client.carrosselCount}
                             </span>
                           </div>
                           {client.designLimit != null && (
@@ -642,8 +647,12 @@ export default function Dashboard() {
                         <ImageIcon className="h-4 w-4" />
                         {selectedClientHealth.arteCount}
                       </span>
+                      <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-500">
+                        <GalleryHorizontal className="h-4 w-4" />
+                        {selectedClientHealth.carrosselCount}
+                      </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Vídeos / Artes</p>
+                    <p className="text-xs text-muted-foreground">Vídeos / Artes / Carrosséis</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <p className="text-lg font-bold text-foreground">
@@ -693,9 +702,9 @@ export default function Dashboard() {
                             {task.deliverableType && (
                               <Badge variant="outline" className={cn(
                                 "text-xs",
-                                (task.deliverableType as string).toLowerCase() === "arte" ? "border-purple-500/30 text-purple-500" : "border-info/30 text-info"
+                                (task.deliverableType as string).toLowerCase() === "arte" ? "border-purple-500/30 text-purple-500" : (task.deliverableType as string).toLowerCase() === "carrossel" ? "border-orange-500/30 text-orange-500" : "border-info/30 text-info"
                               )}>
-                                {(task.deliverableType as string).toLowerCase() === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
+                                {(task.deliverableType as string).toLowerCase() === "arte" ? "🎨 Arte" : (task.deliverableType as string).toLowerCase() === "carrossel" ? "📸 Carrossel" : "🎬 Vídeo"}
                               </Badge>
                             )}
                             <Badge className={cn("text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>

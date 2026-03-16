@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, Image, Video, AlertTriangle, X, CornerDownRight } from "lucide-react";
+import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, Image, Video, GalleryHorizontal, AlertTriangle, X, CornerDownRight } from "lucide-react";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
-  const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video">("all");
+  const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video" | "carrossel">("all");
   
   
   const { data: clients, isLoading: clientsLoading } = useAllClients();
@@ -137,6 +137,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         const overdue = filteredDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
         const arteCount = filteredDeliveries.filter(d => d.deliverableType === "arte").length;
         const videoCount = filteredDeliveries.filter(d => d.deliverableType === "video").length;
+        const carrosselCount = filteredDeliveries.filter(d => d.deliverableType === "carrossel").length;
 
 
 
@@ -224,6 +225,22 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                   <span className="flex items-center gap-1.5">
                     <Image className="h-3.5 w-3.5" />
                     Artes ({arteCount})
+                  </span>
+                </button>
+              )}
+              {carrosselCount > 0 && (
+                <button
+                  onClick={() => setDesignFilter(designFilter === "carrossel" ? "all" : "carrossel")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
+                    designFilter === "carrossel"
+                      ? "bg-orange-500 text-white border-orange-500 shadow-sm"
+                      : "bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500/20"
+                  )}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <GalleryHorizontal className="h-3.5 w-3.5" />
+                    Carrosséis ({carrosselCount})
                   </span>
                 </button>
               )}
@@ -317,9 +334,9 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                             {delivery.deliverableType && (
                               <Badge variant="outline" className={cn(
                                 "text-xs shrink-0",
-                                delivery.deliverableType === "arte" ? "border-purple/30 text-purple" : "border-info/30 text-info"
+                                delivery.deliverableType === "arte" ? "border-purple/30 text-purple" : delivery.deliverableType === "carrossel" ? "border-orange-500/30 text-orange-500" : "border-info/30 text-info"
                               )}>
-                                {delivery.deliverableType === "arte" ? "🎨 Arte" : "🎬 Vídeo"}
+                                {delivery.deliverableType === "arte" ? "🎨 Arte" : delivery.deliverableType === "carrossel" ? "📸 Carrossel" : "🎬 Vídeo"}
                               </Badge>
                             )}
                             <Badge className={cn("shrink-0", statusConfig[delivery.status]?.color)}>

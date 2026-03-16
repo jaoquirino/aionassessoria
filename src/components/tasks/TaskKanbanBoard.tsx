@@ -1,6 +1,6 @@
  import { useState, useMemo, useEffect } from "react";
  import { motion, Reorder } from "framer-motion";
- import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare, Image, Video, CheckCircle2, RotateCcw } from "lucide-react";
+ import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare, Image, Video, GalleryHorizontal, CheckCircle2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -411,10 +411,10 @@ interface TaskCardProps {
           {task.deliverable_type && (
             <Badge variant="outline" className={cn(
               "text-xs gap-1",
-              task.deliverable_type === "arte" ? "border-purple/30 text-purple" : "border-info/30 text-info"
+              task.deliverable_type === "arte" ? "border-purple/30 text-purple" : task.deliverable_type === "carrossel" ? "border-orange/30 text-orange" : "border-info/30 text-info"
             )}>
-              {task.deliverable_type === "arte" ? <Image className="h-3 w-3" /> : <Video className="h-3 w-3" />}
-              {task.deliverable_type === "arte" ? "Arte" : "Vídeo"}
+              {task.deliverable_type === "arte" ? <Image className="h-3 w-3" /> : task.deliverable_type === "carrossel" ? <GalleryHorizontal className="h-3 w-3" /> : <Video className="h-3 w-3" />}
+              {task.deliverable_type === "arte" ? "Arte" : task.deliverable_type === "carrossel" ? "Carrossel" : "Vídeo"}
             </Badge>
           )}
 

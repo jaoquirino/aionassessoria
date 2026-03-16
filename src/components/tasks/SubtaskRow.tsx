@@ -114,12 +114,13 @@ export function SubtaskRow({
               >
                 <SelectTrigger className="h-5 text-[10px] px-1.5 py-0 w-auto border-dashed gap-0.5 inline-flex">
                   <SelectValue placeholder="Tipo">
-                    {sub.deliverable_type === "arte" ? "🎨 Arte" : sub.deliverable_type === "video" ? "🎬 Vídeo" : "Tipo"}
+                    {sub.deliverable_type === "arte" ? "🎨 Arte" : sub.deliverable_type === "video" ? "🎬 Vídeo" : sub.deliverable_type === "carrossel" ? "📸 Carrossel" : "Tipo"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="arte" className="text-xs">🎨 Arte</SelectItem>
                   <SelectItem value="video" className="text-xs">🎬 Vídeo</SelectItem>
+                  <SelectItem value="carrossel" className="text-xs">📸 Carrossel</SelectItem>
                 </SelectContent>
               </Select>
             </div>

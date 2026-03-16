@@ -788,6 +788,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                                 <SelectItem value="none">Nenhum</SelectItem>
                                 <SelectItem value="arte">🎨 Arte</SelectItem>
                                 <SelectItem value="video">🎬 Vídeo</SelectItem>
+                                <SelectItem value="carrossel">📸 Carrossel</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -816,6 +817,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                           <SelectContent>
                             <SelectItem value="arte">🎨 Arte</SelectItem>
                             <SelectItem value="video">🎬 Vídeo</SelectItem>
+                            <SelectItem value="carrossel">📸 Carrossel</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
