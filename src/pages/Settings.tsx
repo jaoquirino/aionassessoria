@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign, Briefcase, Puzzle } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign, Briefcase, Puzzle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -490,9 +490,14 @@ export default function Settings() {
               </TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="permissions" className="gap-2">
+              <TabsTrigger value="permissions" className="gap-2 relative">
                 <Shield className="h-4 w-4" />
                 <span className="hidden sm:inline">Permissões</span>
+                {(users?.filter(u => !u.role).length ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-[10px] font-bold text-warning-foreground">
+                    {users?.filter(u => !u.role).length}
+                  </span>
+                )}
               </TabsTrigger>
             )}
           </TabsList>
@@ -935,6 +940,64 @@ export default function Settings() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Pending Users Alert */}
+              {(() => {
+                const pendingUsers = users?.filter(u => !u.role) || [];
+                if (pendingUsers.length === 0) return null;
+                return (
+                  <Card className="border-warning/50 bg-warning/5">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium flex items-center gap-2 text-warning">
+                        <Clock className="h-4 w-4" />
+                        {pendingUsers.length} {pendingUsers.length === 1 ? 'usuário aguardando' : 'usuários aguardando'} aprovação
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {pendingUsers.map((u) => (
+                        <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={u.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs">{getInitials(u.full_name)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-medium">{u.full_name || "Nome não informado"}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Cadastrado em {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="gap-1"
+                              onClick={() => handleRoleChange(u.id, "member")}
+                            >
+                              <ShieldCheck className="h-3 w-3" />
+                              Aprovar
+                            </Button>
+                            <Select
+                              value="none"
+                              onValueChange={(value) => handleRoleChange(u.id, value)}
+                            >
+                              <SelectTrigger className="w-[120px] h-8 text-xs">
+                                <SelectValue placeholder="Definir cargo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="member">Operacional</SelectItem>
+                                <SelectItem value="none">Sem acesso</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })()}
 
               {/* Search and Add */}
               <div className="flex flex-col sm:flex-row gap-4">

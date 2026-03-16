@@ -183,6 +183,9 @@ export default function Auth() {
             toast.success("Conta de administrador criada!");
             navigate("/", { replace: true });
           } else {
+            // Sign out immediately - Supabase auto-confirms and logs in,
+            // but user must wait for admin approval
+            await supabase.auth.signOut();
             toast.success("Conta criada com sucesso! Aguarde a aprovação de um administrador para acessar o sistema.", { duration: 6000 });
           }
           setIsSetupMode(false);
