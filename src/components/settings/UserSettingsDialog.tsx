@@ -62,12 +62,21 @@ export function UserSettingsDialog({
   const [isSavingTeamFields, setIsSavingTeamFields] = useState(false);
 
   // Reset team fields when user changes
+  const isPendingApproval = (user as any)?._pendingApproval === true;
+
   useEffect(() => {
     if (user) {
-      const roles = user.team_roles?.split(",").map(r => r.trim()).filter(Boolean) || [];
-      setTeamRoles(roles);
-      setCapacityLimit(user.capacity_limit ?? 15);
-      setRestrictedView(user.restricted_view ?? false);
+      if (isPendingApproval) {
+        // Defaults for pending approval: restricted view + operational
+        setTeamRoles([]);
+        setCapacityLimit(15);
+        setRestrictedView(true);
+      } else {
+        const roles = user.team_roles?.split(",").map(r => r.trim()).filter(Boolean) || [];
+        setTeamRoles(roles);
+        setCapacityLimit(user.capacity_limit ?? 15);
+        setRestrictedView(user.restricted_view ?? false);
+      }
       setIsEditingUsername(false);
       setShowResetPassword(false);
       setNewPassword("");
