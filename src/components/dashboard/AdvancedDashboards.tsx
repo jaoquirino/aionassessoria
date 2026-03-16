@@ -94,7 +94,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
             Entregas por Cliente
           </h2>
           <p className="text-sm text-muted-foreground">
-            {filteredDeliveries.length} entregáveis no período
+            {filteredDeliveries.filter(d => !d.isParentGroup).length} entregáveis no período
           </p>
         </div>
         
