@@ -293,7 +293,14 @@ export function UserSettingsDialog({
             <Label className="text-sm font-medium">Nível de acesso</Label>
             <Select
               value={user.role || "none"}
-              onValueChange={(value) => onRoleChange(user.id, value)}
+              onValueChange={(value) => {
+                const config = {
+                  roles: teamRoles.length > 0 ? teamRoles.join(", ") : undefined,
+                  capacityLimit,
+                  restrictedView,
+                };
+                onRoleChange(user.id, value, config);
+              }}
               disabled={isSelf}
             >
               <SelectTrigger>
