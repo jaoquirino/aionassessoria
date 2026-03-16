@@ -127,7 +127,7 @@ export function useSetUserRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
+    mutationFn: async ({ userId, role, teamConfig }: { userId: string; role: AppRole; teamConfig?: { roles?: string; capacityLimit?: number; restrictedView?: boolean } }) => {
       // First check if role exists
       const { data: existing } = await supabase
         .from("user_roles")
