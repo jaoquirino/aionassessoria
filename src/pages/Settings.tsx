@@ -37,6 +37,7 @@ import { RolesManagementTab } from "@/components/settings/RolesManagementTab";
 import { PrioritiesManagementTab } from "@/components/settings/PrioritiesManagementTab";
 import { SavedColorsManagementTab } from "@/components/settings/SavedColorsManagementTab";
 import { ModulesManagementTab } from "@/components/settings/ModulesManagementTab";
+import { UserSettingsDialog } from "@/components/settings/UserSettingsDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -55,6 +56,7 @@ export default function Settings() {
   const [searchTerm, setSearchTerm] = useState("");
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [isDeletingUserId, setIsDeletingUserId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<import("@/hooks/useUserRoles").UserWithRole | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // User profile state
@@ -1042,7 +1044,8 @@ export default function Settings() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                            className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/10 transition-colors cursor-pointer"
+                            onClick={() => setSelectedUser(u)}
                           >
                             <div className="flex items-center gap-4">
                               <Avatar className="h-10 w-10">
@@ -1053,63 +1056,18 @@ export default function Settings() {
                                 <p className="font-medium text-foreground">
                                   {u.full_name || "Nome não informado"}
                                 </p>
-                                <p className="text-sm text-muted-foreground">
-                                  Cadastrado em {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                                <p className="text-xs text-muted-foreground">
+                                  @{u.username || "sem_username"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Cadastrado em {new Date(u.created_at).toLocaleDateString("pt-BR")} às{" "}
+                                  {new Date(u.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
                               {getRoleBadge(u.role)}
-
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    disabled={isDeletingUserId === u.id || u.id === user?.id}
-                                    title={u.id === user?.id ? "Você não pode excluir seu próprio usuário" : "Excluir usuário"}
-                                  >
-                                    {isDeletingUserId === u.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <Trash2 className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta ação remove o usuário e seus registros de acesso. Isso não pode ser desfeito.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteUser(u.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                              
-                              <Select
-                                value={u.role || "none"}
-                                onValueChange={(value) => handleRoleChange(u.id, value)}
-                              >
-                                <SelectTrigger className="w-[140px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="member">Operacional</SelectItem>
-                                  <SelectItem value="none">Sem acesso</SelectItem>
-                                </SelectContent>
-                              </Select>
                             </div>
                           </motion.div>
                         ))
@@ -1118,6 +1076,17 @@ export default function Settings() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* User Settings Dialog */}
+              <UserSettingsDialog
+                user={selectedUser}
+                open={!!selectedUser}
+                onOpenChange={(open) => { if (!open) setSelectedUser(null); }}
+                currentUserId={user?.id}
+                onRoleChange={handleRoleChange}
+                onDelete={handleDeleteUser}
+                isDeletingUserId={isDeletingUserId}
+              />
 
               {/* Legend */}
               <Card>
