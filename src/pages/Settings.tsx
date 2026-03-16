@@ -37,6 +37,7 @@ import { RolesManagementTab } from "@/components/settings/RolesManagementTab";
 import { PrioritiesManagementTab } from "@/components/settings/PrioritiesManagementTab";
 import { SavedColorsManagementTab } from "@/components/settings/SavedColorsManagementTab";
 import { ModulesManagementTab } from "@/components/settings/ModulesManagementTab";
+import { UserSettingsDialog } from "@/components/settings/UserSettingsDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
