@@ -419,7 +419,15 @@ export function UserSettingsDialog({
 
           {/* Reset Password */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Senha</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Senha</Label>
+              {!showResetPassword && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowResetPassword(true)}>
+                  <Key className="h-4 w-4" />
+                  Redefinir senha
+                </Button>
+              )}
+            </div>
             {showResetPassword ? (
               <div className="space-y-3">
                 <Input
@@ -459,14 +467,10 @@ export function UserSettingsDialog({
                 </div>
               </div>
             ) : (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowResetPassword(true)}>
-                <Key className="h-4 w-4" />
-                Redefinir senha
-              </Button>
+              <p className="text-xs text-muted-foreground">
+                Define uma nova senha diretamente, sem exigir a senha anterior.
+              </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              Define uma nova senha diretamente, sem exigir a senha anterior.
-            </p>
           </div>
 
           <Separator />
