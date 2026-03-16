@@ -280,6 +280,10 @@ export function useDashboardData() {
             isSubtask: !!t.parent_task_id,
             parentTaskId: t.parent_task_id || null,
             assigneeName: getAssigneeName(t),
+            deliverableType: t.deliverable_type || null,
+            clientName: clientMap.get(t.client_id) || "—",
+            clientLogo: clientLogoMap.get(t.client_id) || null,
+            moduleName: contractModuleNameMap.get(t.contract_module_id) || null,
           });
         }
 
