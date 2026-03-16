@@ -60,9 +60,27 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
 
   const { data: allTasks = [], isLoading: tasksLoading } = useTasks();
   const { data: clients = [] } = useAllClients();
+
+  // Fetch subtasks (tasks with parent_task_id) separately since useTasks excludes them
+  const { data: subtasks = [], isLoading: subtasksLoading } = useQuery({
+    queryKey: ["member_subtasks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .is("archived_at", null)
+        .not("parent_task_id", "is", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as Task[];
+    },
+  });
+
+  // Combine parent tasks and subtasks
+  const combinedTasks = useMemo(() => [...allTasks, ...subtasks], [allTasks, subtasks]);
   
   // Get all task IDs to fetch assignees
-  const taskIds = useMemo(() => allTasks.map((t: Task) => t.id), [allTasks]);
+  const taskIds = useMemo(() => combinedTasks.map((t: Task) => t.id), [combinedTasks]);
   const { data: assigneesMap = {}, isLoading: assigneesLoading } = useTasksAssignees(taskIds);
   const { data: subtaskCounts = {} } = useTasksSubtaskCounts(taskIds);
 
