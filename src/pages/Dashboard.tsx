@@ -684,34 +684,46 @@ export default function Dashboard() {
                     <div className="space-y-1.5">
                       {clientTasks.filter(task => !task.isSubtask || !task.parentTaskId || !collapsedParents.has(task.parentTaskId)).map(task => {
                         // Parent group header
-                        if (task.isParentGroup) {
+                         if (task.isParentGroup) {
                           const isCollapsed = collapsedParents.has(task.id);
                           return (
                             <div
                               key={task.id}
-                              className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
+                              className={cn(
+                                "flex items-center justify-between p-3 rounded-lg border-l-4 border hover:bg-muted/50 transition-colors cursor-pointer",
+                                task.status === "done" ? "border-l-success" :
+                                task.status === "review" ? "border-l-warning" :
+                                task.status === "in_progress" ? "border-l-primary" :
+                                task.status === "waiting_client" ? "border-l-info" :
+                                "border-l-muted-foreground"
+                              )}
                             >
-                              <button
-                                onClick={(e) => { e.stopPropagation(); toggleParentCollapse(task.id); }}
-                                className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
-                              >
-                                {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                              </button>
-                              <div
-                                className="flex items-center gap-3 flex-1 min-w-0"
-                                onClick={() => { setSelectedClientHealth(null); handleClientTaskClick(task); }}
-                              >
-                                {task.clientLogo && (
-                                  <img src={task.clientLogo} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
-                                )}
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {task.clientName}
-                                    {task.moduleName && ` · ${task.moduleName}`}
-                                  </p>
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); toggleParentCollapse(task.id); }}
+                                  className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+                                >
+                                  {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                                </button>
+                                <div
+                                  className="flex items-center gap-3 flex-1 min-w-0"
+                                  onClick={() => { setSelectedClientHealth(null); handleClientTaskClick(task); }}
+                                >
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                      {task.clientLogo && (
+                                        <img src={task.clientLogo} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                                      )}
+                                      {task.clientName}
+                                      {task.moduleName && ` · ${task.moduleName}`}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
+                              <Badge className={cn("shrink-0 text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
+                                {statusConfig[task.status]?.label || task.status}
+                              </Badge>
                             </div>
                           );
                         }

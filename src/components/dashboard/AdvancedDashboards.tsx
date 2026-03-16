@@ -307,35 +307,48 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                       // Parent group header
                       if (delivery.isParentGroup) {
                         const isCollapsed = collapsedParents.has(delivery.id);
+                        const parentStatus = statusConfig[delivery.status];
                         return (
                           <div
                             key={delivery.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
+                            className={cn(
+                              "flex items-center justify-between p-3 rounded-lg border-l-4 border hover:bg-muted/50 transition-colors cursor-pointer",
+                              delivery.status === "done" ? "border-l-success" :
+                              delivery.status === "review" ? "border-l-warning" :
+                              delivery.status === "in_progress" ? "border-l-primary" :
+                              delivery.status === "waiting_client" ? "border-l-info" :
+                              "border-l-muted-foreground"
+                            )}
                           >
-                            <button
-                              onClick={(e) => { e.stopPropagation(); toggleParentCollapse(delivery.id); }}
-                              className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
-                            >
-                              {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                            </button>
-                            <div
-                              className="flex items-center gap-3 flex-1 min-w-0"
-                              onClick={() => {
-                                setSelectedTaskId(delivery.id);
-                                setSelectedSubtaskId(null);
-                              }}
-                            >
-                              {clientLogoMap.get(delivery.clientId) && (
-                                <img src={clientLogoMap.get(delivery.clientId)!} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
-                              )}
-                              <div className="min-w-0">
-                                <p className="font-semibold text-sm text-foreground truncate">{delivery.title}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {delivery.clientName}
-                                  {delivery.moduleName && ` · ${delivery.moduleName}`}
-                                </p>
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleParentCollapse(delivery.id); }}
+                                className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+                              >
+                                {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                              </button>
+                              <div
+                                className="flex items-center gap-3 flex-1 min-w-0"
+                                onClick={() => {
+                                  setSelectedTaskId(delivery.id);
+                                  setSelectedSubtaskId(null);
+                                }}
+                              >
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-sm text-foreground truncate">{delivery.title}</p>
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                    {clientLogoMap.get(delivery.clientId) && (
+                                      <img src={clientLogoMap.get(delivery.clientId)!} alt="" className="h-4 w-4 rounded object-contain shrink-0" />
+                                    )}
+                                    {delivery.clientName}
+                                    {delivery.moduleName && ` · ${delivery.moduleName}`}
+                                  </p>
+                                </div>
                               </div>
                             </div>
+                            <Badge className={cn("shrink-0", parentStatus?.color)}>
+                              {parentStatus?.label || delivery.status}
+                            </Badge>
                           </div>
                         );
                       }
