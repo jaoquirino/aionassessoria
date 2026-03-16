@@ -72,6 +72,7 @@ function getCapacityStatus(current: number, max: number) {
 type TaskFilter = "all" | "overdue" | "today" | "week" | "active";
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data, isLoading } = useDashboardData();
   const { data: currentMember } = useCurrentTeamMember();
