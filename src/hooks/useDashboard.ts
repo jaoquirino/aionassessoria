@@ -325,6 +325,8 @@ export function useDashboardData() {
             healthStatus,
             designDeliverables: stats.designDeliverables,
             designLimit,
+            arteCount: stats.arteCount,
+            videoCount: stats.videoCount,
             tasks: stats.tasks,
           };
         })
