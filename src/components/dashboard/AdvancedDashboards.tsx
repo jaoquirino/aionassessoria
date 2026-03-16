@@ -137,6 +137,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         const overdue = filteredDeliveries.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
         const arteCount = filteredDeliveries.filter(d => d.deliverableType === "arte").length;
         const videoCount = filteredDeliveries.filter(d => d.deliverableType === "video").length;
+        const carrosselCount = filteredDeliveries.filter(d => d.deliverableType === "carrossel").length;
 
 
 
