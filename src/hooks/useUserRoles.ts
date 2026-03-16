@@ -16,6 +16,7 @@ export interface UserWithRole {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
+  username: string | null;
   role: AppRole | null;
   created_at: string;
 }
