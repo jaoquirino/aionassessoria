@@ -239,12 +239,12 @@ export function useDashboardData() {
 
       // Client health - fixed to current month, only design deliveries (arte/vídeo),
       // matching Deliveries dashboard logic (subtasks count, parent with subtasks does not duplicate)
-      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; tasks: ClientTask[] }>();
+      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; arteCount: number; videoCount: number; tasks: ClientTask[] }>();
 
       const healthTasks = operationalTasksFiltered.filter(t => !internalClientIds.has(t.client_id));
 
       healthTasks.forEach(t => {
-        const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
+        const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, arteCount: 0, videoCount: 0, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
         const deliverableType = (t.deliverable_type || "").toLowerCase();
