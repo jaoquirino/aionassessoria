@@ -53,6 +53,8 @@ export interface DashboardClientHealth {
   healthStatus: "normal" | "attention" | "critical";
   designDeliverables: number;
   designLimit: number | null;
+  arteCount: number;
+  videoCount: number;
 }
 
 export interface ClientTask {
