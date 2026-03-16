@@ -72,12 +72,7 @@ export function useDeliveriesByClient(clientId?: string) {
           .map((t: any) => t.parent_task_id)
       );
 
-      // Exclude parent tasks that have subtasks — subtasks replace them
-      const filtered = allTasks.filter(
-        (t: any) => !parentIdsWithSubtasks.has(t.id)
-      );
-
-      return filtered.map((task: any) => ({
+      const mapped = allTasks.map((task: any) => ({
         id: task.id,
         title: task.title,
         clientId: task.client_id,
@@ -91,7 +86,42 @@ export function useDeliveriesByClient(clientId?: string) {
         type: task.type,
         isSubtask: !!task.parent_task_id,
         parentTaskId: task.parent_task_id || null,
+        isParentGroup: parentIdsWithSubtasks.has(task.id),
       })) as DeliveryItem[];
+
+      // Sort: parent tasks first, then their children immediately after
+      const parentMap = new Map<string, DeliveryItem[]>();
+      const standalone: DeliveryItem[] = [];
+      const parents: DeliveryItem[] = [];
+
+      mapped.forEach(item => {
+        if (item.isParentGroup) {
+          parents.push(item);
+          if (!parentMap.has(item.id)) parentMap.set(item.id, []);
+        } else if (item.isSubtask && item.parentTaskId && parentIdsWithSubtasks.has(item.parentTaskId)) {
+          const children = parentMap.get(item.parentTaskId) || [];
+          children.push(item);
+          parentMap.set(item.parentTaskId, children);
+        } else {
+          standalone.push(item);
+        }
+      });
+
+      // Build grouped list: parent → children, then standalone tasks
+      const grouped: DeliveryItem[] = [];
+      // Sort parents by due_date desc
+      parents.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+      parents.forEach(parent => {
+        grouped.push(parent);
+        const children = parentMap.get(parent.id) || [];
+        children.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        grouped.push(...children);
+      });
+      // Standalone sorted by due_date desc
+      standalone.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+      grouped.push(...standalone);
+
+      return grouped;
     },
   });
 }
