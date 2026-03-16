@@ -67,6 +67,10 @@ export interface ClientTask {
   isSubtask: boolean;
   parentTaskId: string | null;
   assigneeName: string;
+  deliverableType: string | null;
+  clientName: string;
+  clientLogo: string | null;
+  moduleName: string | null;
 }
 
 export function useDashboardData() {
@@ -213,6 +217,10 @@ export function useDashboardData() {
       const memberMap = new Map(teamMembers.map(m => [m.id, m.name]));
       const clientMap = new Map(clients.map(c => [c.id, c.name]));
       const clientLogoMap = new Map(clients.map(c => [c.id, c.logo_url || null]));
+      const contractModuleNameMap = new Map<string, string>();
+      contractModules.forEach((cm: any) => {
+        if (cm.service_module?.name) contractModuleNameMap.set(cm.id, cm.service_module.name);
+      });
 
       const getAssigneeName = (task: any) => {
         const assigneeIds = taskAssigneeMap.get(task.id) || [];
@@ -276,6 +284,10 @@ export function useDashboardData() {
             isSubtask: !!t.parent_task_id,
             parentTaskId: t.parent_task_id || null,
             assigneeName: getAssigneeName(t),
+            deliverableType: t.deliverable_type || null,
+            clientName: clientMap.get(t.client_id) || "—",
+            clientLogo: clientLogoMap.get(t.client_id) || null,
+            moduleName: contractModuleNameMap.get(t.contract_module_id) || null,
           });
         }
 
