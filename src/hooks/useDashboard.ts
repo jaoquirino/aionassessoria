@@ -67,6 +67,7 @@ export interface ClientTask {
   type: string;
   isSubtask: boolean;
   parentTaskId: string | null;
+  isParentGroup?: boolean;
   assigneeName: string;
   deliverableType: string | null;
   clientName: string;
