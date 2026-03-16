@@ -89,9 +89,17 @@ export function useUsersWithRoles() {
 
       if (rolesError) throw rolesError;
 
+      // Get team members linked to users
+      const { data: teamMembers, error: teamError } = await supabase
+        .from("team_members")
+        .select("id, user_id, role, permission, capacity_limit, restricted_view, is_active");
+
+      if (teamError) throw teamError;
+
       // Combine them
       const usersWithRoles: UserWithRole[] = profiles.map((profile) => {
         const userRole = roles.find((r) => r.user_id === profile.user_id);
+        const teamMember = teamMembers?.find((tm) => tm.user_id === profile.user_id);
         return {
           id: profile.user_id,
           email: "",
@@ -100,6 +108,12 @@ export function useUsersWithRoles() {
           username: profile.username,
           role: userRole?.role as AppRole | null,
           created_at: profile.created_at,
+          team_member_id: teamMember?.id || null,
+          team_roles: teamMember?.role || null,
+          permission: teamMember?.permission || null,
+          capacity_limit: teamMember?.capacity_limit ?? null,
+          restricted_view: teamMember?.restricted_view ?? null,
+          is_active: teamMember?.is_active ?? null,
         };
       });
 
