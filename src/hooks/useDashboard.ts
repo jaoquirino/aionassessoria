@@ -53,6 +53,9 @@ export interface DashboardClientHealth {
   healthStatus: "normal" | "attention" | "critical";
   designDeliverables: number;
   designLimit: number | null;
+  arteCount: number;
+  videoCount: number;
+  delivered: number;
 }
 
 export interface ClientTask {
@@ -239,12 +242,12 @@ export function useDashboardData() {
 
       // Client health - fixed to current month, only design deliveries (arte/vídeo),
       // matching Deliveries dashboard logic (subtasks count, parent with subtasks does not duplicate)
-      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; tasks: ClientTask[] }>();
+      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; arteCount: number; videoCount: number; tasks: ClientTask[] }>();
 
       const healthTasks = operationalTasksFiltered.filter(t => !internalClientIds.has(t.client_id));
 
       healthTasks.forEach(t => {
-        const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
+        const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, arteCount: 0, videoCount: 0, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
         const deliverableType = (t.deliverable_type || "").toLowerCase();
@@ -258,6 +261,8 @@ export function useDashboardData() {
         // Health deliveries = design tasks in current month (any status), same as Deliveries total
         if (isCurrentMonth && isDesignDeliverable) {
           curr.designDeliverables += 1;
+          if (deliverableType === "arte") curr.arteCount += 1;
+          else curr.videoCount += 1;
           if (t.status === "done") curr.delivered += 1;
           else curr.pending += 1;
 
@@ -300,7 +305,7 @@ export function useDashboardData() {
           c.status === "active" && !c.is_internal && clientDesignLimitMap.has(c.id)
         )
         .map(c => {
-          const stats = clientTaskStats2.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
+          const stats = clientTaskStats2.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, arteCount: 0, videoCount: 0, tasks: [] };
           const revenue = clientRevenueMap.get(c.id) || 0;
           let healthStatus: "normal" | "attention" | "critical" = "normal";
           const designLimit = clientDesignLimitMap.get(c.id) || null;
@@ -321,6 +326,9 @@ export function useDashboardData() {
             healthStatus,
             designDeliverables: stats.designDeliverables,
             designLimit,
+            arteCount: stats.arteCount,
+            videoCount: stats.videoCount,
+            delivered: stats.delivered,
             tasks: stats.tasks,
           };
         })
