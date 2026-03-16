@@ -161,6 +161,9 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         // Remove parent groups that have no visible children after filtering
         const visibleChildParents = new Set(displayDeliveries.filter(d => d.isSubtask && d.parentTaskId).map(d => d.parentTaskId));
         displayDeliveries = displayDeliveries.filter(d => !d.isParentGroup || visibleChildParents.has(d.id));
+        
+        // Hide children of collapsed parents
+        displayDeliveries = displayDeliveries.filter(d => !d.isSubtask || !d.parentTaskId || !collapsedParents.has(d.parentTaskId));
 
         const hasActiveFilter = statusFilter !== "all" || designFilter !== "all";
 
