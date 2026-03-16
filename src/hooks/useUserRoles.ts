@@ -19,6 +19,13 @@ export interface UserWithRole {
   username: string | null;
   role: AppRole | null;
   created_at: string;
+  // Team member fields
+  team_member_id: string | null;
+  team_roles: string | null;
+  permission: string | null;
+  capacity_limit: number | null;
+  restricted_view: boolean | null;
+  is_active: boolean | null;
 }
 
 // Check if current user is admin
@@ -82,9 +89,17 @@ export function useUsersWithRoles() {
 
       if (rolesError) throw rolesError;
 
+      // Get team members linked to users
+      const { data: teamMembers, error: teamError } = await supabase
+        .from("team_members")
+        .select("id, user_id, role, permission, capacity_limit, restricted_view, is_active");
+
+      if (teamError) throw teamError;
+
       // Combine them
       const usersWithRoles: UserWithRole[] = profiles.map((profile) => {
         const userRole = roles.find((r) => r.user_id === profile.user_id);
+        const teamMember = teamMembers?.find((tm) => tm.user_id === profile.user_id);
         return {
           id: profile.user_id,
           email: "",
@@ -93,6 +108,12 @@ export function useUsersWithRoles() {
           username: profile.username,
           role: userRole?.role as AppRole | null,
           created_at: profile.created_at,
+          team_member_id: teamMember?.id || null,
+          team_roles: teamMember?.role || null,
+          permission: teamMember?.permission || null,
+          capacity_limit: teamMember?.capacity_limit ?? null,
+          restricted_view: teamMember?.restricted_view ?? null,
+          is_active: teamMember?.is_active ?? null,
         };
       });
 
@@ -106,7 +127,7 @@ export function useSetUserRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
+    mutationFn: async ({ userId, role, teamConfig }: { userId: string; role: AppRole; teamConfig?: { roles?: string; capacityLimit?: number; restrictedView?: boolean } }) => {
       // First check if role exists
       const { data: existing } = await supabase
         .from("user_roles")
@@ -146,12 +167,15 @@ export function useSetUserRole() {
         .maybeSingle();
 
       if (existingTeamMember) {
-        // Reactivate the team member and update permission
+        // Reactivate the team member and update permission + team config
         await supabase
           .from("team_members")
           .update({ 
             is_active: true,
-            permission: role === "admin" ? "admin" : "operational"
+            permission: role === "admin" ? "admin" : "operational",
+            ...(teamConfig?.roles && { role: teamConfig.roles }),
+            ...(teamConfig?.capacityLimit !== undefined && { capacity_limit: teamConfig.capacityLimit }),
+            ...(teamConfig?.restrictedView !== undefined && { restricted_view: teamConfig.restrictedView }),
           })
           .eq("id", existingTeamMember.id);
       } else {
@@ -168,10 +192,12 @@ export function useSetUserRole() {
             .insert({
               user_id: userId,
               name: profile.full_name || "Novo Integrante",
-              role: "A definir",
+              role: teamConfig?.roles || "A definir",
               permission: role === "admin" ? "admin" : "operational",
               avatar_url: profile.avatar_url,
               is_active: true,
+              capacity_limit: teamConfig?.capacityLimit ?? 15,
+              restricted_view: teamConfig?.restrictedView ?? false,
             });
         }
       }

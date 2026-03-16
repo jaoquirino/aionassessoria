@@ -354,11 +354,11 @@ export default function Settings() {
       u.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleRoleChange = (userId: string, role: string) => {
+  const handleRoleChange = (userId: string, role: string, teamConfig?: { roles?: string; capacityLimit?: number; restrictedView?: boolean }) => {
     if (role === "none") {
       removeRole.mutate(userId);
     } else {
-      setRole.mutate({ userId, role: role as AppRole });
+      setRole.mutate({ userId, role: role as AppRole, teamConfig });
     }
   };
 
@@ -975,24 +975,18 @@ export default function Settings() {
                               size="sm"
                               variant="default"
                               className="gap-1"
-                              onClick={() => handleRoleChange(u.id, "member")}
+                              onClick={() => {
+                                // Open modal with this pending user - defaults will be applied
+                                setSelectedUser({
+                                  ...u,
+                                  // Pre-set defaults for approval
+                                  _pendingApproval: true,
+                                } as any);
+                              }}
                             >
                               <ShieldCheck className="h-3 w-3" />
                               Aprovar
                             </Button>
-                            <Select
-                              value="none"
-                              onValueChange={(value) => handleRoleChange(u.id, value)}
-                            >
-                              <SelectTrigger className="w-[120px] h-8 text-xs">
-                                <SelectValue placeholder="Definir cargo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="member">Operacional</SelectItem>
-                                <SelectItem value="none">Sem acesso</SelectItem>
-                              </SelectContent>
-                            </Select>
                           </div>
                         </div>
                       ))}
