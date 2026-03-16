@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, Image, Video, GalleryHorizontal, AlertTriangle, X, CornerDownRight } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, Image, Video, GalleryHorizontal, AlertTriangle, X, CornerDownRight, ChevronDown, ChevronRight } from "lucide-react";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,16 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
   const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video" | "carrossel">("all");
+  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(new Set());
+
+  const toggleParentCollapse = useCallback((parentId: string) => {
+    setCollapsedParents(prev => {
+      const next = new Set(prev);
+      if (next.has(parentId)) next.delete(parentId);
+      else next.add(parentId);
+      return next;
+    });
+  }, []);
   
   
   const { data: clients, isLoading: clientsLoading } = useAllClients();
@@ -151,6 +161,9 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         // Remove parent groups that have no visible children after filtering
         const visibleChildParents = new Set(displayDeliveries.filter(d => d.isSubtask && d.parentTaskId).map(d => d.parentTaskId));
         displayDeliveries = displayDeliveries.filter(d => !d.isParentGroup || visibleChildParents.has(d.id));
+        
+        // Hide children of collapsed parents
+        displayDeliveries = displayDeliveries.filter(d => !d.isSubtask || !d.parentTaskId || !collapsedParents.has(d.parentTaskId));
 
         const hasActiveFilter = statusFilter !== "all" || designFilter !== "all";
 
@@ -293,16 +306,25 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                       
                       // Parent group header
                       if (delivery.isParentGroup) {
+                        const isCollapsed = collapsedParents.has(delivery.id);
                         return (
                           <div
                             key={delivery.id}
-                            onClick={() => {
-                              setSelectedTaskId(delivery.id);
-                              setSelectedSubtaskId(null);
-                            }}
                             className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
                           >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleParentCollapse(delivery.id); }}
+                              className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+                            >
+                              {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                            </button>
+                            <div
+                              className="flex items-center gap-3 flex-1 min-w-0"
+                              onClick={() => {
+                                setSelectedTaskId(delivery.id);
+                                setSelectedSubtaskId(null);
+                              }}
+                            >
                               {clientLogoMap.get(delivery.clientId) && (
                                 <img src={clientLogoMap.get(delivery.clientId)!} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
                               )}

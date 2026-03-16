@@ -20,7 +20,7 @@ import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Task } from "@/types/tasks";
-import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar, CornerDownRight, Video, Image, GalleryHorizontal } from "lucide-react";
+import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar, CornerDownRight, Video, Image, GalleryHorizontal, ChevronDown, ChevronRight } from "lucide-react";
 
 import { cn, parseLocalDate } from "@/lib/utils";
 
@@ -50,6 +50,16 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
   const [activeTab, setActiveTab] = useState("active");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(new Set());
+
+  const toggleParentCollapse = (parentId: string) => {
+    setCollapsedParents(prev => {
+      const next = new Set(prev);
+      if (next.has(parentId)) next.delete(parentId);
+      else next.add(parentId);
+      return next;
+    });
+  };
 
   const { data: allTasks = [], isLoading: tasksLoading } = useTasks();
   const { data: clients = [] } = useAllClients();
@@ -156,20 +166,28 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
 
      // Parent group header
      if (isParentGroup) {
+       const isCollapsed = collapsedParents.has(task.id);
        return (
          <motion.div
            key={task.id}
            initial={{ opacity: 0, y: 10 }}
            animate={{ opacity: 1, y: 0 }}
            transition={{ delay: 0.03 * index }}
-           onClick={() => handleTaskClick(task.id)}
            className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border border-border/50 cursor-pointer hover:bg-muted/60 transition-colors"
          >
-           {client?.logo_url && (
-             <img src={client.logo_url} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
-           )}
-           <div className="min-w-0">
-             <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
+           <button
+             onClick={(e) => { e.stopPropagation(); toggleParentCollapse(task.id); }}
+             className="p-0.5 rounded hover:bg-muted transition-colors shrink-0"
+           >
+             {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+           </button>
+           <div className="flex-1 min-w-0" onClick={() => handleTaskClick(task.id)}>
+             <div className="flex items-center gap-2">
+               {client?.logo_url && (
+                 <img src={client.logo_url} alt="" className="h-5 w-5 rounded object-contain shrink-0" />
+               )}
+               <p className="font-semibold text-sm text-foreground truncate">{task.title}</p>
+             </div>
              <p className="text-xs text-muted-foreground">{client?.name || "—"}</p>
            </div>
          </motion.div>
@@ -306,7 +324,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                        Nenhuma tarefa ativa no período selecionado
                      </p>
                    ) : (
-                     memberTasks.active.map((task: Task, index: number) => renderTaskCard(task, index, false))
+                     memberTasks.active.filter((t: Task) => !(t as any)._isParentGroup || true).filter((t: Task) => !t.parent_task_id || !collapsedParents.has(t.parent_task_id)).map((task: Task, index: number) => renderTaskCard(task, index, false))
                    )}
                  </div>
                )}
@@ -318,7 +336,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                        Nenhuma tarefa concluída no período selecionado
                      </p>
                    ) : (
-                     memberTasks.completed.map((task: Task, index: number) => renderTaskCard(task, index, true))
+                     memberTasks.completed.filter((t: Task) => !t.parent_task_id || !collapsedParents.has(t.parent_task_id)).map((task: Task, index: number) => renderTaskCard(task, index, true))
                    )}
                  </div>
                )}
