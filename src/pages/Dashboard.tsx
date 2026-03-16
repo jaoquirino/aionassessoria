@@ -245,25 +245,27 @@ export default function Dashboard() {
                       </td>
                       <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
                       <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          {client.videoCount > 0 && (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
-                              <Video className="h-3.5 w-3.5" />
-                              {client.videoCount}
-                            </span>
-                          )}
-                          {client.arteCount > 0 && (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-purple">
-                              <ImageIcon className="h-3.5 w-3.5" />
-                              {client.arteCount}
-                            </span>
-                          )}
-                          <span className="text-xs text-muted-foreground">
-                            {client.delivered}/{client.designDeliverables}
-                            {client.designLimit != null && (
-                              <span className="text-muted-foreground/60"> de {client.designLimit}</span>
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2.5">
+                            {client.videoCount > 0 && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
+                                <Video className="h-3.5 w-3.5" />
+                                {client.videoCount}
+                              </span>
                             )}
-                          </span>
+                            {client.arteCount > 0 && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-500">
+                                <ImageIcon className="h-3.5 w-3.5" />
+                                {client.arteCount}
+                              </span>
+                            )}
+                          </div>
+                          {client.designLimit != null && (
+                            <span className="text-xs font-medium text-foreground">
+                              {client.delivered}
+                              <span className="text-muted-foreground">/{client.designLimit}</span>
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="py-4">
