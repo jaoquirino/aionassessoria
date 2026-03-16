@@ -181,8 +181,9 @@ export default function Auth() {
 
           if (isSetupMode) {
             toast.success("Conta de administrador criada!");
+            navigate("/", { replace: true });
           } else {
-            toast.success("Conta criada com sucesso!");
+            toast.success("Conta criada com sucesso! Aguarde a aprovação de um administrador para acessar o sistema.", { duration: 6000 });
           }
           setIsSetupMode(false);
           setIsLogin(true);
