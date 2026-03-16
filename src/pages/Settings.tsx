@@ -354,11 +354,11 @@ export default function Settings() {
       u.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const handleRoleChange = (userId: string, role: string) => {
+  const handleRoleChange = (userId: string, role: string, teamConfig?: { roles?: string; capacityLimit?: number; restrictedView?: boolean }) => {
     if (role === "none") {
       removeRole.mutate(userId);
     } else {
-      setRole.mutate({ userId, role: role as AppRole });
+      setRole.mutate({ userId, role: role as AppRole, teamConfig });
     }
   };
 
