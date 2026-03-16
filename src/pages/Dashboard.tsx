@@ -258,7 +258,7 @@ export default function Dashboard() {
                           </div>
                           {client.designLimit != null && (
                             <span className="text-xs font-medium text-foreground">
-                              {client.delivered}
+                              {client.designDeliverables}
                               <span className="text-muted-foreground">/{client.designLimit}</span>
                             </span>
                           )}
