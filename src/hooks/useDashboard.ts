@@ -137,7 +137,19 @@ export function useDashboardData() {
 
       // Filter tasks
       const operationalTasks = tasks.filter(t => t.type !== "onboarding");
-      const operationalTasksForWeight = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
+
+      // Identify parent tasks that have subtasks — subtasks replace them in counts
+      const parentIdsWithSubtasks = new Set(
+        operationalTasks
+          .filter(t => t.parent_task_id)
+          .map(t => t.parent_task_id)
+      );
+
+      // Exclude parent tasks that have subtasks for accurate counting
+      const operationalTasksFiltered = operationalTasks.filter(
+        t => !parentIdsWithSubtasks.has(t.id)
+      );
+      const operationalTasksForWeight = operationalTasksFiltered.filter(t => !internalClientIds.has(t.client_id));
 
       // Stats: exclude internal clients and onboarding
       const overdueTasks = operationalTasksForWeight.filter(t => parseLocalDate(t.due_date) < todayMidnight && t.status !== "done").length;
