@@ -336,7 +336,7 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
                        Nenhuma tarefa concluída no período selecionado
                      </p>
                    ) : (
-                     memberTasks.completed.map((task: Task, index: number) => renderTaskCard(task, index, true))
+                     memberTasks.completed.filter((t: Task) => !t.parent_task_id || !collapsedParents.has(t.parent_task_id)).map((task: Task, index: number) => renderTaskCard(task, index, true))
                    )}
                  </div>
                )}
