@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.validate-setup-token]
 verify_jwt = false
+
+[functions.admin-reset-password]
+verify_jwt = false
