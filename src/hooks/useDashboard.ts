@@ -237,33 +237,31 @@ export function useDashboardData() {
         parentTaskId: t.parent_task_id || null,
       }));
 
-      // Client health - fixed to current month and only design deliveries (arte/vídeo), including subtasks
+      // Client health - fixed to current month, only design deliveries (arte/vídeo),
+      // matching Deliveries dashboard logic (subtasks count, parent with subtasks does not duplicate)
       const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; tasks: ClientTask[] }>();
-      
-      // Use ALL operational tasks (not filtered by parent/subtask) for health counting
-      // Only exclude internal clients
-      const healthTasks = operationalTasks.filter(t => !internalClientIds.has(t.client_id));
-      
+
+      const healthTasks = operationalTasksFiltered.filter(t => !internalClientIds.has(t.client_id));
+
       healthTasks.forEach(t => {
         const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
         const deliverableType = (t.deliverable_type || "").toLowerCase();
         const isDesignDeliverable = deliverableType === "arte" || deliverableType === "video" || deliverableType === "vídeo";
-        const isCompletedDesignDeliveryThisMonth = t.status === "done" && isCurrentMonth && isDesignDeliverable;
 
+        // Keep operational weight behavior
         if (t.status !== "done") {
           curr.weight += t.weight;
-          curr.pending += 1;
         }
 
-        if (isCompletedDesignDeliveryThisMonth) {
+        // Health deliveries = design tasks in current month (any status), same as Deliveries total
+        if (isCurrentMonth && isDesignDeliverable) {
           curr.designDeliverables += 1;
-          curr.delivered += 1;
-        }
+          if (t.status === "done") curr.delivered += 1;
+          else curr.pending += 1;
 
-        // Keep drill-down list behavior (tasks in current month + overdue pending)
-        if (isCurrentMonth || (t.status !== "done" && taskDue < todayMidnight)) {
+          // Drill-down for health shows only the design deliveries considered in the metric
           curr.tasks.push({
             id: t.id,
             title: t.title,
