@@ -217,6 +217,10 @@ export function useDashboardData() {
       const memberMap = new Map(teamMembers.map(m => [m.id, m.name]));
       const clientMap = new Map(clients.map(c => [c.id, c.name]));
       const clientLogoMap = new Map(clients.map(c => [c.id, c.logo_url || null]));
+      const contractModuleNameMap = new Map<string, string>();
+      contractModules.forEach((cm: any) => {
+        if (cm.service_module?.name) contractModuleNameMap.set(cm.id, cm.service_module.name);
+      });
 
       const getAssigneeName = (task: any) => {
         const assigneeIds = taskAssigneeMap.get(task.id) || [];
