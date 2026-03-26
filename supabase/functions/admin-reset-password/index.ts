@@ -52,11 +52,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { userId, newPassword } = await req.json();
+    const { userId } = await req.json();
 
-    if (!userId || !newPassword) {
+    if (!userId) {
       return new Response(
-        JSON.stringify({ error: "userId and newPassword are required" }),
+        JSON.stringify({ error: "userId is required" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -64,15 +64,34 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update user password using admin API
+    // Generate a random temporary password
+    const tempPassword = crypto.randomUUID() + "Aa1!";
+
+    // Update user password to a random temp password
     const { error: updateError } = await supabase.auth.admin.updateUser(
       userId,
-      { password: newPassword }
+      { password: tempPassword }
     );
 
     if (updateError) {
       return new Response(
         JSON.stringify({ error: updateError.message }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Set must_reset_password flag
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ must_reset_password: true })
+      .eq("user_id", userId);
+
+    if (profileError) {
+      return new Response(
+        JSON.stringify({ error: profileError.message }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

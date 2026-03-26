@@ -24,7 +24,6 @@ import { type UserWithRole, type AppRole } from "@/hooks/useUserRoles";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { strongPasswordSchema, getPasswordRequirements } from "@/lib/passwordValidation";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface UserSettingsDialogProps {
@@ -51,8 +50,6 @@ export function UserSettingsDialog({
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [editedUsername, setEditedUsername] = useState("");
   const [isSavingUsername, setIsSavingUsername] = useState(false);
-  const [showResetPassword, setShowResetPassword] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   // Team member fields
@@ -78,8 +75,6 @@ export function UserSettingsDialog({
         setRestrictedView(user.restricted_view ?? false);
       }
       setIsEditingUsername(false);
-      setShowResetPassword(false);
-      setNewPassword("");
     }
   }, [user]);
 
@@ -139,12 +134,6 @@ export function UserSettingsDialog({
   };
 
   const handleResetPassword = async () => {
-    const validation = strongPasswordSchema.safeParse(newPassword);
-    if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
-      return;
-    }
-
     setIsResettingPassword(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -153,17 +142,15 @@ export function UserSettingsDialog({
 
       const { data, error } = await supabase.functions.invoke("admin-reset-password", {
         headers: { Authorization: `Bearer ${token}` },
-        body: { userId: user.id, newPassword },
+        body: { userId: user.id },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Senha redefinida com sucesso");
-      setNewPassword("");
-      setShowResetPassword(false);
+      toast.success("Senha resetada. O usuário deverá criar uma nova senha no próximo login.");
     } catch (error: any) {
-      toast.error("Erro ao redefinir senha: " + error.message);
+      toast.error("Erro ao resetar senha: " + error.message);
     } finally {
       setIsResettingPassword(false);
     }
@@ -418,59 +405,34 @@ export function UserSettingsDialog({
           <Separator />
 
           {/* Reset Password */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Senha</Label>
-              {!showResetPassword && (
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowResetPassword(true)}>
-                  <Key className="h-4 w-4" />
-                  Redefinir senha
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Senha</Label>
+            <p className="text-xs text-muted-foreground">
+              Ao resetar, a senha atual é invalidada e o usuário deverá criar uma nova senha no próximo login.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 w-full" disabled={isResettingPassword}>
+                  {isResettingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+                  Resetar senha
                 </Button>
-              )}
-            </div>
-            {showResetPassword ? (
-              <div className="space-y-3">
-                <Input
-                  type="password"
-                  placeholder="Nova senha"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-                {newPassword.length > 0 && (
-                  <div className="p-3 rounded-lg bg-muted/50 border">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Requisitos:</p>
-                    <div className="grid grid-cols-1 gap-1">
-                      {getPasswordRequirements(newPassword).map((req, index) => (
-                        <div key={index} className="flex items-center gap-2 text-xs">
-                          <div className={`h-1.5 w-1.5 rounded-full ${req.met ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
-                          <span className={req.met ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
-                            {req.label}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleResetPassword}
-                    disabled={isResettingPassword || !newPassword}
-                    className="gap-1"
-                  >
-                    {isResettingPassword ? <Loader2 className="h-3 w-3 animate-spin" /> : <Key className="h-3 w-3" />}
-                    Redefinir
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => { setShowResetPassword(false); setNewPassword(""); }}>
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Define uma nova senha diretamente, sem exigir a senha anterior.
-              </p>
-            )}
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Resetar senha?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    A senha de <strong>{user.full_name || user.username}</strong> será invalidada. 
+                    No próximo login, será solicitada uma nova senha.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetPassword}>
+                    Confirmar reset
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
 
           <Separator />

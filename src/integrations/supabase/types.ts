@@ -655,6 +655,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          must_reset_password: boolean
           updated_at: string
           user_id: string
           username: string | null
@@ -664,6 +665,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          must_reset_password?: boolean
           updated_at?: string
           user_id: string
           username?: string | null
@@ -673,6 +675,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          must_reset_password?: boolean
           updated_at?: string
           user_id?: string
           username?: string | null
@@ -1283,6 +1286,10 @@ export type Database = {
       calculate_task_weight: {
         Args: { task_type: Database["public"]["Enums"]["task_type"] }
         Returns: number
+      }
+      check_must_reset_password: {
+        Args: { _username: string }
+        Returns: boolean
       }
       has_role: {
         Args: {

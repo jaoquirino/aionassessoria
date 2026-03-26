@@ -1,0 +1,1 @@
+CREATE POLICY "Allow anon to check must_reset_password by username" ON public.profiles FOR SELECT TO anon USING (true);
