@@ -67,11 +67,21 @@ Deno.serve(async (req) => {
     // Generate a random temporary password
     const tempPassword = crypto.randomUUID() + "Aa1!";
 
-    // Update user password to a random temp password
-    const { error: updateError } = await supabase.auth.admin.updateUser(
-      userId,
-      { password: tempPassword }
+    // Update user password to a random temp password using GoTrue Admin API
+    const updateRes = await fetch(
+      `${supabaseUrl}/auth/v1/admin/users/${userId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseServiceKey}`,
+          "apikey": supabaseServiceKey,
+        },
+        body: JSON.stringify({ password: tempPassword }),
+      }
     );
+
+    const updateError = !updateRes.ok ? await updateRes.json().catch(() => ({ message: "Erro ao atualizar senha" })) : null;
 
     if (updateError) {
       return new Response(
