@@ -76,8 +76,6 @@ export function UserSettingsDialog({
         setRestrictedView(user.restricted_view ?? false);
       }
       setIsEditingUsername(false);
-      setShowResetPassword(false);
-      setNewPassword("");
     }
   }, [user]);
 
