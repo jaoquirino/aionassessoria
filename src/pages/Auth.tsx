@@ -127,8 +127,8 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // If login mode and no password, check if must_reset_password
-    if (isLogin && !isSetupMode && !password.trim()) {
+    // Always check must_reset_password first for login mode
+    if (isLogin && !isSetupMode) {
       const usernameResult = usernameSchema.safeParse(username);
       if (!usernameResult.success) {
         setErrors({ username: usernameResult.error.errors[0].message });
@@ -140,7 +140,8 @@ export default function Auth() {
       if (needsReset) {
         setMustResetPassword(true);
         return;
-      } else {
+      }
+      if (!password.trim()) {
         setErrors({ password: "Digite sua senha" });
         return;
       }
