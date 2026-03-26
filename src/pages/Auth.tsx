@@ -162,13 +162,7 @@ export default function Auth() {
         }
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
-            // Check if this user needs password reset
-            const needsReset = await checkMustResetPassword(username);
-            if (needsReset) {
-              setMustResetPassword(true);
-            } else {
-              toast.error("Usuário ou senha incorretos");
-            }
+            toast.error("Usuário ou senha incorretos");
           } else if (error.message.includes("Email not confirmed")) {
             toast.error("Confirme seu cadastro antes de fazer login");
           } else {
