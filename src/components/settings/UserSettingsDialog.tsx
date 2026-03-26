@@ -24,7 +24,6 @@ import { type UserWithRole, type AppRole } from "@/hooks/useUserRoles";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { strongPasswordSchema, getPasswordRequirements } from "@/lib/passwordValidation";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface UserSettingsDialogProps {
