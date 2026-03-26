@@ -115,12 +115,10 @@ export default function Auth() {
 
   const checkMustResetPassword = async (usernameValue: string): Promise<boolean> => {
     try {
-      const { data } = await supabase
-        .from("profiles")
-        .select("must_reset_password")
-        .eq("username", usernameValue.toLowerCase())
-        .maybeSingle();
-      return data?.must_reset_password === true;
+      const { data } = await supabase.rpc("check_must_reset_password", {
+        _username: usernameValue.toLowerCase(),
+      });
+      return data === true;
     } catch {
       return false;
     }
