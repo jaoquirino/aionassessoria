@@ -435,8 +435,6 @@ export function UserSettingsDialog({
               </AlertDialogContent>
             </AlertDialog>
           </div>
-            )}
-          </div>
 
           <Separator />
 
