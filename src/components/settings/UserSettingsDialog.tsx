@@ -51,8 +51,6 @@ export function UserSettingsDialog({
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [editedUsername, setEditedUsername] = useState("");
   const [isSavingUsername, setIsSavingUsername] = useState(false);
-  const [showResetPassword, setShowResetPassword] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   // Team member fields
