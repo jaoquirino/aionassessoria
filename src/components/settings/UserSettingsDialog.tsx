@@ -135,12 +135,6 @@ export function UserSettingsDialog({
   };
 
   const handleResetPassword = async () => {
-    const validation = strongPasswordSchema.safeParse(newPassword);
-    if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
-      return;
-    }
-
     setIsResettingPassword(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -149,17 +143,15 @@ export function UserSettingsDialog({
 
       const { data, error } = await supabase.functions.invoke("admin-reset-password", {
         headers: { Authorization: `Bearer ${token}` },
-        body: { userId: user.id, newPassword },
+        body: { userId: user.id },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Senha redefinida com sucesso");
-      setNewPassword("");
-      setShowResetPassword(false);
+      toast.success("Senha resetada. O usuário deverá criar uma nova senha no próximo login.");
     } catch (error: any) {
-      toast.error("Erro ao redefinir senha: " + error.message);
+      toast.error("Erro ao resetar senha: " + error.message);
     } finally {
       setIsResettingPassword(false);
     }
