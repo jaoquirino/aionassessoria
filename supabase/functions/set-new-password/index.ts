@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,7 +14,12 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
 
     const { username, newPassword } = await req.json();
 
@@ -26,7 +31,7 @@ Deno.serve(async (req) => {
     }
 
     // Find user by username
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("user_id, must_reset_password")
       .eq("username", username.toLowerCase())
@@ -47,7 +52,7 @@ Deno.serve(async (req) => {
     }
 
     // Update the user's password using admin API
-    const { error: updateError } = await supabase.auth.admin.updateUser(
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUser(
       profile.user_id,
       { password: newPassword }
     );
@@ -60,7 +65,7 @@ Deno.serve(async (req) => {
     }
 
     // Clear the must_reset_password flag
-    await supabase
+    await supabaseAdmin
       .from("profiles")
       .update({ must_reset_password: false })
       .eq("user_id", profile.user_id);
