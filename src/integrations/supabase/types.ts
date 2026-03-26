@@ -1287,6 +1287,10 @@ export type Database = {
         Args: { task_type: Database["public"]["Enums"]["task_type"] }
         Returns: number
       }
+      check_must_reset_password: {
+        Args: { _username: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
