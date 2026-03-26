@@ -116,7 +116,6 @@ export function useAuth() {
     signUp,
     signIn,
     signOut,
-    resetPassword,
     updatePassword,
     checkHasAdmin,
   };
