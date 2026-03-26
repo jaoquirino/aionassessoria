@@ -46,15 +46,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update the user's password
-    const { error: updateError } = await supabase.auth.admin.updateUser(
-      profile.user_id,
-      { password: newPassword }
+    // Update the user's password using GoTrue Admin API directly
+    const updateRes = await fetch(
+      `${supabaseUrl}/auth/v1/admin/users/${profile.user_id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseServiceKey}`,
+          "apikey": supabaseServiceKey,
+        },
+        body: JSON.stringify({ password: newPassword }),
+      }
     );
 
-    if (updateError) {
+    if (!updateRes.ok) {
+      const errorBody = await updateRes.json().catch(() => ({}));
       return new Response(
-        JSON.stringify({ error: updateError.message }),
+        JSON.stringify({ error: errorBody.message || errorBody.msg || "Erro ao atualizar senha" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
