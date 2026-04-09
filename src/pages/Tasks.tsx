@@ -78,7 +78,7 @@ export default function Tasks() {
 
   // Fetch assignees for restricted view filtering
   const allTaskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
-  const { data: assigneesByTask = {} } = useTasksAssignees(isRestricted ? allTaskIds : []);
+  const { data: assigneesByTask = {} } = useTasksAssignees(allTaskIds);
 
   const operationalTasks = useMemo(() => {
     let filtered = tasks.filter(task => task.type !== "onboarding");
@@ -137,7 +137,7 @@ export default function Tasks() {
 
       const matchesStatus = filters.status === "all" || task.status === filters.status;
       const matchesType = filters.type === "all" || task.type === filters.type;
-      const matchesAssignee = filters.assignee === "all" || task.assigned_to === filters.assignee;
+      const matchesAssignee = filters.assignee === "all" || task.assigned_to === filters.assignee || (assigneesByTask[task.id] || []).some(a => a.team_member_id === filters.assignee);
       const matchesClient = filters.client === "all" || task.client_id === filters.client;
 
       return matchesSearch && matchesStatus && matchesType && matchesAssignee && matchesClient;
