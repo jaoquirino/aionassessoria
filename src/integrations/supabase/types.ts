@@ -607,6 +607,36 @@ export type Database = {
         }
         Relationships: []
       }
+      module_permissions: {
+        Row: {
+          can_access: boolean
+          created_at: string
+          id: string
+          module: string
+          sub_permissions: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_access?: boolean
+          created_at?: string
+          id?: string
+          module: string
+          sub_permissions?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_access?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          sub_permissions?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1410,6 +1440,10 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      has_module_access: {
+        Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1437,7 +1471,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "member"
+      app_role: "admin" | "member" | "gestor"
       client_status: "onboarding" | "active" | "paused" | "ended"
       onboarding_step_status: "pending" | "in_progress" | "completed"
       task_status: "todo" | "in_progress" | "review" | "waiting_client" | "done"
@@ -1569,7 +1603,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "member"],
+      app_role: ["admin", "member", "gestor"],
       client_status: ["onboarding", "active", "paused", "ended"],
       onboarding_step_status: ["pending", "in_progress", "completed"],
       task_status: ["todo", "in_progress", "review", "waiting_client", "done"],

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign, Briefcase, Puzzle, Clock } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign, Briefcase, Puzzle, Clock, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,7 @@ import { PrioritiesManagementTab } from "@/components/settings/PrioritiesManagem
 import { SavedColorsManagementTab } from "@/components/settings/SavedColorsManagementTab";
 import { ModulesManagementTab } from "@/components/settings/ModulesManagementTab";
 import { UserSettingsDialog } from "@/components/settings/UserSettingsDialog";
+import { ModulePermissionsTab } from "@/components/settings/ModulePermissionsTab";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -408,6 +409,14 @@ export default function Settings() {
         </Badge>
       );
     }
+    if (role === "gestor") {
+      return (
+        <Badge className="bg-info text-info-foreground">
+          <Shield className="h-3 w-3 mr-1" />
+          Gestor
+        </Badge>
+      );
+    }
     return (
       <Badge variant="secondary">
         <Shield className="h-3 w-3 mr-1" />
@@ -490,6 +499,12 @@ export default function Settings() {
               <TabsTrigger value="modules" className="gap-2">
                 <Puzzle className="h-4 w-4" />
                 <span className="hidden sm:inline">Módulos</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="module_permissions" className="gap-2">
+                <Eye className="h-4 w-4" />
+                <span className="hidden sm:inline">Módulos Acesso</span>
               </TabsTrigger>
             )}
             {isAdmin && (
@@ -913,6 +928,23 @@ export default function Settings() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <Shield className="h-4 w-4 text-info" />
+                      Gestores
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {users?.filter(u => u.role === "gestor").length || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Gestão de equipe
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
                       Operacionais
                     </CardTitle>
                   </CardHeader>
@@ -1099,6 +1131,15 @@ export default function Settings() {
                     </p>
                   </div>
                   <div className="flex items-start gap-3">
+                    <Badge className="bg-info text-info-foreground shrink-0">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Gestor
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Gestão de equipe: pode visualizar permissões, gerenciar tarefas e integrantes conforme configurado.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
                     <Badge variant="secondary" className="shrink-0">
                       <Shield className="h-3 w-3 mr-1" />
                       Operacional
@@ -1137,6 +1178,11 @@ export default function Settings() {
           {isAdmin && (
             <TabsContent value="modules">
               <ModulesManagementTab />
+            </TabsContent>
+          )}
+          {isAdmin && (
+            <TabsContent value="module_permissions">
+              <ModulePermissionsTab />
             </TabsContent>
           )}
         </Tabs>
