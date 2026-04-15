@@ -10,13 +10,12 @@ import {
   Filter,
   Settings2,
   Trash2,
-  Pencil,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+
 import { formatCurrency } from "@/lib/formatCurrency";
 import { useHideValues } from "@/hooks/useHideValues";
 import {
@@ -48,7 +47,7 @@ export default function Financial() {
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { hideValues, MaskValue } = useHideValues();
+  const { hidden: hideValues } = useHideValues();
 
   const startDate = format(startOfMonth(new Date(currentMonth + "-01")), "yyyy-MM-dd");
   const endDate = format(endOfMonth(new Date(currentMonth + "-01")), "yyyy-MM-dd");
