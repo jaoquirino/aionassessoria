@@ -38,7 +38,7 @@ import { PrioritiesManagementTab } from "@/components/settings/PrioritiesManagem
 import { SavedColorsManagementTab } from "@/components/settings/SavedColorsManagementTab";
 import { ModulesManagementTab } from "@/components/settings/ModulesManagementTab";
 import { UserSettingsDialog } from "@/components/settings/UserSettingsDialog";
-import { ModulePermissionsTab } from "@/components/settings/ModulePermissionsTab";
+// ModulePermissionsTab moved into UserSettingsDialog
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
