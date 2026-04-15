@@ -209,10 +209,12 @@ export default function Dashboard() {
 
   const shouldAnimate = !hasAnimated.current;
 
+  const showFullDashboard = isAdmin || (!isOperational && !isRestricted);
+
   const overviewContent = (
     <>
       {/* ROW 1: Client Health */}
-      {isAdmin && (
+      {isAdmin && !isOperational && (
         <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")}>
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
