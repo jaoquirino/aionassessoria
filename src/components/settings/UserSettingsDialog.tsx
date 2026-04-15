@@ -507,7 +507,7 @@ export function UserSettingsDialog({
           {/* ========== MODULES TAB ========== */}
           {!isAdmin && user.role && (
             <TabsContent value="modules" className="mt-0">
-              <ModulePermissionsSection userId={user.id} />
+              <ModulePermissionsSection userId={user.id} userPermission={user.permission || (user.role === "gestor" ? "gestor" : "operational")} />
             </TabsContent>
           )}
 
