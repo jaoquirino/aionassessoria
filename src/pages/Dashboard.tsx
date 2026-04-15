@@ -102,7 +102,7 @@ export default function Dashboard() {
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   const hasAnimated = useRef(false);
   const isRestricted = currentMember?.restricted_view === true;
-  const isOperational = currentMember?.permission === "operational" || (!currentMember?.permission && !derivedData?.isAdmin);
+  const isOperational = currentMember?.permission === "operational";
 
   const revenueChartData = useMemo(() => {
     if (!financialData?.data) return [];
