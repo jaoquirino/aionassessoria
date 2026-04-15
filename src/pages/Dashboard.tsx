@@ -302,8 +302,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ROW 2: Capacity + Revenue */}
-      <div className="grid gap-6 lg:grid-cols-5">
+      {/* ROW 2: Capacity + Revenue - hidden for operational */}
+      {!isOperational && <div className="grid gap-6 lg:grid-cols-5">
         <div className={cn("glass rounded-xl p-6 lg:col-span-3", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.1s", animationFillMode: "both" } : undefined}>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
