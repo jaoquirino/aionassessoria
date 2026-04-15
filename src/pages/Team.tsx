@@ -28,7 +28,6 @@ import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks
 import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
-import { useRoleNames } from "@/hooks/useAvailableRoles";
 
 interface TeamMemberWithStats extends TeamMember {
   currentWeight: number;
