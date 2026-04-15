@@ -731,11 +731,6 @@ export default function Settings() {
             </TabsContent>
           )}
 
-          {isAdmin && (
-            <TabsContent value="roles">
-              <RolesManagementTab />
-            </TabsContent>
-          )}
 
           {isAdmin && (
             <TabsContent value="permissions" className="space-y-6">
