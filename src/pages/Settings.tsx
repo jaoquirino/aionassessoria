@@ -460,18 +460,6 @@ export default function Settings() {
               <span className="hidden sm:inline">Aparência</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="notifications" className="gap-2">
-                <Bell className="h-4 w-4" />
-                <span className="hidden sm:inline">Notificações</span>
-              </TabsTrigger>
-            )}
-            {isAdmin && (
-              <TabsTrigger value="capacity" className="gap-2">
-                <Database className="h-4 w-4" />
-                <span className="hidden sm:inline">Capacidade</span>
-              </TabsTrigger>
-            )}
-            {isAdmin && (
               <TabsTrigger value="onboarding" className="gap-2">
                 <ClipboardList className="h-4 w-4" />
                 <span className="hidden sm:inline">Onboarding</span>
@@ -480,19 +468,7 @@ export default function Settings() {
             {isAdmin && (
               <TabsTrigger value="archived" className="gap-2">
                 <Archive className="h-4 w-4" />
-                <span className="hidden sm:inline">Arquivadas</span>
-              </TabsTrigger>
-            )}
-            {isAdmin && (
-              <TabsTrigger value="export" className="gap-2">
-                <FileDown className="h-4 w-4" />
-                <span className="hidden sm:inline">Exportar</span>
-              </TabsTrigger>
-            )}
-            {isAdmin && (
-              <TabsTrigger value="roles" className="gap-2">
-                <Briefcase className="h-4 w-4" />
-                <span className="hidden sm:inline">Cargos</span>
+                <span className="hidden sm:inline">Tarefas</span>
               </TabsTrigger>
             )}
             {isAdmin && (
