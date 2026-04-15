@@ -44,7 +44,8 @@ export function useUpsertFreelancerRate() {
         .select("id")
         .eq("team_member_id", input.team_member_id)
         .eq("module_id", input.module_id)
-        .is("deliverable_type", input.deliverable_type)
+        .is("deliverable_type", input.deliverable_type === null ? null : undefined)
+        .eq("deliverable_type", input.deliverable_type || "")
         .maybeSingle();
 
       if (existing) {
