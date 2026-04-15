@@ -39,7 +39,16 @@ const queryClient = new QueryClient({
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
-  const { data: isTeamMember, isLoading: isTeamMemberLoading } = useIsTeamMember();
+  const queryClient = useQueryClient();
+  const { data: isTeamMember, isLoading: isTeamMemberLoading, refetch } = useIsTeamMember();
+
+  // Refetch team member status when user changes (login/logout)
+  useEffect(() => {
+    if (user) {
+      queryClient.invalidateQueries({ queryKey: ["is_team_member"] });
+      queryClient.invalidateQueries({ queryKey: ["is_admin"] });
+    }
+  }, [user?.id, queryClient]);
 
   if (loading || isTeamMemberLoading) {
     return (
