@@ -126,6 +126,18 @@ export function useDashboardData() {
       const teamMembers = teamMembersRes.data || [];
       const contractModules = contractModulesRes.data || [];
       const taskAssignees = taskAssigneesRes.data || [];
+      const allDeliverableTypes = (deliverableTypesRes.data || []) as { name: string; module_id: string }[];
+
+      // Build set of valid deliverable type names (lowercased)
+      const validDeliverableTypes = new Set(allDeliverableTypes.map(dt => dt.name.toLowerCase()));
+
+      // Build map: module_id -> set of deliverable type names
+      const moduleDeliverableTypesMap = new Map<string, Set<string>>();
+      allDeliverableTypes.forEach(dt => {
+        const existing = moduleDeliverableTypesMap.get(dt.module_id) || new Set();
+        existing.add(dt.name.toLowerCase());
+        moduleDeliverableTypesMap.set(dt.module_id, existing);
+      });
 
       // Build a map of task_id -> team_member_ids
       const taskAssigneeMap = new Map<string, string[]>();
