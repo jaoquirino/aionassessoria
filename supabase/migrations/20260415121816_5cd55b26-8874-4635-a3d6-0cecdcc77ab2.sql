@@ -1,0 +1,2 @@
+UPDATE public.team_members SET name = initcap(lower(name)) WHERE name != initcap(lower(name));
+UPDATE public.profiles SET full_name = initcap(lower(full_name)) WHERE full_name IS NOT NULL AND full_name != initcap(lower(full_name));

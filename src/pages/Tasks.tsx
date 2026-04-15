@@ -170,11 +170,9 @@ export default function Tasks() {
         status,
       });
 
-      // Open edit modal so user can select client and module
+      // Open edit modal immediately
       if (result && result.id) {
-        setTimeout(() => {
-          setSelectedTaskId(result.id);
-        }, 100);
+        setSelectedTaskId(result.id);
       }
     } catch {
       // Error already handled by mutation
