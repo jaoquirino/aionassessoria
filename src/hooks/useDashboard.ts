@@ -263,7 +263,7 @@ export function useDashboardData() {
 
       // Client health - fixed to current month, only design deliveries (arte/vídeo/carrossel),
       // matching Deliveries dashboard logic (subtasks count, parent with subtasks does not duplicate)
-      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; arteCount: number; videoCount: number; carrosselCount: number; tasks: ClientTask[] }>();
+      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; deliverableTypeCounts: Record<string, number>; tasks: ClientTask[] }>();
 
       const healthTasks = operationalTasksFiltered.filter(t => !internalClientIds.has(t.client_id));
 
@@ -275,27 +275,33 @@ export function useDashboardData() {
         }
       });
 
+      // Build map: contract_module_id -> module_id for quick lookup
+      const cmToModuleId = new Map<string, string>();
+      contractModules.forEach((cm: any) => {
+        if (cm.module_id) cmToModuleId.set(cm.id, cm.module_id);
+      });
+
       healthTasks.forEach(t => {
-        const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, arteCount: 0, videoCount: 0, carrosselCount: 0, tasks: [] };
+        const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, deliverableTypeCounts: {}, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
         
         // Inherit deliverable_type from parent if subtask doesn't have one
         const rawDeliverableType = t.deliverable_type || (t.parent_task_id ? parentDeliverableTypeMap.get(t.parent_task_id) : null) || "";
         const deliverableType = rawDeliverableType.toLowerCase();
-        const isDesignDeliverable = deliverableType === "arte" || deliverableType === "video" || deliverableType === "vídeo" || deliverableType === "carrossel";
+        
+        // Check if deliverable type is valid (registered in module_deliverable_types)
+        const isValidDeliverable = deliverableType && validDeliverableTypes.has(deliverableType);
 
         // Keep operational weight behavior
         if (t.status !== "done") {
           curr.weight += t.weight;
         }
 
-        // Health deliveries = design tasks in current month (any status), same as Deliveries total
-        if (isCurrentMonth && isDesignDeliverable) {
+        // Health deliveries = tasks with valid deliverable types in current month
+        if (isCurrentMonth && isValidDeliverable) {
           curr.designDeliverables += 1;
-          if (deliverableType === "arte") curr.arteCount += 1;
-          else if (deliverableType === "carrossel") curr.carrosselCount += 1;
-          else curr.videoCount += 1;
+          curr.deliverableTypeCounts[deliverableType] = (curr.deliverableTypeCounts[deliverableType] || 0) + 1;
           if (t.status === "done") curr.delivered += 1;
           else curr.pending += 1;
 
