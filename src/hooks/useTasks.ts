@@ -179,7 +179,7 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: async (input: CreateTaskInput) => {
-      const { checklist, status, ...taskData } = input;
+      const { checklist, status, optimisticId: _optimisticId, ...taskData } = input;
       
       // Get current user's team member id
       const { data: { user } } = await supabase.auth.getUser();
@@ -199,7 +199,7 @@ export function useCreateTask() {
         .insert({
           ...taskData,
           status: status || "todo",
-          weight: 0, // Will be set by trigger
+          weight: 0,
           created_by: teamMemberId,
         })
         .select()
@@ -207,7 +207,6 @@ export function useCreateTask() {
 
       if (error) throw error;
 
-      // Insert checklist items if provided
       if (checklist && checklist.length > 0) {
         const checklistItems = checklist.map((text, index) => ({
           task_id: task.id,
@@ -218,7 +217,6 @@ export function useCreateTask() {
         await supabase.from("task_checklist").insert(checklistItems);
       }
 
-      // Log creation in history with performer
       await supabase.from("task_history").insert({
         task_id: task.id,
         action_type: "created",
@@ -231,10 +229,10 @@ export function useCreateTask() {
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] });
       const previousTasks = queryClient.getQueryData(["tasks"]);
+      const optimisticId = input.optimisticId || `temp-${Date.now()}`;
 
-      // Create optimistic task
       const optimisticTask = {
-        id: `temp-${Date.now()}`,
+        id: optimisticId,
         title: input.title,
         status: input.status || "todo",
         priority: input.priority || "medium",
@@ -268,7 +266,7 @@ export function useCreateTask() {
         return old ? [optimisticTask, ...old] : [optimisticTask];
       });
 
-      return { previousTasks };
+      return { previousTasks, optimisticId };
     },
     onError: (error, _, context) => {
       if (context?.previousTasks) {
@@ -276,7 +274,17 @@ export function useCreateTask() {
       }
       toast.error("Erro ao criar tarefa: " + error.message);
     },
-    onSuccess: () => {
+    onSuccess: (task, _variables, context) => {
+      if (context?.optimisticId) {
+        queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((item) =>
+            item.id === context.optimisticId
+              ? ({ ...item, ...task, id: task.id } as Task)
+              : item
+          );
+        });
+      }
       toast.success("Tarefa criada com sucesso");
     },
     onSettled: () => {
