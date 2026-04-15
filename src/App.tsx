@@ -126,6 +126,7 @@ const App = () => (
             <Route path="/calendario" element={<Calendar />} />
             <Route path="/equipe" element={<AdminRoute><Team /></AdminRoute>} />
             <Route path="/financeiro" element={<StrictAdminRoute><Financial /></StrictAdminRoute>} />
+            <Route path="/configuracoes" element={<Settings />} />
             <Route path="/modulos" element={<Navigate to="/configuracoes" replace />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/onboarding-templates" element={<Navigate to="/configuracoes" replace />} />
