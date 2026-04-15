@@ -780,32 +780,16 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                     </div>
                   )}
 
-                   {/* Deliverable Type - only for design modules (parent tasks) */}
-                  {!isSubtask && (() => {
-                    const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);
-                    const isDesignModule = selectedModule?.moduleName?.toLowerCase().includes("design");
-                    if (!isDesignModule) return null;
-                    return (
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-1">
-                          <Package className="h-3 w-3" /> Tipo de Entregável
-                        </Label>
-                        <Select 
-                          value={deliverableType || ""} 
-                          onValueChange={(val) => { setDeliverableType(val || null); markDirty(); }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="arte">🎨 Arte</SelectItem>
-                            <SelectItem value="video">🎬 Vídeo</SelectItem>
-                            <SelectItem value="carrossel">📸 Carrossel</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    );
-                  })()}
+                   {/* Deliverable Type - for parent tasks, dynamic from module */}
+                  {!isSubtask && (
+                    <DeliverableTypeSelector
+                      contractModuleId={contractModuleId}
+                      clientModules={clientModules}
+                      value={deliverableType}
+                      onChange={(val) => { setDeliverableType(val); markDirty(); }}
+                      showIcon
+                    />
+                  )}
 
                   <Separator />
 
