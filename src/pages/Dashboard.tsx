@@ -102,6 +102,7 @@ export default function Dashboard() {
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   const hasAnimated = useRef(false);
   const isRestricted = currentMember?.restricted_view === true;
+  const isOperational = currentMember?.permission === "operational";
 
   const revenueChartData = useMemo(() => {
     if (!financialData?.data) return [];
@@ -208,10 +209,12 @@ export default function Dashboard() {
 
   const shouldAnimate = !hasAnimated.current;
 
+  
+
   const overviewContent = (
     <>
       {/* ROW 1: Client Health */}
-      {isAdmin && (
+      {isAdmin && !isOperational && (
         <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")}>
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -299,140 +302,142 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ROW 2: Capacity + Revenue */}
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className={cn("glass rounded-xl p-6 lg:col-span-3", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.1s", animationFillMode: "both" } : undefined}>
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Activity className="h-5 w-5 text-primary" />
+      {/* ROW 2: Capacity + Revenue - hidden for operational */}
+      {!isOperational && (
+        <div className="grid gap-6 lg:grid-cols-5">
+          <div className={cn("glass rounded-xl p-6 lg:col-span-3", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.1s", animationFillMode: "both" } : undefined}>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <Activity className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Capacidade da Equipe</h3>
+                  <p className="text-sm text-muted-foreground">Peso × Capacidade</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Capacidade da Equipe</h3>
-                <p className="text-sm text-muted-foreground">Peso × Capacidade</p>
-              </div>
-            </div>
-            {!isRestricted && (
-              <button onClick={() => navigate("/equipe")} className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-                Ver equipe <ArrowRight className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Peso Total</span>
-              <span className={cn("text-lg font-bold",
-                displayStats.totalWeight > displayStats.totalCapacity ? "text-destructive" :
-                displayStats.totalWeight > displayStats.totalCapacity * 0.8 ? "text-warning" : "text-success"
-              )}>{displayStats.totalWeight} / {displayStats.totalCapacity}</span>
-            </div>
-            <Progress
-              value={Math.min((displayStats.totalWeight / (displayStats.totalCapacity || 1)) * 100, 100)}
-              className={cn("h-3",
-                displayStats.totalWeight > displayStats.totalCapacity && "[&>div]:bg-destructive",
-                displayStats.totalWeight > displayStats.totalCapacity * 0.8 && displayStats.totalWeight <= displayStats.totalCapacity && "[&>div]:bg-warning",
-                displayStats.totalWeight <= displayStats.totalCapacity * 0.8 && "[&>div]:bg-success"
+              {!isRestricted && (
+                <button onClick={() => navigate("/equipe")} className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                  Ver equipe <ArrowRight className="h-4 w-4" />
+                </button>
               )}
-            />
-          </div>
-          <div className="space-y-4">
-            {(isRestricted ? filteredTeam : team).length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">Nenhum membro</p>
-            ) : (
-              (isRestricted ? filteredTeam : team).map((member) => {
-                const status = getCapacityStatus(member.currentWeight, member.maxWeight);
-                const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
-                return (
-                  <div key={member.id} className="space-y-2 cursor-pointer rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50"
-                    onClick={() => setSelectedTeamMember({ id: member.id, name: member.name, role: member.role, avatar_url: member.avatar_url })}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={member.avatar_url || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                            {member.name.split(" ").map(n => n[0]).join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.role}</p>
+            </div>
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Peso Total</span>
+                <span className={cn("text-lg font-bold",
+                  displayStats.totalWeight > displayStats.totalCapacity ? "text-destructive" :
+                  displayStats.totalWeight > displayStats.totalCapacity * 0.8 ? "text-warning" : "text-success"
+                )}>{displayStats.totalWeight} / {displayStats.totalCapacity}</span>
+              </div>
+              <Progress
+                value={Math.min((displayStats.totalWeight / (displayStats.totalCapacity || 1)) * 100, 100)}
+                className={cn("h-3",
+                  displayStats.totalWeight > displayStats.totalCapacity && "[&>div]:bg-destructive",
+                  displayStats.totalWeight > displayStats.totalCapacity * 0.8 && displayStats.totalWeight <= displayStats.totalCapacity && "[&>div]:bg-warning",
+                  displayStats.totalWeight <= displayStats.totalCapacity * 0.8 && "[&>div]:bg-success"
+                )}
+              />
+            </div>
+            <div className="space-y-4">
+              {(isRestricted ? filteredTeam : team).length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">Nenhum membro</p>
+              ) : (
+                (isRestricted ? filteredTeam : team).map((member) => {
+                  const status = getCapacityStatus(member.currentWeight, member.maxWeight);
+                  const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
+                  return (
+                    <div key={member.id} className="space-y-2 cursor-pointer rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50"
+                      onClick={() => setSelectedTeamMember({ id: member.id, name: member.name, role: member.role, avatar_url: member.avatar_url })}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage src={member.avatar_url || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                              {member.name.split(" ").map(n => n[0]).join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{member.name}</p>
+                            <p className="text-xs text-muted-foreground">{member.role}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={cn("status-indicator", `status-${status}`)} />
+                          <span className="text-sm font-medium text-foreground">{member.currentWeight}/{member.maxWeight}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={cn("status-indicator", `status-${status}`)} />
-                        <span className="text-sm font-medium text-foreground">{member.currentWeight}/{member.maxWeight}</span>
+                      <Progress value={percentage} className={cn("h-2",
+                        status === "critical" && "[&>div]:bg-destructive",
+                        status === "attention" && "[&>div]:bg-warning",
+                        status === "normal" && "[&>div]:bg-success"
+                      )} />
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{member.tasksCount} tarefas ativas</span>
+                        {member.overdueTasks > 0 && (
+                          <span className="text-destructive">{member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}</span>
+                        )}
                       </div>
                     </div>
-                    <Progress value={percentage} className={cn("h-2",
-                      status === "critical" && "[&>div]:bg-destructive",
-                      status === "attention" && "[&>div]:bg-warning",
-                      status === "normal" && "[&>div]:bg-success"
-                    )} />
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{member.tasksCount} tarefas ativas</span>
-                      {member.overdueTasks > 0 && (
-                        <span className="text-destructive">{member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {isAdmin && (
-          <div className={cn("lg:col-span-2 flex flex-col gap-6", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.2s", animationFillMode: "both" } : undefined}>
-            <div className="glass rounded-xl p-6 flex-1 flex flex-col">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
-                  <DollarSign className="h-6 w-6 text-success" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Receita Mensal</p>
-                  <p className="text-2xl font-bold text-foreground">{maskCurrency(formatCurrency(stats.monthlyRevenue))}</p>
-                </div>
-              </div>
-              {revenueChartData.length > 1 && (
-                <div className="flex-1 min-h-0">
-                  <div className="h-24">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={revenueChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
-                            <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0.05} />
-                          </linearGradient>
-                        </defs>
-                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                        <Tooltip
-                          formatter={(value: number) => [maskCurrency(formatCurrency(value)), "Receita"]}
-                          contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                        />
-                        <Area type="monotone" dataKey="value" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#revenueGradient)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                  );
+                })
               )}
-              <div className="h-px bg-border my-3" />
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Clientes Ativos</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.activeClients}</p>
-                </div>
-              </div>
-              <button onClick={() => navigate("/clientes")} className="mt-4 flex items-center gap-1 text-sm font-medium text-primary hover:underline self-end">
-                Ver clientes <ArrowRight className="h-4 w-4" />
-              </button>
             </div>
           </div>
-        )}
-      </div>
+
+          {isAdmin && (
+            <div className={cn("lg:col-span-2 flex flex-col gap-6", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.2s", animationFillMode: "both" } : undefined}>
+              <div className="glass rounded-xl p-6 flex-1 flex flex-col">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
+                    <DollarSign className="h-6 w-6 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Receita Mensal</p>
+                    <p className="text-2xl font-bold text-foreground">{maskCurrency(formatCurrency(stats.monthlyRevenue))}</p>
+                  </div>
+                </div>
+                {revenueChartData.length > 1 && (
+                  <div className="flex-1 min-h-0">
+                    <div className="h-24">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={revenueChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                              <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0.05} />
+                            </linearGradient>
+                          </defs>
+                          <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            formatter={(value: number) => [maskCurrency(formatCurrency(value)), "Receita"]}
+                            contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                          />
+                          <Area type="monotone" dataKey="value" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#revenueGradient)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+                <div className="h-px bg-border my-3" />
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Clientes Ativos</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.activeClients}</p>
+                  </div>
+                </div>
+                <button onClick={() => navigate("/clientes")} className="mt-4 flex items-center gap-1 text-sm font-medium text-primary hover:underline self-end">
+                  Ver clientes <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {isAdmin && <OnboardingOverview />}
       {isAdmin && <OnboardingTasksSection />}

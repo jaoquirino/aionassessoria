@@ -33,11 +33,10 @@ import {
 } from "@/hooks/useModulePermissions";
 import { useFreelancerRates, useUpsertFreelancerRate, useDeleteFreelancerRate } from "@/hooks/useFreelancerRates";
 import { useAllModules } from "@/hooks/useModules";
+import { useAllModuleDeliverableTypes } from "@/hooks/useModuleDeliverableTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-
-const COMMON_DELIVERABLE_TYPES = ["Arte", "Vídeo", "Carrossel", "Fotografia", "Reels", "Stories", "Post"];
 
 interface UserSettingsDialogProps {
   user: UserWithRole | null;
@@ -514,7 +513,7 @@ export function UserSettingsDialog({
           {/* ========== RATES TAB ========== */}
           {user.team_member_id && (
             <TabsContent value="rates" className="mt-0">
-              <ProductionRatesSection teamMemberId={user.team_member_id} userName={user.full_name || user.username || ""} />
+              <ProductionRatesSection teamMemberId={user.team_member_id} />
             </TabsContent>
           )}
         </Tabs>
@@ -651,40 +650,36 @@ function ModulePermissionsSection({ userId, userPermission }: { userId: string; 
 }
 
 /* ========== Production Rates Section (inline) ========== */
-function ProductionRatesSection({ teamMemberId, userName }: { teamMemberId: string; userName: string }) {
+function ProductionRatesSection({ teamMemberId }: { teamMemberId: string }) {
   const [newModuleId, setNewModuleId] = useState("");
   const [newDeliverableType, setNewDeliverableType] = useState("");
-  const [customType, setCustomType] = useState("");
   const [newRate, setNewRate] = useState(0);
 
   const { data: rates = [], isLoading } = useFreelancerRates(teamMemberId);
   const { data: modules = [] } = useAllModules();
+  const { data: allDeliverableTypes = [] } = useAllModuleDeliverableTypes();
   const upsertRate = useUpsertFreelancerRate();
   const deleteRate = useDeleteFreelancerRate();
 
   const activeModules = modules.filter(m => m.is_active);
 
-  const existingTypes = useMemo(() => {
-    const types = new Set<string>();
-    COMMON_DELIVERABLE_TYPES.forEach(t => types.add(t));
-    rates.forEach(r => {
-      if (r.deliverable_type) types.add(r.deliverable_type);
-    });
-    return Array.from(types).sort();
-  }, [rates]);
+  // Get deliverable types for the selected module
+  const moduleDeliverableTypes = useMemo(() => {
+    if (!newModuleId) return [];
+    return allDeliverableTypes.filter(dt => dt.module_id === newModuleId).map(dt => dt.name);
+  }, [newModuleId, allDeliverableTypes]);
 
   const handleAdd = async () => {
     if (!newModuleId || newRate <= 0) return;
-    const deliverableType = newDeliverableType === "__custom" ? customType.trim() : (newDeliverableType && newDeliverableType !== "__none" ? newDeliverableType : null);
+    const deliverableType = newDeliverableType && newDeliverableType !== "__none" ? newDeliverableType : null;
     await upsertRate.mutateAsync({
       team_member_id: teamMemberId,
       module_id: newModuleId,
-      deliverable_type: deliverableType || null,
+      deliverable_type: deliverableType,
       rate_per_unit: newRate,
     });
     setNewModuleId("");
     setNewDeliverableType("");
-    setCustomType("");
     setNewRate(0);
   };
 
@@ -739,7 +734,7 @@ function ProductionRatesSection({ teamMemberId, userName }: { teamMemberId: stri
 
         <div className="space-y-2">
           <Label className="text-xs">Módulo *</Label>
-          <Select value={newModuleId} onValueChange={setNewModuleId}>
+          <Select value={newModuleId} onValueChange={(v) => { setNewModuleId(v); setNewDeliverableType(""); }}>
             <SelectTrigger className="h-9">
               <SelectValue placeholder="Selecionar módulo" />
             </SelectTrigger>
@@ -751,29 +746,22 @@ function ProductionRatesSection({ teamMemberId, userName }: { teamMemberId: stri
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-xs">Tipo de entrega (opcional)</Label>
-          <Select value={newDeliverableType} onValueChange={setNewDeliverableType}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="Módulo inteiro" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none">Módulo inteiro</SelectItem>
-              {existingTypes.map((dt) => (
-                <SelectItem key={dt} value={dt}>{dt}</SelectItem>
-              ))}
-              <SelectItem value="__custom">Outro (digitar)</SelectItem>
-            </SelectContent>
-          </Select>
-          {newDeliverableType === "__custom" && (
-            <Input
-              placeholder="Digite o tipo de entrega"
-              value={customType}
-              onChange={(e) => setCustomType(e.target.value)}
-              className="h-9"
-            />
-          )}
-        </div>
+        {moduleDeliverableTypes.length > 0 && (
+          <div className="space-y-2">
+            <Label className="text-xs">Tipo de entrega</Label>
+            <Select value={newDeliverableType} onValueChange={setNewDeliverableType}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Módulo inteiro" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">Módulo inteiro</SelectItem>
+                {moduleDeliverableTypes.map((dt) => (
+                  <SelectItem key={dt} value={dt}>{dt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label className="text-xs">Valor por peça *</Label>
@@ -782,7 +770,7 @@ function ProductionRatesSection({ teamMemberId, userName }: { teamMemberId: stri
 
         <Button
           onClick={handleAdd}
-          disabled={!newModuleId || newRate <= 0 || upsertRate.isPending || (newDeliverableType === "__custom" && !customType.trim())}
+          disabled={!newModuleId || newRate <= 0 || upsertRate.isPending}
           className="w-full gap-2"
           size="sm"
         >

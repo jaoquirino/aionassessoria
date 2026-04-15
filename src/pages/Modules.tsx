@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useAllModules, useDeleteModule, type ServiceModule } from "@/hooks/useModules";
+import { useAllModuleDeliverableTypes } from "@/hooks/useModuleDeliverableTypes";
 import { ModuleDialog } from "@/components/modules/ModuleDialog";
 
 interface ModuleWithStats extends ServiceModule {
@@ -38,6 +39,7 @@ export default function Modules() {
   const [deletingModule, setDeletingModule] = useState<ModuleWithStats | null>(null);
 
   const { data: modules = [], isLoading } = useAllModules();
+  const { data: allDeliverableTypes = [] } = useAllModuleDeliverableTypes();
   const deleteModule = useDeleteModule();
 
   const allRoles = useMemo(() => {
@@ -209,9 +211,23 @@ export default function Modules() {
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
               {module.description || "Sem descrição"}
             </p>
+
+            {/* Sub-services */}
+            {(() => {
+              const subs = allDeliverableTypes.filter(dt => dt.module_id === module.id);
+              return subs.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {subs.map(s => (
+                    <Badge key={s.id} variant="secondary" className="text-xs">
+                      {s.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : null;
+            })()}
 
             <div className="flex flex-wrap gap-2 mb-4">
               <Badge variant="outline" className="border-primary/30 text-primary">
