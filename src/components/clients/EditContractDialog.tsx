@@ -408,17 +408,6 @@ export function EditContractDialog({
               rows={3}
             />
           </div>
-
-          {/* Contract Payments Section */}
-          {contract && (
-            <>
-              <Separator />
-              <ContractPaymentsSection
-                contractId={contract.id}
-                monthlyValue={Number(contract.monthly_value)}
-              />
-            </>
-          )}
         </div>
 
         <DialogFooter>
