@@ -69,6 +69,7 @@ import {
   useUnmarkContractPayment,
 } from "@/hooks/useContractPayments";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { subMonths } from "date-fns";
 
 export default function Financial() {
