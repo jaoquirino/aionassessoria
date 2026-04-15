@@ -62,7 +62,7 @@ import { usePriorities } from "@/hooks/usePriorities";
 import { SubtaskRow } from "./SubtaskRow";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { Task } from "@/types/tasks";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -133,17 +133,19 @@ function useClientModules(clientId: string | null) {
 }
 
 export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "details", initialSubtaskId = null }: TaskEditDialogProps) {
+  const isOptimisticTask = taskId?.startsWith("temp-") ?? false;
   const { data: task, isLoading: taskLoading } = useTask(taskId);
-  // Pre-populate from tasks list cache for instant display
-  const queryClient = useQueryClient();
+  const { data: tasksCache = [] } = useQuery({
+    queryKey: ["tasks"],
+    enabled: open,
+    staleTime: Infinity,
+  });
   const cachedTask = useMemo(() => {
     if (!taskId) return null;
-    const tasks = queryClient.getQueryData<Task[]>(["tasks"]);
-    return tasks?.find(t => t.id === taskId) || null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskId]);
+    return (tasksCache as Task[]).find((t) => t.id === taskId) || null;
+  }, [taskId, tasksCache]);
   const displayTask = task || cachedTask;
-  const isLoading = !displayTask && taskLoading;
+  const isLoading = isOptimisticTask ? !displayTask : !displayTask && taskLoading;
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
   const { data: comments = [] } = useTaskComments(taskId);
