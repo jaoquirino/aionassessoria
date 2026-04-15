@@ -289,6 +289,8 @@ export function useCreateTask() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -337,6 +339,8 @@ export function useUpdateTask() {
     onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -385,6 +389,8 @@ export function useUpdateTaskStatus() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
       queryClient.invalidateQueries({ queryKey: ["onboarding_module_tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -432,6 +438,8 @@ export function useUpdateTaskField() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["onboarding_module_tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -490,6 +498,8 @@ export function useArchiveTask() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -508,6 +518,8 @@ export function useUnarchiveTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
       toast.success("Tarefa restaurada");
     },
     onError: (error) => {
