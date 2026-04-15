@@ -228,7 +228,7 @@ export default function Dashboard() {
   const overviewContent = (
     <>
       {/* ROW 1: Client Health */}
-      {isAdmin && canViewClientHealth && (
+      {canViewClientHealth && (
         <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")}>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -395,7 +395,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {isAdmin && canViewRevenue && (
+          {canViewRevenue && (
             <div className={cn("lg:col-span-2 flex flex-col gap-6", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.2s", animationFillMode: "both" } : undefined}>
               <div className="glass rounded-xl p-6 flex-1 flex flex-col">
                 <div className="flex items-center gap-3 mb-4">
@@ -448,8 +448,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {isAdmin && canViewOnboarding && <OnboardingOverview />}
-      {isAdmin && canViewOnboarding && <OnboardingTasksSection />}
+      {canViewOnboarding && <OnboardingOverview />}
+      {canViewOnboarding && <OnboardingTasksSection />}
 
       {/* ROW 3: Tasks */}
       {canViewTasksOverview && (
