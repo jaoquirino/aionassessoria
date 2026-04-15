@@ -571,6 +571,120 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_categories: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          category_id: string | null
+          client_id: string | null
+          contract_id: string | null
+          created_at: string
+          created_by: string | null
+          date: string
+          description: string | null
+          id: string
+          is_auto_generated: boolean
+          reference_month: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          is_auto_generated?: boolean
+          reference_month?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          is_auto_generated?: boolean
+          reference_month?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "financial_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kanban_columns: {
         Row: {
           color_class: string
