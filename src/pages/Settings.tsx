@@ -50,6 +50,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { capitalizeName } from "@/lib/utils";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -246,7 +247,7 @@ export default function Settings() {
         .from("profiles")
         .upsert({
           user_id: user.id,
-          full_name: fullName.trim() || null,
+          full_name: fullName.trim() ? capitalizeName(fullName.trim()) : null,
           username: username.trim() || null,
           avatar_url: avatarUrl || null,
           updated_at: new Date().toISOString(),

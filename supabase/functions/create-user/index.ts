@@ -51,7 +51,8 @@
      }
  
      // Get request body
-     const { username, password, fullName, roles, permission } = await req.json();
+      const { username, password, fullName: rawFullName, roles, permission } = await req.json();
+      const fullName = rawFullName ? rawFullName.toLowerCase().replace(/(?:^|\s)\S/g, (c: string) => c.toUpperCase()) : null;
  
      if (!username || !password) {
        return new Response(
