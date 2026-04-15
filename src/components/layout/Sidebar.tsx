@@ -13,16 +13,6 @@ import {
   Menu,
   DollarSign,
 } from "lucide-react";
-  LayoutDashboard,
-  Users,
-  CheckSquare,
-  CalendarDays,
-  UserCircle,
-  ChevronLeft,
-  Sun,
-  Moon,
-  Menu,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
