@@ -379,6 +379,17 @@ export default function Team() {
         onOpenChange={(open) => { if (!open) setTasksDialogMember(null); }}
       />
 
+      <FreelancerRatesDialog
+        member={ratesMember}
+        open={!!ratesMember}
+        onOpenChange={(open) => { if (!open) setRatesMember(null); }}
+      />
+
+      <PaymentPeriodsDialog
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+      />
+
       <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
