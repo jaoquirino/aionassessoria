@@ -96,6 +96,7 @@ export function useArchivedTasks() {
 
 // Fetch single task with all details
 export function useTask(taskId: string | null) {
+  const isTemp = taskId?.startsWith("temp-") ?? false;
   return useQuery({
     queryKey: ["task", taskId],
     queryFn: async () => {
@@ -141,7 +142,6 @@ export function useTask(taskId: string | null) {
           }));
 
         // Add synthetic "created" entry at the end (oldest)
-        // Use created_by if available, otherwise infer from the earliest history entry
         const earliestEntry = enrichedHistory.length > 0 ? enrichedHistory[enrichedHistory.length - 1] : null;
         const creatorId = data.created_by || earliestEntry?.performed_by || null;
         const creatorMember = creatorId ? membersMap.get(creatorId) || null : null;
@@ -169,7 +169,7 @@ export function useTask(taskId: string | null) {
 
       return data as Task | null;
     },
-    enabled: !!taskId,
+    enabled: !!taskId && !isTemp,
   });
 }
 
