@@ -53,7 +53,7 @@ export default function Team() {
   const [deletingMember, setDeletingMember] = useState<TeamMemberWithStats | null>(null);
   const [tasksDialogMember, setTasksDialogMember] = useState<TeamMemberWithStats | null>(null);
   const [ratesMember, setRatesMember] = useState<TeamMemberWithStats | null>(null);
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  
 
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
   const deleteMember = useDeleteTeamMember();
