@@ -138,10 +138,6 @@ export default function Team() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => setPaymentDialogOpen(true)}>
-            <DollarSign className="h-4 w-4" />
-            Pagamentos
-          </Button>
           <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
             <Plus className="h-4 w-4" />
             Novo Integrante
@@ -385,10 +381,6 @@ export default function Team() {
         onOpenChange={(open) => { if (!open) setRatesMember(null); }}
       />
 
-      <PaymentPeriodsDialog
-        open={paymentDialogOpen}
-        onOpenChange={setPaymentDialogOpen}
-      />
 
       <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
         <AlertDialogContent>
