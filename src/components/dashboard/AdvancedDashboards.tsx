@@ -147,9 +147,16 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         // Exclude parent groups from counts (children are the actual deliverables)
         const countable = filteredDeliveries.filter(d => !d.isParentGroup);
         const overdue = countable.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
-        const arteCount = countable.filter(d => d.deliverableType === "arte").length;
-        const videoCount = countable.filter(d => d.deliverableType === "video").length;
-        const carrosselCount = countable.filter(d => d.deliverableType === "carrossel").length;
+        
+        // Dynamic type counts
+        const typeCounts = new Map<string, number>();
+        countable.forEach(d => {
+          if (d.deliverableType) {
+            const key = d.deliverableType.toLowerCase();
+            typeCounts.set(key, (typeCounts.get(key) || 0) + 1);
+          }
+        });
+        const typeEntries = Array.from(typeCounts.entries()).sort((a, b) => b[1] - a[1]);
 
         // Apply all filters — keep parent groups visible if any of their children match
         let displayDeliveries = filteredDeliveries;
