@@ -1125,6 +1125,35 @@ export type Database = {
         }
         Relationships: []
       }
+      role_deliverables: {
+        Row: {
+          created_at: string
+          deliverable_type: string
+          id: string
+          role_id: string
+        }
+        Insert: {
+          created_at?: string
+          deliverable_type: string
+          id?: string
+          role_id: string
+        }
+        Update: {
+          created_at?: string
+          deliverable_type?: string
+          id?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_deliverables_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "available_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_colors: {
         Row: {
           created_at: string
