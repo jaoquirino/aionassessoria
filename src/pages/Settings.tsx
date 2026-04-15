@@ -1131,6 +1131,15 @@ export default function Settings() {
                     </p>
                   </div>
                   <div className="flex items-start gap-3">
+                    <Badge className="bg-info text-info-foreground shrink-0">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Gestor
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Gestão de equipe: pode visualizar permissões, gerenciar tarefas e integrantes conforme configurado.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
                     <Badge variant="secondary" className="shrink-0">
                       <Shield className="h-3 w-3 mr-1" />
                       Operacional
