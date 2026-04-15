@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ContractPaymentsSection } from "@/components/clients/ContractPaymentsSection";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -408,17 +408,6 @@ export function EditContractDialog({
               rows={3}
             />
           </div>
-
-          {/* Contract Payments Section */}
-          {contract && (
-            <>
-              <Separator />
-              <ContractPaymentsSection
-                contractId={contract.id}
-                monthlyValue={Number(contract.monthly_value)}
-              />
-            </>
-          )}
         </div>
 
         <DialogFooter>

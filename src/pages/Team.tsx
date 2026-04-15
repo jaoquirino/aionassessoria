@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Loader2, Trash2, DollarSign, Settings2 } from "lucide-react";
+import { Plus, Search, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,7 @@ import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks
 import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
 import { FreelancerRatesDialog } from "@/components/team/FreelancerRatesDialog";
-import { PaymentPeriodsDialog } from "@/components/team/PaymentPeriodsDialog";
+import { DollarSign } from "lucide-react";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
 
 interface TeamMemberWithStats extends TeamMember {
@@ -53,7 +53,7 @@ export default function Team() {
   const [deletingMember, setDeletingMember] = useState<TeamMemberWithStats | null>(null);
   const [tasksDialogMember, setTasksDialogMember] = useState<TeamMemberWithStats | null>(null);
   const [ratesMember, setRatesMember] = useState<TeamMemberWithStats | null>(null);
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  
 
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
   const deleteMember = useDeleteTeamMember();
@@ -138,10 +138,6 @@ export default function Team() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => setPaymentDialogOpen(true)}>
-            <DollarSign className="h-4 w-4" />
-            Pagamentos
-          </Button>
           <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
             <Plus className="h-4 w-4" />
             Novo Integrante
@@ -385,10 +381,6 @@ export default function Team() {
         onOpenChange={(open) => { if (!open) setRatesMember(null); }}
       />
 
-      <PaymentPeriodsDialog
-        open={paymentDialogOpen}
-        onOpenChange={setPaymentDialogOpen}
-      />
 
       <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
         <AlertDialogContent>
