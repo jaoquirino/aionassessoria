@@ -129,6 +129,10 @@ export function useGlobalRealtime() {
       .on("postgres_changes", { event: "*", schema: "public", table: "editorial_post_attachments" }, () => {
         enqueue("editorial_posts");
       })
+      // Module permissions
+      .on("postgres_changes", { event: "*", schema: "public", table: "module_permissions" }, () => {
+        enqueue("my_module_permissions", "user_module_permissions");
+      })
       .subscribe();
 
     return () => {

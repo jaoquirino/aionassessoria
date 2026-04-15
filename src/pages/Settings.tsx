@@ -38,6 +38,7 @@ import { PrioritiesManagementTab } from "@/components/settings/PrioritiesManagem
 import { SavedColorsManagementTab } from "@/components/settings/SavedColorsManagementTab";
 import { ModulesManagementTab } from "@/components/settings/ModulesManagementTab";
 import { UserSettingsDialog } from "@/components/settings/UserSettingsDialog";
+import { ModulePermissionsTab } from "@/components/settings/ModulePermissionsTab";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -408,6 +409,14 @@ export default function Settings() {
         </Badge>
       );
     }
+    if (role === "gestor") {
+      return (
+        <Badge className="bg-info text-info-foreground">
+          <Shield className="h-3 w-3 mr-1" />
+          Gestor
+        </Badge>
+      );
+    }
     return (
       <Badge variant="secondary">
         <Shield className="h-3 w-3 mr-1" />
@@ -490,6 +499,12 @@ export default function Settings() {
               <TabsTrigger value="modules" className="gap-2">
                 <Puzzle className="h-4 w-4" />
                 <span className="hidden sm:inline">Módulos</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="module_permissions" className="gap-2">
+                <Eye className="h-4 w-4" />
+                <span className="hidden sm:inline">Módulos Acesso</span>
               </TabsTrigger>
             )}
             {isAdmin && (
