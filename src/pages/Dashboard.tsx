@@ -38,7 +38,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { getDeliverableTypeKind, getDeliverableTypeLabel } from "@/lib/deliverableType";
+import { getDeliverableTypeKind, getDeliverableTypeLabel, type DeliverableKind } from "@/lib/deliverableType";
+
+const kindIconMap: Record<DeliverableKind, React.ElementType> = {
+  arte: ImageIcon, carrossel: GalleryHorizontal, video: Video,
+  edicao: SlidersHorizontal, fotografar: Camera, selecao: Scissors, generic: Package,
+};
+const kindColorMap: Record<DeliverableKind, string> = {
+  arte: "text-primary", carrossel: "text-warning", video: "text-info",
+  edicao: "text-purple-400", fotografar: "text-emerald-400", selecao: "text-amber-400", generic: "text-muted-foreground",
+};
 import { useDashboardData, type ClientTask } from "@/hooks/useDashboard";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
