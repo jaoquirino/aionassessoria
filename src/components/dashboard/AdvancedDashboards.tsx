@@ -233,58 +233,23 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
 
               <div className="w-px h-6 bg-border mx-1" />
 
-              {/* Design type filters */}
-              {arteCount > 0 && (
+              {/* Dynamic deliverable type filters */}
+              {typeEntries.map(([type, count]) => (
                 <button
-                  onClick={() => setDesignFilter(designFilter === "arte" ? "all" : "arte")}
+                  key={type}
+                  onClick={() => setDesignFilter(designFilter === type ? "all" : type)}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
-                    designFilter === "arte"
-                      ? "bg-purple text-white border-purple shadow-sm"
-                      : "bg-purple/10 text-purple border-purple/20 hover:bg-purple/20"
+                    designFilter === type
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground border-border"
                   )}
                 >
                   <span className="flex items-center gap-1.5">
-                    <Image className="h-3.5 w-3.5" />
-                    Artes ({arteCount})
+                    {type.charAt(0).toUpperCase() + type.slice(1)} ({count})
                   </span>
                 </button>
-              )}
-              {carrosselCount > 0 && (
-                <button
-                  onClick={() => setDesignFilter(designFilter === "carrossel" ? "all" : "carrossel")}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
-                    designFilter === "carrossel"
-                      ? "bg-orange-500 text-white border-orange-500 shadow-sm"
-                      : "bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500/20"
-                  )}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <GalleryHorizontal className="h-3.5 w-3.5" />
-                    Carrosséis ({carrosselCount})
-                  </span>
-                </button>
-              )}
-              {videoCount > 0 && (
-                <button
-                  onClick={() => setDesignFilter(designFilter === "video" ? "all" : "video")}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
-                    designFilter === "video"
-                      ? "bg-info text-white border-info shadow-sm"
-                      : "bg-info/10 text-info border-info/20 hover:bg-info/20"
-                  )}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Video className="h-3.5 w-3.5" />
-                    Vídeos ({videoCount})
-                  </span>
-                </button>
-              )}
-
-
-
+              ))}
 
               {hasActiveFilter && (
                 <button
