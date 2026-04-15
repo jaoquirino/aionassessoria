@@ -64,6 +64,7 @@ import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { useQuery } from "@tanstack/react-query";
 import type { Task } from "@/types/tasks";
+import { DeliverableTypeSelector } from "./DeliverableTypeSelector";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TaskEditDialogProps {
@@ -751,10 +752,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                             if (selectedMod) {
                               setWeight(selectedMod.defaultWeight);
                             }
-                            const selIsDesign = selectedMod?.moduleName?.toLowerCase().includes("design");
-                            if (!selIsDesign) {
-                              setDeliverableType(null);
-                            }
+                            // Reset deliverable type when changing module
+                            setDeliverableType(null);
                             markDirty();
                           }}
                         >
@@ -771,60 +770,26 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         </Select>
                       </div>
 
-                      {/* Only show deliverable type if module is design */}
-                      {(() => {
-                        const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);
-                        const isDesignModule = selectedModule?.moduleName?.toLowerCase().includes("design");
-                        if (!isDesignModule) return null;
-                        return (
-                          <div className="space-y-2">
-                            <Label>Tipo de Entregável</Label>
-                            <Select 
-                              value={deliverableType || "none"} 
-                              onValueChange={(val) => { setDeliverableType(val === "none" ? null : val); markDirty(); }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Nenhum" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">Nenhum</SelectItem>
-                                <SelectItem value="arte">🎨 Arte</SelectItem>
-                                <SelectItem value="video">🎬 Vídeo</SelectItem>
-                                <SelectItem value="carrossel">📸 Carrossel</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        );
-                      })()}
+                      {/* Dynamic deliverable types from module */}
+                      <DeliverableTypeSelector
+                        contractModuleId={contractModuleId}
+                        clientModules={clientModules}
+                        value={deliverableType}
+                        onChange={(val) => { setDeliverableType(val); markDirty(); }}
+                      />
                     </div>
                   )}
 
-                   {/* Deliverable Type - only for design modules (parent tasks) */}
-                  {!isSubtask && (() => {
-                    const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);
-                    const isDesignModule = selectedModule?.moduleName?.toLowerCase().includes("design");
-                    if (!isDesignModule) return null;
-                    return (
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-1">
-                          <Package className="h-3 w-3" /> Tipo de Entregável
-                        </Label>
-                        <Select 
-                          value={deliverableType || ""} 
-                          onValueChange={(val) => { setDeliverableType(val || null); markDirty(); }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="arte">🎨 Arte</SelectItem>
-                            <SelectItem value="video">🎬 Vídeo</SelectItem>
-                            <SelectItem value="carrossel">📸 Carrossel</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    );
-                  })()}
+                   {/* Deliverable Type - for parent tasks, dynamic from module */}
+                  {!isSubtask && (
+                    <DeliverableTypeSelector
+                      contractModuleId={contractModuleId}
+                      clientModules={clientModules}
+                      value={deliverableType}
+                      onChange={(val) => { setDeliverableType(val); markDirty(); }}
+                      showIcon
+                    />
+                  )}
 
                   <Separator />
 

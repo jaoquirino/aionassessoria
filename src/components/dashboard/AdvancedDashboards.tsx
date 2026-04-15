@@ -38,7 +38,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
-  const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video" | "carrossel">("all");
+  const [designFilter, setDesignFilter] = useState<string>("all");
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(new Set());
 
   const toggleParentCollapse = useCallback((parentId: string) => {
@@ -147,9 +147,16 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         // Exclude parent groups from counts (children are the actual deliverables)
         const countable = filteredDeliveries.filter(d => !d.isParentGroup);
         const overdue = countable.filter(d => d.status !== "done" && new Date(d.dueDate) < new Date());
-        const arteCount = countable.filter(d => d.deliverableType === "arte").length;
-        const videoCount = countable.filter(d => d.deliverableType === "video").length;
-        const carrosselCount = countable.filter(d => d.deliverableType === "carrossel").length;
+        
+        // Dynamic type counts
+        const typeCounts = new Map<string, number>();
+        countable.forEach(d => {
+          if (d.deliverableType) {
+            const key = d.deliverableType.toLowerCase();
+            typeCounts.set(key, (typeCounts.get(key) || 0) + 1);
+          }
+        });
+        const typeEntries = Array.from(typeCounts.entries()).sort((a, b) => b[1] - a[1]);
 
         // Apply all filters — keep parent groups visible if any of their children match
         let displayDeliveries = filteredDeliveries;
@@ -226,58 +233,23 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
 
               <div className="w-px h-6 bg-border mx-1" />
 
-              {/* Design type filters */}
-              {arteCount > 0 && (
+              {/* Dynamic deliverable type filters */}
+              {typeEntries.map(([type, count]) => (
                 <button
-                  onClick={() => setDesignFilter(designFilter === "arte" ? "all" : "arte")}
+                  key={type}
+                  onClick={() => setDesignFilter(designFilter === type ? "all" : type)}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
-                    designFilter === "arte"
-                      ? "bg-purple text-white border-purple shadow-sm"
-                      : "bg-purple/10 text-purple border-purple/20 hover:bg-purple/20"
+                    designFilter === type
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground border-border"
                   )}
                 >
                   <span className="flex items-center gap-1.5">
-                    <Image className="h-3.5 w-3.5" />
-                    Artes ({arteCount})
+                    {type.charAt(0).toUpperCase() + type.slice(1)} ({count})
                   </span>
                 </button>
-              )}
-              {carrosselCount > 0 && (
-                <button
-                  onClick={() => setDesignFilter(designFilter === "carrossel" ? "all" : "carrossel")}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
-                    designFilter === "carrossel"
-                      ? "bg-orange-500 text-white border-orange-500 shadow-sm"
-                      : "bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500/20"
-                  )}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <GalleryHorizontal className="h-3.5 w-3.5" />
-                    Carrosséis ({carrosselCount})
-                  </span>
-                </button>
-              )}
-              {videoCount > 0 && (
-                <button
-                  onClick={() => setDesignFilter(designFilter === "video" ? "all" : "video")}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
-                    designFilter === "video"
-                      ? "bg-info text-white border-info shadow-sm"
-                      : "bg-info/10 text-info border-info/20 hover:bg-info/20"
-                  )}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Video className="h-3.5 w-3.5" />
-                    Vídeos ({videoCount})
-                  </span>
-                </button>
-              )}
-
-
-
+              ))}
 
               {hasActiveFilter && (
                 <button

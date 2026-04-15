@@ -262,19 +262,12 @@ export default function Dashboard() {
                       <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
                       <td className="py-4">
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2.5">
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
-                              <Video className="h-3.5 w-3.5" />
-                              {client.videoCount}
-                            </span>
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-500">
-                              <ImageIcon className="h-3.5 w-3.5" />
-                              {client.arteCount}
-                            </span>
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-500">
-                              <GalleryHorizontal className="h-3.5 w-3.5" />
-                              {client.carrosselCount}
-                            </span>
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            {Object.entries(client.deliverableTypeCounts || {}).map(([type, count]) => (
+                              <span key={type} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                                {type.charAt(0).toUpperCase() + type.slice(1)}: {count as number}
+                              </span>
+                            ))}
                           </div>
                           {client.designLimit != null && (
                             <span className="text-xs font-medium text-foreground">

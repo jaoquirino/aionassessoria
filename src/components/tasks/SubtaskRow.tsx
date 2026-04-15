@@ -9,6 +9,7 @@ import { cn, parseLocalDate } from "@/lib/utils";
 import { PriorityPopover, DatePopover } from "./InlineFieldPopover";
 import { MultiAssigneePopover } from "./MultiAssigneePopover";
 import { StackedAvatars } from "./StackedAvatars";
+import { DeliverableTypeSelector } from "./DeliverableTypeSelector";
 import type { Task, TeamMember } from "@/types/tasks";
 import { supabase } from "@/integrations/supabase/client";
 import type { TaskAssignee } from "@/hooks/useTaskAssignees";
@@ -56,9 +57,8 @@ export function SubtaskRow({
   // Assignees from server
   const displayAssignees = assignees.map(a => a.team_member).filter(Boolean) as TeamMember[];
 
-  // Deliverable type logic — use sub data directly (optimistically updated)
+  // Module info for deliverable type
   const mod = clientModules.find(m => m.contractModuleId === sub.contract_module_id);
-  const isDesign = mod?.moduleName?.toLowerCase().includes("design");
 
   return (
     <div
@@ -103,28 +103,18 @@ export function SubtaskRow({
             Peso: {sub.weight}
           </Badge>
 
-          {/* Deliverable type (Design only) */}
-          {isDesign && (
-            <div onClick={(e) => e.stopPropagation()} className="inline-flex">
-              <Select
-                value={sub.deliverable_type || ""}
-                onValueChange={(val) => {
-                  onUpdate(sub.id, parentId, { deliverable_type: val } as any);
-                }}
-              >
-                <SelectTrigger className="h-5 text-[10px] px-1.5 py-0 w-auto border-dashed gap-0.5 inline-flex">
-                  <SelectValue placeholder="Tipo">
-                    {sub.deliverable_type === "arte" ? "🎨 Arte" : sub.deliverable_type === "video" ? "🎬 Vídeo" : sub.deliverable_type === "carrossel" ? "📸 Carrossel" : "Tipo"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="arte" className="text-xs">🎨 Arte</SelectItem>
-                  <SelectItem value="video" className="text-xs">🎬 Vídeo</SelectItem>
-                  <SelectItem value="carrossel" className="text-xs">📸 Carrossel</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Deliverable type (dynamic from module) */}
+          <div onClick={(e) => e.stopPropagation()} className="inline-flex">
+            <DeliverableTypeSelector
+              contractModuleId={sub.contract_module_id}
+              clientModules={clientModules}
+              value={sub.deliverable_type}
+              onChange={(val) => {
+                onUpdate(sub.id, parentId, { deliverable_type: val } as any);
+              }}
+              compact
+            />
+          </div>
 
           {/* Due date */}
           <DatePopover

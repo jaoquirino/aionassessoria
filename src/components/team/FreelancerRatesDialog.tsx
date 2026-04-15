@@ -1,18 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Trash2, Plus } from "lucide-react";
 import { useFreelancerRates, useUpsertFreelancerRate, useDeleteFreelancerRate } from "@/hooks/useFreelancerRates";
 import { useAllModules } from "@/hooks/useModules";
+import { useModuleDeliverableTypes } from "@/hooks/useModuleDeliverableTypes";
 import type { TeamMember } from "@/hooks/useTeamMembers";
-
-// Common deliverable types as suggestions, but user can type custom ones
-const COMMON_DELIVERABLE_TYPES = ["Arte", "Vídeo", "Carrossel", "Fotografia", "Reels", "Stories", "Post"];
 
 interface FreelancerRatesDialogProps {
   member: TeamMember | null;
@@ -23,47 +20,39 @@ interface FreelancerRatesDialogProps {
 export function FreelancerRatesDialog({ member, open, onOpenChange }: FreelancerRatesDialogProps) {
   const [newModuleId, setNewModuleId] = useState("");
   const [newDeliverableType, setNewDeliverableType] = useState("");
-  const [customType, setCustomType] = useState("");
   const [newRate, setNewRate] = useState(0);
 
   const { data: rates = [], isLoading } = useFreelancerRates(member?.id);
   const { data: modules = [] } = useAllModules();
+  const { data: deliverableTypes = [] } = useModuleDeliverableTypes(newModuleId || undefined);
   const upsertRate = useUpsertFreelancerRate();
   const deleteRate = useDeleteFreelancerRate();
 
   const activeModules = modules.filter(m => m.is_active);
 
-  // Gather existing deliverable types from current rates to suggest them
-  const existingTypes = useMemo(() => {
-    const types = new Set<string>();
-    COMMON_DELIVERABLE_TYPES.forEach(t => types.add(t));
-    rates.forEach(r => {
-      if (r.deliverable_type) types.add(r.deliverable_type);
-    });
-    return Array.from(types).sort();
-  }, [rates]);
-
   useEffect(() => {
     if (open) {
       setNewModuleId("");
       setNewDeliverableType("");
-      setCustomType("");
       setNewRate(0);
     }
   }, [open]);
 
+  // Reset deliverable type when module changes
+  useEffect(() => {
+    setNewDeliverableType("");
+  }, [newModuleId]);
+
   const handleAdd = async () => {
     if (!member || !newModuleId || newRate <= 0) return;
-    const deliverableType = newDeliverableType === "__custom" ? customType.trim() : (newDeliverableType || null);
     await upsertRate.mutateAsync({
       team_member_id: member.id,
       module_id: newModuleId,
-      deliverable_type: deliverableType || null,
+      deliverable_type: newDeliverableType || null,
       rate_per_unit: newRate,
     });
     setNewModuleId("");
     setNewDeliverableType("");
-    setCustomType("");
     setNewRate(0);
   };
 
@@ -131,28 +120,22 @@ export function FreelancerRatesDialog({ member, open, onOpenChange }: Freelancer
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Tipo de entrega (opcional)</Label>
-              <Select value={newDeliverableType} onValueChange={setNewDeliverableType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Módulo inteiro (qualquer tipo)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Módulo inteiro</SelectItem>
-                  {existingTypes.map((dt) => (
-                    <SelectItem key={dt} value={dt}>{dt}</SelectItem>
-                  ))}
-                  <SelectItem value="__custom">Outro (digitar)</SelectItem>
-                </SelectContent>
-              </Select>
-              {newDeliverableType === "__custom" && (
-                <Input
-                  placeholder="Digite o tipo de entrega"
-                  value={customType}
-                  onChange={(e) => setCustomType(e.target.value)}
-                />
-              )}
-            </div>
+            {newModuleId && deliverableTypes.length > 0 && (
+              <div className="space-y-2">
+                <Label>Tipo de entrega (opcional)</Label>
+                <Select value={newDeliverableType} onValueChange={setNewDeliverableType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Módulo inteiro (qualquer tipo)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Módulo inteiro</SelectItem>
+                    {deliverableTypes.map((dt) => (
+                      <SelectItem key={dt.id} value={dt.name}>{dt.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Valor por peça *</Label>
@@ -161,7 +144,7 @@ export function FreelancerRatesDialog({ member, open, onOpenChange }: Freelancer
 
             <Button
               onClick={handleAdd}
-              disabled={!newModuleId || newRate <= 0 || upsertRate.isPending || (newDeliverableType === "__custom" && !customType.trim())}
+              disabled={!newModuleId || newRate <= 0 || upsertRate.isPending}
               className="w-full gap-2"
             >
               <Plus className="h-4 w-4" />
