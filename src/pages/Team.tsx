@@ -50,7 +50,7 @@ export default function Team() {
   const [editingMember, setEditingMember] = useState<TeamMemberWithStats | null>(null);
   const [deletingMember, setDeletingMember] = useState<TeamMemberWithStats | null>(null);
   const [tasksDialogMember, setTasksDialogMember] = useState<TeamMemberWithStats | null>(null);
-  const [ratesMember, setRatesMember] = useState<TeamMemberWithStats | null>(null);
+  
   
 
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
