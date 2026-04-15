@@ -42,6 +42,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MentionTextarea } from "@/components/ui/mention-textarea";
 import { cn, parseLocalDate } from "@/lib/utils";
+import { normalizeDeliverableType } from "@/lib/deliverableType";
  import {
    useTask,
    useUpdateTask,
@@ -267,6 +268,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const handleModuleChange = (newModuleId: string) => {
     markDirty();
     setContractModuleId(newModuleId);
+    setDeliverableType(null);
     const selectedModule = clientModules.find(m => m.contractModuleId === newModuleId);
     if (selectedModule) {
       setWeight(selectedModule.defaultWeight);
@@ -275,7 +277,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   };
 
   const handleSave = async () => {
-    if (!displayTask) return;
+    if (!displayTask) return false;
 
     setIsSaving(true);
     try {
@@ -306,14 +308,19 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
          assigned_to: selectedAssignees[0] || null,
         due_date: dueDate ? `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-${String(dueDate.getDate()).padStart(2, "0")}` : displayTask.due_date,
         description_notes: descriptionNotes || null,
+        contract_id: contractId,
         contract_module_id: contractModuleId || null,
         type: taskType,
-        deliverable_type: deliverableType,
+        weight,
+        deliverable_type: deliverableType ? normalizeDeliverableType(deliverableType) : null,
       } as any);
 
        // Save multiple assignees
        await setTaskAssignees.mutateAsync({ taskId: displayTask.id, memberIds: selectedAssignees });
       isDirtyRef.current = false;
+      return true;
+    } catch {
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -330,15 +337,22 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       setDescriptionNotes(displayTask.description_notes || "");
       setClientId(displayTask.client_id || "");
       setContractModuleId(displayTask.contract_module_id || "");
+      setTaskType(displayTask.type);
+      setWeight(displayTask.weight);
+      setDeliverableType(displayTask.deliverable_type || null);
     }
     onOpenChange(false);
   };
 
-  // Auto-save on outside click - close immediately, save in background
-  const handleOpenChange = (newOpen: boolean) => {
+  const closeWithSave = async () => {
+    const saved = await handleSave();
+    if (saved) onOpenChange(false);
+  };
+
+  const handleOpenChange = async (newOpen: boolean) => {
     if (!newOpen && displayTask && isDirtyRef.current) {
-      // Fire and forget - close immediately
-      handleSave();
+      const saved = await handleSave();
+      if (!saved) return;
     }
     onOpenChange(newOpen);
   };
@@ -409,8 +423,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       const tagName = target.tagName.toLowerCase();
       if (tagName === "textarea" || tagName === "input") return;
       e.preventDefault();
-      handleSave();
-      onOpenChange(false);
+      void closeWithSave();
     }
   };
 
@@ -423,6 +436,12 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
           isSubtask ? "max-w-lg" : "max-w-2xl"
         )}
         onKeyDown={handleDialogKeyDown}
+        onInteractOutside={(e) => {
+          if (isSaving) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isSaving) e.preventDefault();
+        }}
       >
         {isLoading ? (
           <div className="p-6 space-y-4">
@@ -1248,8 +1267,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
               <Button variant="outline" onClick={handleCancel}>
                 Cancelar
               </Button>
-              <Button onClick={() => { handleSave(); onOpenChange(false); }}>
-                Salvar
+              <Button onClick={() => void closeWithSave()} disabled={isSaving}>
+                {isSaving ? "Salvando..." : "Salvar"}
               </Button>
             </DialogFooter>
           </div>

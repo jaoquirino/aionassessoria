@@ -23,6 +23,7 @@ import type { Task } from "@/types/tasks";
 import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar, CornerDownRight, Video, Image, GalleryHorizontal, ChevronDown, ChevronRight } from "lucide-react";
 
 import { cn, parseLocalDate } from "@/lib/utils";
+import { getDeliverableTypeKind, getDeliverableTypeLabel } from "@/lib/deliverableType";
 
 interface TeamMemberTasksDialogProps {
   member: {
@@ -240,13 +241,15 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
              {deliverableType && (
                <Badge variant="outline" className={cn(
                  "text-xs",
-                 deliverableType === "arte" ? "border-purple-500/30 text-purple-500" :
-                 deliverableType === "carrossel" ? "border-orange-500/30 text-orange-500" :
-                 "border-info/30 text-info"
+                  getDeliverableTypeKind(deliverableType) === "arte" ? "border-purple-500/30 text-purple-500" :
+                  getDeliverableTypeKind(deliverableType) === "carrossel" ? "border-orange-500/30 text-orange-500" :
+                  getDeliverableTypeKind(deliverableType) === "video" ? "border-info/30 text-info" :
+                  "border-border text-muted-foreground"
                )}>
-                 {deliverableType === "arte" ? <><Image className="h-3 w-3 mr-1" />Arte</> :
-                  deliverableType === "carrossel" ? <><GalleryHorizontal className="h-3 w-3 mr-1" />Carrossel</> :
-                  <><Video className="h-3 w-3 mr-1" />Vídeo</>}
+                  {getDeliverableTypeKind(deliverableType) === "arte" ? <><Image className="h-3 w-3 mr-1" />{getDeliverableTypeLabel(deliverableType)}</> :
+                   getDeliverableTypeKind(deliverableType) === "carrossel" ? <><GalleryHorizontal className="h-3 w-3 mr-1" />{getDeliverableTypeLabel(deliverableType)}</> :
+                   getDeliverableTypeKind(deliverableType) === "video" ? <><Video className="h-3 w-3 mr-1" />{getDeliverableTypeLabel(deliverableType)}</> :
+                   getDeliverableTypeLabel(deliverableType)}
                </Badge>
              )}
              <Badge className={cn(status.color)}>

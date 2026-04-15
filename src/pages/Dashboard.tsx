@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { getDeliverableTypeKind, getDeliverableTypeLabel } from "@/lib/deliverableType";
 import { useDashboardData, type ClientTask } from "@/hooks/useDashboard";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
@@ -672,21 +673,26 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground">Receita</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="inline-flex items-center gap-1 text-sm font-bold text-info">
-                        <Video className="h-4 w-4" />
-                        {selectedClientHealth.videoCount}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-sm font-bold text-purple-500">
-                        <ImageIcon className="h-4 w-4" />
-                        {selectedClientHealth.arteCount}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-500">
-                        <GalleryHorizontal className="h-4 w-4" />
-                        {selectedClientHealth.carrosselCount}
-                      </span>
+                    <div className="flex items-center justify-center gap-3 flex-wrap">
+                      {Object.entries(selectedClientHealth.deliverableTypeCounts || {}).map(([type, count]) => {
+                        const kind = getDeliverableTypeKind(type);
+                        const colorClass = kind === "arte"
+                          ? "text-purple-500"
+                          : kind === "carrossel"
+                            ? "text-orange-500"
+                            : kind === "video"
+                              ? "text-info"
+                              : "text-muted-foreground";
+
+                        return (
+                          <span key={type} className={cn("inline-flex items-center gap-1 text-sm font-bold", colorClass)}>
+                            {kind === "arte" ? <ImageIcon className="h-4 w-4" /> : kind === "carrossel" ? <GalleryHorizontal className="h-4 w-4" /> : kind === "video" ? <Video className="h-4 w-4" /> : null}
+                            {getDeliverableTypeLabel(type)}: {count as number}
+                          </span>
+                        );
+                      })}
                     </div>
-                    <p className="text-xs text-muted-foreground">Vídeos / Artes / Carrosséis</p>
+                    <p className="text-xs text-muted-foreground">Entregáveis de design no período</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <p className="text-lg font-bold text-foreground">
@@ -785,9 +791,9 @@ export default function Dashboard() {
                               {task.deliverableType && (
                                 <Badge variant="outline" className={cn(
                                   "text-xs",
-                                  (task.deliverableType as string).toLowerCase() === "arte" ? "border-purple-500/30 text-purple-500" : (task.deliverableType as string).toLowerCase() === "carrossel" ? "border-orange-500/30 text-orange-500" : "border-info/30 text-info"
+                                  getDeliverableTypeKind(task.deliverableType) === "arte" ? "border-purple-500/30 text-purple-500" : getDeliverableTypeKind(task.deliverableType) === "carrossel" ? "border-orange-500/30 text-orange-500" : getDeliverableTypeKind(task.deliverableType) === "video" ? "border-info/30 text-info" : "border-border text-muted-foreground"
                                 )}>
-                                  {(task.deliverableType as string).toLowerCase() === "arte" ? "🎨 Arte" : (task.deliverableType as string).toLowerCase() === "carrossel" ? "📸 Carrossel" : "🎬 Vídeo"}
+                                  {getDeliverableTypeLabel(task.deliverableType)}
                                 </Badge>
                               )}
                               <Badge className={cn("text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>

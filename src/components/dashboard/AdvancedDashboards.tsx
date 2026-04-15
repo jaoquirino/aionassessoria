@@ -8,8 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDeliveriesByClient, useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
 import { useAllClients } from "@/hooks/useClients";
 import { cn } from "@/lib/utils";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { PeriodSelector, type PeriodOption, type CustomDateRange, getPeriodDates } from "./PeriodSelector";
+import { normalizeDeliverableType, getDeliverableTypeKind, getDeliverableTypeLabel } from "@/lib/deliverableType";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground", icon: Clock },
@@ -40,6 +41,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
   const [designFilter, setDesignFilter] = useState<string>("all");
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(new Set());
+  const [activePieIndex, setActivePieIndex] = useState(0);
 
   const toggleParentCollapse = useCallback((parentId: string) => {
     setCollapsedParents(prev => {
@@ -94,8 +96,95 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
     pending: filteredDeliveries.filter(d => d.status !== "done"),
   };
 
+  const deliveredBreakdown = useMemo(() => {
+    const doneItems = filteredDeliveries.filter(d => d.status === "done" && !d.isParentGroup);
+    const counts = new Map<string, number>();
+
+    doneItems.forEach((item) => {
+      const key = normalizeDeliverableType(item.deliverableType) || "outros";
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+
+    const total = doneItems.length || 1;
+    const colors: Record<string, string> = {
+      arte: "hsl(var(--primary))",
+      carrossel: "hsl(var(--warning))",
+      video: "hsl(var(--info))",
+      generic: "hsl(var(--muted-foreground))",
+      outros: "hsl(var(--muted-foreground))",
+    };
+
+    return Array.from(counts.entries()).map(([type, value]) => {
+      const kind = getDeliverableTypeKind(type);
+      return {
+        type,
+        label: getDeliverableTypeLabel(type) || "Outros",
+        value,
+        percentage: Math.round((value / total) * 100),
+        fill: colors[kind] || colors.generic,
+      };
+    });
+  }, [filteredDeliveries]);
+
   return (
     <div className="space-y-6">
+      {deliveredBreakdown.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Distribuição das entregas concluídas</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-6 md:grid-cols-[280px_1fr] items-center">
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={deliveredBreakdown}
+                    dataKey="value"
+                    nameKey="label"
+                    innerRadius={58}
+                    outerRadius={92}
+                    paddingAngle={3}
+                    onMouseEnter={(_, index) => setActivePieIndex(index)}
+                  >
+                    {deliveredBreakdown.map((entry, index) => (
+                      <Cell
+                        key={entry.type}
+                        fill={entry.fill}
+                        fillOpacity={activePieIndex === index ? 1 : 0.72}
+                        stroke={entry.fill}
+                        strokeWidth={activePieIndex === index ? 2 : 0}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number, _name, props: any) => [`${value} entregas · ${props.payload.percentage}%`, props.payload.label]}
+                    contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-3">
+              {deliveredBreakdown.map((item, index) => (
+                <div
+                  key={item.type}
+                  onMouseEnter={() => setActivePieIndex(index)}
+                  className={cn(
+                    "flex items-center justify-between rounded-lg border px-4 py-3 transition-all",
+                    activePieIndex === index && "bg-muted/50 border-primary/30"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.fill }} />
+                    <span className="font-medium text-foreground">{item.label}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">{item.value}</span> · {item.percentage}%</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header with Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -152,7 +241,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         const typeCounts = new Map<string, number>();
         countable.forEach(d => {
           if (d.deliverableType) {
-            const key = d.deliverableType.toLowerCase();
+              const key = normalizeDeliverableType(d.deliverableType);
             typeCounts.set(key, (typeCounts.get(key) || 0) + 1);
           }
         });
@@ -163,7 +252,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
         if (statusFilter === "done") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || d.status === "done");
         else if (statusFilter === "pending") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || d.status !== "done");
         else if (statusFilter === "overdue") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || (d.status !== "done" && new Date(d.dueDate) < new Date()));
-        if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || d.deliverableType === designFilter);
+        if (designFilter !== "all") displayDeliveries = displayDeliveries.filter(d => d.isParentGroup || normalizeDeliverableType(d.deliverableType) === designFilter);
         
         // Remove parent groups that have no visible children after filtering
         const visibleChildParents = new Set(displayDeliveries.filter(d => d.isSubtask && d.parentTaskId).map(d => d.parentTaskId));
@@ -374,9 +463,9 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                             {delivery.deliverableType && (
                               <Badge variant="outline" className={cn(
                                 "text-xs shrink-0",
-                                delivery.deliverableType === "arte" ? "border-purple/30 text-purple" : delivery.deliverableType === "carrossel" ? "border-orange-500/30 text-orange-500" : "border-info/30 text-info"
+                                 getDeliverableTypeKind(delivery.deliverableType) === "arte" ? "border-purple/30 text-purple" : getDeliverableTypeKind(delivery.deliverableType) === "carrossel" ? "border-orange-500/30 text-orange-500" : getDeliverableTypeKind(delivery.deliverableType) === "video" ? "border-info/30 text-info" : "border-border text-muted-foreground"
                               )}>
-                                {delivery.deliverableType === "arte" ? "🎨 Arte" : delivery.deliverableType === "carrossel" ? "📸 Carrossel" : "🎬 Vídeo"}
+                                 {getDeliverableTypeLabel(delivery.deliverableType)}
                               </Badge>
                             )}
                             <Badge className={cn("shrink-0", statusConfig[delivery.status]?.color)}>

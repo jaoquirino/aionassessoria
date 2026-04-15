@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { parseLocalDate } from "@/lib/utils";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
+import { normalizeDeliverableType } from "@/lib/deliverableType";
 
 export interface DashboardStats {
   overdueTasks: number;
@@ -128,16 +129,19 @@ export function useDashboardData() {
       const taskAssignees = taskAssigneesRes.data || [];
       const allDeliverableTypes = (deliverableTypesRes.data || []) as { name: string; module_id: string }[];
 
-      // Build set of valid deliverable type names (lowercased)
-      const validDeliverableTypes = new Set(allDeliverableTypes.map(dt => dt.name.toLowerCase()));
-
       // Build map: module_id -> set of deliverable type names
       const moduleDeliverableTypesMap = new Map<string, Set<string>>();
       allDeliverableTypes.forEach(dt => {
         const existing = moduleDeliverableTypesMap.get(dt.module_id) || new Set();
-        existing.add(dt.name.toLowerCase());
+        existing.add(normalizeDeliverableType(dt.name));
         moduleDeliverableTypesMap.set(dt.module_id, existing);
       });
+
+      const designContractModuleIds = new Set(
+        contractModules
+          .filter((cm: any) => (cm.service_module?.primary_role || "").toLowerCase().includes("design"))
+          .map((cm: any) => cm.id)
+      );
 
       // Build a map of task_id -> team_member_ids
       const taskAssigneeMap = new Map<string, string[]>();
@@ -235,10 +239,14 @@ export function useDashboardData() {
         if (cm.service_module?.name) contractModuleNameMap.set(cm.id, cm.service_module.name);
       });
 
-      const getAssigneeName = (task: any) => {
+      const getAssigneeIds = (task: any) => {
         const assigneeIds = taskAssigneeMap.get(task.id) || [];
         if (task.assigned_to) assigneeIds.push(task.assigned_to);
-        const uniqueIds = [...new Set(assigneeIds)];
+        return [...new Set(assigneeIds)];
+      };
+
+      const getAssigneeName = (task: any) => {
+        const uniqueIds = getAssigneeIds(task);
         if (uniqueIds.length === 0) return "Não atribuído";
         const names = uniqueIds.map(id => memberMap.get(id)).filter(Boolean);
         return names.length > 0 ? names.join(", ") : "Não atribuído";
@@ -251,7 +259,10 @@ export function useDashboardData() {
         clientName: clientMap.get(t.client_id) || "—",
         clientLogo: clientLogoMap.get(t.client_id) || null,
         assigneeName: getAssigneeName(t),
-        assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
+        assigneeAvatar: (() => {
+          const firstAssigneeId = getAssigneeIds(t)[0];
+          return firstAssigneeId ? (teamMembers.find(m => m.id === firstAssigneeId)?.avatar_url || null) : null;
+        })(),
         dueDate: t.due_date,
         status: t.status,
         isOverdue: parseLocalDate(t.due_date) < todayMidnight && t.status !== "done",
@@ -269,10 +280,12 @@ export function useDashboardData() {
 
       // Build a map of parent task deliverable_type so subtasks can inherit
       const parentDeliverableTypeMap = new Map<string, string>();
+      const parentContractModuleMap = new Map<string, string | null>();
       operationalTasks.forEach(t => {
         if (t.deliverable_type) {
           parentDeliverableTypeMap.set(t.id, t.deliverable_type);
         }
+        parentContractModuleMap.set(t.id, t.contract_module_id || null);
       });
 
       // Build map: contract_module_id -> module_id for quick lookup
@@ -288,10 +301,12 @@ export function useDashboardData() {
         
         // Inherit deliverable_type from parent if subtask doesn't have one
         const rawDeliverableType = t.deliverable_type || (t.parent_task_id ? parentDeliverableTypeMap.get(t.parent_task_id) : null) || "";
-        const deliverableType = rawDeliverableType.toLowerCase();
-        
-        // Check if deliverable type is valid (registered in module_deliverable_types)
-        const isValidDeliverable = deliverableType && validDeliverableTypes.has(deliverableType);
+        const deliverableType = normalizeDeliverableType(rawDeliverableType);
+        const effectiveContractModuleId = t.contract_module_id || (t.parent_task_id ? parentContractModuleMap.get(t.parent_task_id) : null) || null;
+        const effectiveModuleId = effectiveContractModuleId ? cmToModuleId.get(effectiveContractModuleId) || null : null;
+        const validTypesForModule = effectiveModuleId ? moduleDeliverableTypesMap.get(effectiveModuleId) : null;
+        const isValidDeliverable = !!deliverableType && !!validTypesForModule?.has(deliverableType);
+        const isDesignModule = !!effectiveContractModuleId && designContractModuleIds.has(effectiveContractModuleId);
 
         // Keep operational weight behavior
         if (t.status !== "done") {
@@ -299,7 +314,7 @@ export function useDashboardData() {
         }
 
         // Health deliveries = tasks with valid deliverable types in current month
-        if (isCurrentMonth && isValidDeliverable) {
+        if (isCurrentMonth && isDesignModule && isValidDeliverable) {
           curr.designDeliverables += 1;
           curr.deliverableTypeCounts[deliverableType] = (curr.deliverableTypeCounts[deliverableType] || 0) + 1;
           if (t.status === "done") curr.delivered += 1;
