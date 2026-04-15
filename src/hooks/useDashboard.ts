@@ -415,7 +415,7 @@ export function useDashboardData() {
           c.status === "active" && !c.is_internal && clientDesignLimitMap.has(c.id)
         )
         .map(c => {
-          const stats = clientTaskStats2.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, arteCount: 0, videoCount: 0, carrosselCount: 0, tasks: [] };
+          const stats = clientTaskStats2.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, deliverableTypeCounts: {}, tasks: [] };
           const revenue = clientRevenueMap.get(c.id) || 0;
           let healthStatus: "normal" | "attention" | "critical" = "normal";
           const designLimit = clientDesignLimitMap.get(c.id) || null;
@@ -436,9 +436,7 @@ export function useDashboardData() {
             healthStatus,
             designDeliverables: stats.designDeliverables,
             designLimit,
-            arteCount: stats.arteCount,
-            videoCount: stats.videoCount,
-            carrosselCount: stats.carrosselCount,
+            deliverableTypeCounts: stats.deliverableTypeCounts,
             delivered: stats.delivered,
             tasks: stats.tasks,
           };
