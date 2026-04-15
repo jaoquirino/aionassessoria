@@ -226,7 +226,86 @@ export default function Dashboard() {
       {/* ROW 1: Client Health */}
       {isAdmin && canViewClientHealth && (
         <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")}>
-...
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                <Heart className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Saúde dos Clientes</h3>
+                <p className="text-sm text-muted-foreground">Mês atual — Entregas de design × limite contratado</p>
+              </div>
+            </div>
+            <button onClick={() => navigate("/clientes")} className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+              Ver todos <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Cliente</th>
+                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Receita</th>
+                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Entregas</th>
+                  <th className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {clients.length === 0 ? (
+                  <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">Nenhum cliente ativo</td></tr>
+                ) : (
+                  clients.map((client) => (
+                    <tr key={client.id} className="group cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedClientHealth(client)}>
+                      <td className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("h-2 w-2 rounded-full shrink-0",
+                            client.healthStatus === "normal" && "bg-success",
+                            client.healthStatus === "attention" && "bg-warning",
+                            client.healthStatus === "critical" && "bg-destructive"
+                          )} />
+                          {client.logo_url && (
+                            <img src={client.logo_url} alt="" className="h-6 w-6 rounded object-contain shrink-0" />
+                          )}
+                          <span className="font-medium text-foreground">{client.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
+                      <td className="py-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            {Object.entries(client.deliverableTypeCounts || {}).map(([type, count]) => (
+                              <span key={type} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                                {type.charAt(0).toUpperCase() + type.slice(1)}: {count as number}
+                              </span>
+                            ))}
+                          </div>
+                          {client.designLimit != null && (
+                            <span className="text-xs font-medium text-foreground">
+                              {client.designDeliverables}
+                              <span className="text-muted-foreground">/{client.designLimit}</span>
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <span className={cn("text-xs font-medium capitalize",
+                          client.healthStatus === "normal" && "text-success",
+                          client.healthStatus === "attention" && "text-warning",
+                          client.healthStatus === "critical" && "text-destructive"
+                        )}>
+                          {client.healthStatus === "normal" ? "Saudável" : client.healthStatus === "attention" ? "Atenção" : "Crítico"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ROW 2: Capacity + Revenue */}
       {(canViewTeamCapacity || canViewRevenue) && (
         <div className="grid gap-6 lg:grid-cols-5">
           {canViewTeamCapacity && (
