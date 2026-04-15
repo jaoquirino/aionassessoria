@@ -59,21 +59,36 @@ export interface UpdateContractInput {
   is_recurring?: boolean;
 }
 
-function computeContractStatus(contract: Contract): { status: "active" | "expiring_soon" | "renewing" | "ended"; daysUntilRenewal: number } {
+function computeContractStatus(contract: Contract): { status: "active" | "expiring_soon" | "renewing" | "ended"; daysUntilRenewal: number; shouldAutoEnd: boolean } {
   if (contract.status === "ended") {
-    return { status: "ended", daysUntilRenewal: 0 };
+    return { status: "ended", daysUntilRenewal: 0, shouldAutoEnd: false };
   }
-  
+
+  const today = new Date();
   const renewalDate = contract.renewal_date ? parseLocalDate(contract.renewal_date) : null;
-  const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : 999;
+  const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, today) : 999;
+
+  // Non-recurring contracts: end after start_date + minimum_duration_months
+  if (!contract.is_recurring) {
+    const startDate = parseLocalDate(contract.start_date);
+    const endDate = addMonths(startDate, contract.minimum_duration_months);
+    if (today > endDate) {
+      return { status: "ended", daysUntilRenewal: 0, shouldAutoEnd: true };
+    }
+  }
+
+  // Any contract past renewal date → auto-end
+  if (renewalDate && today > renewalDate) {
+    return { status: "ended", daysUntilRenewal: 0, shouldAutoEnd: true };
+  }
   
   if (daysUntilRenewal <= 7) {
-    return { status: "renewing", daysUntilRenewal };
+    return { status: "renewing", daysUntilRenewal, shouldAutoEnd: false };
   }
   if (daysUntilRenewal <= 30) {
-    return { status: "expiring_soon", daysUntilRenewal };
+    return { status: "expiring_soon", daysUntilRenewal, shouldAutoEnd: false };
   }
-  return { status: "active", daysUntilRenewal };
+  return { status: "active", daysUntilRenewal, shouldAutoEnd: false };
 }
 
 // Fetch contracts for a specific client
