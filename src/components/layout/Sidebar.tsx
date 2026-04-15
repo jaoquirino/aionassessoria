@@ -11,12 +11,25 @@ import {
   Sun,
   Moon,
   Menu,
+  DollarSign,
+} from "lucide-react";
+  LayoutDashboard,
+  Users,
+  CheckSquare,
+  CalendarDays,
+  UserCircle,
+  ChevronLeft,
+  Sun,
+  Moon,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { NotificationBell } from "@/components/notifications/NotificationCenter";
+import { useMyModulePermissions } from "@/hooks/useModulePermissions";
+import { useIsAdmin } from "@/hooks/useUserRoles";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -25,11 +38,12 @@ import logoDark from "@/assets/logo-dark.png";
 import logoIcon from "@/assets/logo-icon.png";
 
 const allNavigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Clientes", href: "/clientes", icon: Users, adminOnly: true },
-  { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
-  { name: "Calendário", href: "/calendario", icon: CalendarDays },
-  { name: "Equipe", href: "/equipe", icon: UserCircle, adminOnly: true },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, moduleKey: "dashboard" },
+  { name: "Clientes", href: "/clientes", icon: Users, adminOnly: true, moduleKey: "clients" },
+  { name: "Tarefas", href: "/tarefas", icon: CheckSquare, moduleKey: "tasks" },
+  { name: "Calendário", href: "/calendario", icon: CalendarDays, moduleKey: "calendar" },
+  { name: "Equipe", href: "/equipe", icon: UserCircle, adminOnly: true, moduleKey: "team" },
+  { name: "Financeiro", href: "/financeiro", icon: DollarSign, adminOnly: true, moduleKey: "financial" },
 ];
 
 interface SidebarProps {
@@ -43,9 +57,21 @@ export function Sidebar({ isCollapsed, onCollapsedChange }: SidebarProps) {
   const { data: currentMember } = useCurrentTeamMember();
   const { isDark, toggleTheme } = useUserPreferences();
   const isMobile = useIsMobile();
+  const { data: modulePerms = [] } = useMyModulePermissions();
+  const { data: isAdminRole } = useIsAdmin();
 
   const isAdmin = currentMember?.permission === "admin";
-  const navigation = allNavigation.filter(item => !item.adminOnly || isAdmin);
+  
+  const navigation = allNavigation.filter(item => {
+    // Admin-only items check
+    if (item.adminOnly && !isAdmin) return false;
+    // Admins always see everything
+    if (isAdminRole) return true;
+    // Check module permissions
+    const perm = modulePerms.find(p => p.module === item.moduleKey);
+    // Default to true if no explicit permission set
+    return perm ? perm.can_access : true;
+  });
 
   const navItems = (collapsed: boolean, onNavClick?: () => void) =>
     navigation.map((item) => {
