@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, Save, Shield, ShieldCheck, Eye, EyeOff, Users } from "lucide-react";
+import { Loader2, Save, ShieldCheck, Eye, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,6 @@ import {
   DASHBOARD_SUB_PERMISSIONS,
   useUserModulePermissions,
   useBulkSetModulePermissions,
-  type ModuleKey,
 } from "@/hooks/useModulePermissions";
 import { useUsersWithRoles, type UserWithRole } from "@/hooks/useUserRoles";
 
