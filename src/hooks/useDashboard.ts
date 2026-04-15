@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { parseLocalDate } from "@/lib/utils";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
-import { normalizeDeliverableType } from "@/lib/deliverableType";
+import { getDeliverableTypeKind, normalizeDeliverableType } from "@/lib/deliverableType";
 
 export interface DashboardStats {
   overdueTasks: number;
@@ -302,10 +302,13 @@ export function useDashboardData() {
         // Inherit deliverable_type from parent if subtask doesn't have one
         const rawDeliverableType = t.deliverable_type || (t.parent_task_id ? parentDeliverableTypeMap.get(t.parent_task_id) : null) || "";
         const deliverableType = normalizeDeliverableType(rawDeliverableType);
+        const deliverableKind = getDeliverableTypeKind(rawDeliverableType);
         const effectiveContractModuleId = t.contract_module_id || (t.parent_task_id ? parentContractModuleMap.get(t.parent_task_id) : null) || null;
         const effectiveModuleId = effectiveContractModuleId ? cmToModuleId.get(effectiveContractModuleId) || null : null;
         const validTypesForModule = effectiveModuleId ? moduleDeliverableTypesMap.get(effectiveModuleId) : null;
-        const isValidDeliverable = !!deliverableType && !!validTypesForModule?.has(deliverableType);
+        const isCanonicalDesignDeliverable = deliverableKind === "arte" || deliverableKind === "carrossel" || deliverableKind === "video";
+        const isRegisteredDeliverable = !!deliverableType && !!validTypesForModule?.has(deliverableType);
+        const isValidDeliverable = isCanonicalDesignDeliverable || isRegisteredDeliverable;
         const isDesignModule = !!effectiveContractModuleId && designContractModuleIds.has(effectiveContractModuleId);
 
         // Keep operational weight behavior
@@ -316,7 +319,8 @@ export function useDashboardData() {
         // Health deliveries = tasks with valid deliverable types in current month
         if (isCurrentMonth && isDesignModule && isValidDeliverable) {
           curr.designDeliverables += 1;
-          curr.deliverableTypeCounts[deliverableType] = (curr.deliverableTypeCounts[deliverableType] || 0) + 1;
+          const countKey = isCanonicalDesignDeliverable ? deliverableKind : deliverableType;
+          curr.deliverableTypeCounts[countKey] = (curr.deliverableTypeCounts[countKey] || 0) + 1;
           if (t.status === "done") curr.delivered += 1;
           else curr.pending += 1;
 

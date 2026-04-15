@@ -278,7 +278,7 @@ export default function Dashboard() {
                       <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
                       <td className="py-4">
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2.5 flex-wrap">
+                          <div className="flex items-center gap-3 flex-wrap">
                             {Object.entries(client.deliverableTypeCounts || {}).map(([type, count]) => {
                               const kind = getDeliverableTypeKind(type);
 
@@ -295,9 +295,10 @@ export default function Dashboard() {
                                           ? "text-info"
                                           : "text-muted-foreground",
                                   )}
+                                  title={`${getDeliverableTypeLabel(type) || type}: ${count as number}`}
                                 >
                                   {kind === "arte" ? <ImageIcon className="h-3.5 w-3.5" /> : kind === "carrossel" ? <GalleryHorizontal className="h-3.5 w-3.5" /> : kind === "video" ? <Video className="h-3.5 w-3.5" /> : <Package className="h-3.5 w-3.5" />}
-                                  {getDeliverableTypeLabel(type) || type}: {count as number}
+                                  <span>{count as number}</span>
                                 </span>
                               );
                             })}
@@ -695,17 +696,17 @@ export default function Dashboard() {
                       {Object.entries(selectedClientHealth.deliverableTypeCounts || {}).map(([type, count]) => {
                         const kind = getDeliverableTypeKind(type);
                         const colorClass = kind === "arte"
-                          ? "text-purple-500"
+                          ? "text-primary"
                           : kind === "carrossel"
-                            ? "text-orange-500"
+                            ? "text-warning"
                             : kind === "video"
                               ? "text-info"
                               : "text-muted-foreground";
 
                         return (
-                          <span key={type} className={cn("inline-flex items-center gap-1 text-sm font-bold", colorClass)}>
-                            {kind === "arte" ? <ImageIcon className="h-4 w-4" /> : kind === "carrossel" ? <GalleryHorizontal className="h-4 w-4" /> : kind === "video" ? <Video className="h-4 w-4" /> : null}
-                            {getDeliverableTypeLabel(type)}: {count as number}
+                          <span key={type} className={cn("inline-flex items-center gap-1 text-sm font-bold", colorClass)} title={`${getDeliverableTypeLabel(type) || type}: ${count as number}`}>
+                            {kind === "arte" ? <ImageIcon className="h-4 w-4" /> : kind === "carrossel" ? <GalleryHorizontal className="h-4 w-4" /> : kind === "video" ? <Video className="h-4 w-4" /> : <Package className="h-4 w-4" />}
+                            {count as number}
                           </span>
                         );
                       })}
