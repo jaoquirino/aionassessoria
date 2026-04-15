@@ -10,9 +10,7 @@ import { useCreateTeamMember, useUpdateTeamMember, type TeamMember } from "@/hoo
 import { capitalizeName } from "@/lib/utils";
 import { useLinkToTeamMember, useUnlinkTeamMember, useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useUserRoles";
 import { cn } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch";
 import { PasswordRequirements } from "@/components/settings/PasswordRequirements";
 import { isPasswordStrong } from "@/lib/passwordValidation";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,14 +30,11 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [roles, setRoles] = useState<string[]>(["Designer"]);
-  const [permission, setPermission] = useState("operational");
   const [capacityLimit, setCapacityLimit] = useState(15);
-  const [restrictedView, setRestrictedView] = useState(false);
   const [isCreatingWithLogin, setIsCreatingWithLogin] = useState(false);
   const [employmentType, setEmploymentType] = useState<"employee" | "freelancer">("employee");
 
   const { user } = useAuth();
-  const { data: isAdmin } = useIsAdmin();
   const { data: currentTeamMember } = useCurrentTeamMember();
   const queryClient = useQueryClient();
   const createMember = useCreateTeamMember();
@@ -57,9 +52,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
       setName(member.name);
       const memberRoles = member.role?.split(",").map(r => r.trim()).filter(Boolean) || ["Designer"];
       setRoles(memberRoles);
-      setPermission(member.permission);
       setCapacityLimit(member.capacity_limit);
-      setRestrictedView((member as any).restricted_view ?? false);
       setEmploymentType((member as any).employment_type || "employee");
     } else {
       setName("");
@@ -67,9 +60,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
       setPassword("");
       setShowPassword(false);
       setRoles(["Designer"]);
-      setPermission("operational");
       setCapacityLimit(15);
-      setRestrictedView(false);
       setEmploymentType("employee");
     }
   }, [member, open]);
@@ -89,7 +80,6 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
   const handleSave = async () => {
     if (!name.trim() || roles.length === 0) return;
 
-    // Store roles as comma-separated string
     const roleString = roles.join(", ");
 
     try {
@@ -98,14 +88,11 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           id: member.id,
           name: capitalizeName(name.trim()),
           role: roleString,
-          permission,
           capacity_limit: capacityLimit,
-          restricted_view: restrictedView,
           employment_type: employmentType,
         });
         onOpenChange(false);
       } else if (username.trim() && password.trim()) {
-        // Create user with login credentials via edge function
         if (!isPasswordStrong(password)) {
           toast.error("A senha não atende aos requisitos de segurança");
           return;
@@ -124,17 +111,12 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
               password,
               fullName: capitalizeName(name.trim()),
               roles,
-              permission,
+              permission: "operational",
             },
           });
 
-          if (response.error) {
-            throw new Error(response.error.message || "Erro ao criar usuário");
-          }
-
-          if (response.data?.error) {
-            throw new Error(response.data.error);
-          }
+          if (response.error) throw new Error(response.error.message || "Erro ao criar usuário");
+          if (response.data?.error) throw new Error(response.data.error);
 
           toast.success("Membro criado com acesso ao sistema!");
           queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
@@ -144,11 +126,10 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           setIsCreatingWithLogin(false);
         }
       } else {
-        // Create member without login (just team_members record)
         await createMember.mutateAsync({
           name: name.trim(),
           role: roleString,
-          permission,
+          permission: "operational",
           capacity_limit: capacityLimit,
         });
         onOpenChange(false);
@@ -243,59 +224,56 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
 
           {/* Username and Password - only for new members */}
           {!isEditing && (
-            <>
-              <div className="p-3 rounded-lg border bg-muted/30 space-y-3">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Credenciais de Acesso</p>
-                  <p className="text-xs text-muted-foreground">
-                    Preencha para que o membro possa fazer login no sistema
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="flex items-center gap-2">
-                    <AtSign className="h-4 w-4" />
-                    Usuário
-                  </Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
-                    placeholder="nome.usuario"
-                    autoComplete="off"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Mínimo 12 caracteres"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {password && <PasswordRequirements password={password} />}
-                </div>
+            <div className="p-3 rounded-lg border bg-muted/30 space-y-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Credenciais de Acesso</p>
+                <p className="text-xs text-muted-foreground">
+                  Preencha para que o membro possa fazer login no sistema
+                </p>
               </div>
-            </>
+              
+              <div className="space-y-2">
+                <Label htmlFor="username" className="flex items-center gap-2">
+                  <AtSign className="h-4 w-4" />
+                  Usuário
+                </Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
+                  placeholder="nome.usuario"
+                  autoComplete="off"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Mínimo 12 caracteres"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {password && <PasswordRequirements password={password} />}
+              </div>
+            </div>
           )}
 
           <div className="space-y-2">
             <Label>Cargos / Funções *</Label>
             <p className="text-xs text-muted-foreground">Um membro pode ter múltiplos cargos</p>
             
-            {/* Selected Roles */}
             <div className="flex flex-wrap gap-2 min-h-[32px] p-2 border rounded-md bg-muted/30">
               {roles.map((role) => (
                 <Badge 
@@ -319,7 +297,6 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
               ))}
             </div>
 
-            {/* Add Role */}
             {availableRoles.length > 0 && (
               <Select value="" onValueChange={handleAddRole}>
                 <SelectTrigger>
@@ -332,19 +309,6 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
                 </SelectContent>
               </Select>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="permission">Nível de Acesso</Label>
-            <Select value={permission} onValueChange={setPermission}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="operational">Operacional</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">
@@ -376,20 +340,6 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
                 <SelectItem value="freelancer">Freelancer</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Restricted View Toggle */}
-          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-            <div>
-              <p className="text-sm font-medium">Visão restrita</p>
-              <p className="text-xs text-muted-foreground">
-                Só verá tarefas atribuídas a ele
-              </p>
-            </div>
-            <Switch
-              checked={restrictedView}
-              onCheckedChange={setRestrictedView}
-            />
           </div>
         </div>
 

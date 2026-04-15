@@ -27,12 +27,25 @@ import logoIcon from "@/assets/logo-icon.png";
 
 const allNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard, moduleKey: "dashboard" },
-  { name: "Clientes", href: "/clientes", icon: Users, adminOnly: true, moduleKey: "clients" },
+  { name: "Clientes", href: "/clientes", icon: Users, moduleKey: "clients" },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare, moduleKey: "tasks" },
   { name: "Calendário", href: "/calendario", icon: CalendarDays, moduleKey: "calendar" },
-  { name: "Equipe", href: "/equipe", icon: UserCircle, adminOnly: true, moduleKey: "team" },
-  { name: "Financeiro", href: "/financeiro", icon: DollarSign, adminOnly: true, moduleKey: "financial" },
+  { name: "Equipe", href: "/equipe", icon: UserCircle, moduleKey: "team" },
+  { name: "Financeiro", href: "/financeiro", icon: DollarSign, moduleKey: "financial" },
 ];
+
+// Default module access by role
+// Admin: everything
+// Gestor: dashboard, tasks, calendar, team
+// Operational (member): dashboard, tasks
+function getDefaultAccess(permission: string, moduleKey: string): boolean {
+  if (permission === "admin") return true;
+  if (permission === "gestor") {
+    return ["dashboard", "tasks", "calendar", "team"].includes(moduleKey);
+  }
+  // operational / member
+  return ["dashboard", "tasks"].includes(moduleKey);
+}
 
 export function TopNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -44,13 +57,18 @@ export function TopNavbar() {
   const { data: isAdminRole } = useIsAdmin();
 
   const isAdmin = currentMember?.permission === "admin" || !!isAdminRole;
-  const isGestor = currentMember?.permission === "gestor";
+  const permission = isAdmin ? "admin" : (currentMember?.permission || "operational");
 
   const navigation = allNavigation.filter((item) => {
-    if (item.adminOnly && !isAdmin && !isGestor) return false;
+    // Admin sees everything
     if (isAdmin) return true;
+
+    // Check explicit module permissions first
     const perm = modulePerms.find((p) => p.module === item.moduleKey);
-    return perm ? perm.can_access : true;
+    if (perm) return perm.can_access;
+
+    // Fall back to role defaults
+    return getDefaultAccess(permission, item.moduleKey);
   });
 
   return (
