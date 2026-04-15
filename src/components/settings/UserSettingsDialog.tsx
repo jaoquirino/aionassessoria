@@ -513,7 +513,7 @@ export function UserSettingsDialog({
           {/* ========== RATES TAB ========== */}
           {user.team_member_id && (
             <TabsContent value="rates" className="mt-0">
-              <ProductionRatesSection teamMemberId={user.team_member_id} userName={user.full_name || user.username || ""} />
+              <ProductionRatesSection teamMemberId={user.team_member_id} />
             </TabsContent>
           )}
         </Tabs>
