@@ -22,7 +22,7 @@ import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, type AppRole } fr
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPreferences";
-import { useCapacitySettings } from "@/hooks/useCapacitySettings";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AvatarCropDialog } from "@/components/settings/AvatarCropDialog";
