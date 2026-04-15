@@ -64,7 +64,7 @@ export function useCanAccessModule(moduleKey: ModuleKey) {
   if (isLoading) return { canAccess: true, isLoading: true }; // default allow while loading
 
   const perm = permissions?.find((p) => p.module === moduleKey);
-  // Default to true if no record exists
+  // Default to true if no record exists (navbar handles role-based filtering)
   return { canAccess: perm ? perm.can_access : true, isLoading: false };
 }
 

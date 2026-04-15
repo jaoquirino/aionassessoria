@@ -507,7 +507,7 @@ export function UserSettingsDialog({
           {/* ========== MODULES TAB ========== */}
           {!isAdmin && user.role && (
             <TabsContent value="modules" className="mt-0">
-              <ModulePermissionsSection userId={user.id} />
+              <ModulePermissionsSection userId={user.id} userPermission={user.permission || (user.role === "gestor" ? "gestor" : "operational")} />
             </TabsContent>
           )}
 
@@ -524,7 +524,16 @@ export function UserSettingsDialog({
 }
 
 /* ========== Module Permissions Section (inline) ========== */
-function ModulePermissionsSection({ userId }: { userId: string }) {
+function getDefaultModuleAccess(permission: string, moduleKey: string): boolean {
+  if (permission === "admin") return true;
+  if (permission === "gestor") {
+    return ["dashboard", "tasks", "calendar", "team"].includes(moduleKey);
+  }
+  // operational
+  return ["dashboard", "tasks"].includes(moduleKey);
+}
+
+function ModulePermissionsSection({ userId, userPermission }: { userId: string; userPermission: string }) {
   const { data: existingPerms = [], isLoading } = useUserModulePermissions(userId);
   const bulkSet = useBulkSetModulePermissions();
 
@@ -537,7 +546,8 @@ function ModulePermissionsSection({ userId }: { userId: string }) {
 
     ALL_MODULES.forEach((m) => {
       const perm = existingPerms.find((p) => p.module === m.key);
-      states[m.key] = perm ? perm.can_access : true;
+      // Use role-based default when no explicit permission exists
+      states[m.key] = perm ? perm.can_access : getDefaultModuleAccess(userPermission, m.key);
     });
 
     const dashPerm = existingPerms.find((p) => p.module === "dashboard");
@@ -548,7 +558,7 @@ function ModulePermissionsSection({ userId }: { userId: string }) {
 
     setModuleStates(states);
     setDashboardSubs(subs);
-  }, [existingPerms]);
+  }, [existingPerms, userPermission]);
 
   const handleSave = () => {
     const permissions = ALL_MODULES.map((m) => ({
@@ -562,8 +572,8 @@ function ModulePermissionsSection({ userId }: { userId: string }) {
   const hasChanges = () => {
     for (const m of ALL_MODULES) {
       const perm = existingPerms.find((p) => p.module === m.key);
-      const currentVal = moduleStates[m.key] ?? true;
-      const originalVal = perm ? perm.can_access : true;
+      const currentVal = moduleStates[m.key] ?? getDefaultModuleAccess(userPermission, m.key);
+      const originalVal = perm ? perm.can_access : getDefaultModuleAccess(userPermission, m.key);
       if (currentVal !== originalVal) return true;
     }
     const dashPerm = existingPerms.find((p) => p.module === "dashboard");
