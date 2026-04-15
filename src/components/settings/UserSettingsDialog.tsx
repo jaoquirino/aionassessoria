@@ -33,11 +33,10 @@ import {
 } from "@/hooks/useModulePermissions";
 import { useFreelancerRates, useUpsertFreelancerRate, useDeleteFreelancerRate } from "@/hooks/useFreelancerRates";
 import { useAllModules } from "@/hooks/useModules";
+import { useAllModuleDeliverableTypes } from "@/hooks/useModuleDeliverableTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-
-const COMMON_DELIVERABLE_TYPES = ["Arte", "Vídeo", "Carrossel", "Fotografia", "Reels", "Stories", "Post"];
 
 interface UserSettingsDialogProps {
   user: UserWithRole | null;
