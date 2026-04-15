@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   DollarSign,
@@ -332,7 +332,7 @@ export default function Financial() {
 
         {/* Recebimentos Tab */}
         <TabsContent value="recebimentos">
-          <ContractPaymentsTab hideValues={hideValues} />
+          <ContractPaymentsTab hideValues={hideValues} currentMonth={currentMonth} />
         </TabsContent>
 
         {/* Freelancers Tab */}
@@ -374,10 +374,13 @@ export default function Financial() {
 }
 
 // ===== Contract Payments Tab =====
-function ContractPaymentsTab({ hideValues }: { hideValues: boolean }) {
+function ContractPaymentsTab({ hideValues, currentMonth }: { hideValues: boolean; currentMonth: string }) {
   const { data: clients = [] } = useAllClients();
+  const generatePayments = useGenerateContractPayments();
+  const markPaid = useMarkContractPaymentPaid();
+  const unmarkPayment = useUnmarkContractPayment();
 
-  // Group active contracts by client using data from useAllClients
+  // Build list of active contracts grouped by client
   const clientContracts = useMemo(() => {
     const grouped: Array<{
       client: { id: string; name: string; logo_url: string | null; color: string | null };
@@ -398,6 +401,7 @@ function ContractPaymentsTab({ hideValues }: { hideValues: boolean }) {
     return grouped.sort((a, b) => a.client.name.localeCompare(b.client.name));
   }, [clients]);
 
+
   if (clientContracts.length === 0) {
     return (
       <Card>
@@ -408,10 +412,12 @@ function ContractPaymentsTab({ hideValues }: { hideValues: boolean }) {
     );
   }
 
+  const selectedMonthRef = `${currentMonth}-01`; // e.g. "2026-04-01"
+
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        Controle de recebimentos mensais dos contratos ativos. Marque como pago para gerar automaticamente uma entrada no financeiro.
+        Recebimentos do mês selecionado. Marque como pago para gerar uma entrada automática.
       </p>
       {clientContracts.map(({ client, contracts: clientCtrcts }) => (
         <Card key={client.id}>
@@ -427,13 +433,17 @@ function ContractPaymentsTab({ hideValues }: { hideValues: boolean }) {
               {client.name}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {clientCtrcts.map((contract: any) => (
-              <ContractPaymentRow
+              <ContractMonthPaymentRow
                 key={contract.id}
                 contractId={contract.id}
                 monthlyValue={Number(contract.monthly_value)}
                 hideValues={hideValues}
+                referenceMonth={selectedMonthRef}
+                markPaid={markPaid}
+                unmarkPayment={unmarkPayment}
+                generatePayments={generatePayments}
               />
             ))}
           </CardContent>
@@ -443,99 +453,96 @@ function ContractPaymentsTab({ hideValues }: { hideValues: boolean }) {
   );
 }
 
-function ContractPaymentRow({ contractId, monthlyValue, hideValues }: { contractId: string; monthlyValue: number; hideValues: boolean }) {
-  const { data: payments = [], isLoading } = useContractPayments(contractId);
-  const generatePayments = useGenerateContractPayments();
-  const markPaid = useMarkContractPaymentPaid();
-  const unmarkPayment = useUnmarkContractPayment();
+// Shows a single month's payment for a contract
+function ContractMonthPaymentRow({
+  contractId,
+  monthlyValue,
+  hideValues,
+  referenceMonth,
+  markPaid,
+  unmarkPayment,
+  generatePayments,
+}: {
+  contractId: string;
+  monthlyValue: number;
+  hideValues: boolean;
+  referenceMonth: string;
+  markPaid: ReturnType<typeof useMarkContractPaymentPaid>;
+  unmarkPayment: ReturnType<typeof useUnmarkContractPayment>;
+  generatePayments: ReturnType<typeof useGenerateContractPayments>;
+}) {
+  const { data: allPayments = [], isLoading } = useContractPayments(contractId);
 
-  const handleGenerate = () => generatePayments.mutateAsync(contractId);
+  // Find payment for this specific month
+  const payment = allPayments.find(p => p.reference_month === referenceMonth);
 
   if (isLoading) {
-    return <div className="flex justify-center py-3"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>;
+    return <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>;
   }
 
-  if (payments.length === 0) {
+  // If no payment exists for this month, offer to generate
+  if (!payment) {
     return (
-      <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
+      <div className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20">
         <span className="text-sm text-muted-foreground">
-          {hideValues ? "••••" : formatCurrency(monthlyValue)}/mês
+          {hideValues ? "••••" : formatCurrency(monthlyValue)}/mês — Sem registro para este mês
         </span>
-        <Button variant="outline" size="sm" onClick={handleGenerate} disabled={generatePayments.isPending} className="gap-1.5 h-7 text-xs">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => generatePayments.mutateAsync(contractId)}
+          disabled={generatePayments.isPending}
+          className="gap-1.5 h-7 text-xs"
+        >
           {generatePayments.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-          Gerar meses
+          Gerar
         </Button>
       </div>
     );
   }
 
+  const isPaid = payment.status === "paid";
+
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-muted-foreground">
-          {hideValues ? "••••" : formatCurrency(monthlyValue)}/mês
-        </span>
+    <div className="flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+      {isPaid ? (
+        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+      ) : (
+        <Clock className="h-4 w-4 text-yellow-500 shrink-0" />
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium">
+          {isPaid ? "Recebido" : "Pendente"}
+        </p>
+        {isPaid && payment.paid_at && (
+          <p className="text-xs text-muted-foreground">
+            Pago em {format(new Date(payment.paid_at), "dd/MM/yyyy")}
+          </p>
+        )}
+      </div>
+      <span className="text-sm font-medium">{hideValues ? "••••" : formatCurrency(monthlyValue)}</span>
+      {isPaid ? (
         <Button
           variant="ghost"
-          size="sm"
-          onClick={handleGenerate}
-          disabled={generatePayments.isPending}
-          className="gap-1 h-6 text-xs text-muted-foreground"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => unmarkPayment.mutateAsync({ paymentId: payment.id, contractId })}
+          disabled={unmarkPayment.isPending}
+          title="Reverter"
         >
-          <RefreshCw className="h-3 w-3" />
-          Atualizar
+          <Undo2 className="h-3.5 w-3.5 text-muted-foreground" />
         </Button>
-      </div>
-      {payments.slice(0, 6).map((payment) => {
-        const isPaid = payment.status === "paid";
-        return (
-          <div key={payment.id} className="flex items-center gap-3 p-2 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
-            {isPaid ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-            ) : (
-              <Clock className="h-4 w-4 text-yellow-500 shrink-0" />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium capitalize">
-                {format(parseISO(payment.reference_month), "MMMM yyyy", { locale: ptBR })}
-              </p>
-              {isPaid && payment.paid_at && (
-                <p className="text-xs text-muted-foreground">
-                  Pago em {format(new Date(payment.paid_at), "dd/MM/yyyy")}
-                </p>
-              )}
-            </div>
-            <span className="text-sm font-medium">{hideValues ? "••••" : formatCurrency(monthlyValue)}</span>
-            {isPaid ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => unmarkPayment.mutateAsync({ paymentId: payment.id, contractId })}
-                disabled={unmarkPayment.isPending}
-                title="Reverter"
-              >
-                <Undo2 className="h-3.5 w-3.5 text-muted-foreground" />
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs gap-1"
-                onClick={() => markPaid.mutateAsync({ paymentId: payment.id, contractId })}
-                disabled={markPaid.isPending}
-              >
-                <CheckCircle2 className="h-3 w-3" />
-                Pago
-              </Button>
-            )}
-          </div>
-        );
-      })}
-      {payments.length > 6 && (
-        <p className="text-xs text-muted-foreground text-center py-1">
-          +{payments.length - 6} meses anteriores
-        </p>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs gap-1"
+          onClick={() => markPaid.mutateAsync({ paymentId: payment.id, contractId })}
+          disabled={markPaid.isPending}
+        >
+          <CheckCircle2 className="h-3 w-3" />
+          Pago
+        </Button>
       )}
     </div>
   );
