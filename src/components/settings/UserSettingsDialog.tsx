@@ -748,7 +748,7 @@ function ProductionRatesSection({ teamMemberId, userName }: { teamMemberId: stri
               <SelectValue placeholder="Módulo inteiro" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Módulo inteiro</SelectItem>
+              <SelectItem value="__none">Módulo inteiro</SelectItem>
               {existingTypes.map((dt) => (
                 <SelectItem key={dt} value={dt}>{dt}</SelectItem>
               ))}
