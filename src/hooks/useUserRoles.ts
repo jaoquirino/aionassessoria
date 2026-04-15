@@ -172,7 +172,7 @@ export function useSetUserRole() {
           .from("team_members")
           .update({ 
             is_active: true,
-            permission: role === "admin" ? "admin" : "operational",
+            permission: role === "admin" ? "admin" : role === "gestor" ? "gestor" : "operational",
             ...(teamConfig?.roles && { role: teamConfig.roles }),
             ...(teamConfig?.capacityLimit !== undefined && { capacity_limit: teamConfig.capacityLimit }),
             ...(teamConfig?.restrictedView !== undefined && { restricted_view: teamConfig.restrictedView }),
@@ -193,7 +193,7 @@ export function useSetUserRole() {
               user_id: userId,
               name: profile.full_name || "Novo Integrante",
               role: teamConfig?.roles || "A definir",
-              permission: role === "admin" ? "admin" : "operational",
+              permission: role === "admin" ? "admin" : role === "gestor" ? "gestor" : "operational",
               avatar_url: profile.avatar_url,
               is_active: true,
               capacity_limit: teamConfig?.capacityLimit ?? 15,
