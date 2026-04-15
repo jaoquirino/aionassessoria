@@ -524,7 +524,16 @@ export function UserSettingsDialog({
 }
 
 /* ========== Module Permissions Section (inline) ========== */
-function ModulePermissionsSection({ userId }: { userId: string }) {
+function getDefaultModuleAccess(permission: string, moduleKey: string): boolean {
+  if (permission === "admin") return true;
+  if (permission === "gestor") {
+    return ["dashboard", "tasks", "calendar", "team"].includes(moduleKey);
+  }
+  // operational
+  return ["dashboard", "tasks"].includes(moduleKey);
+}
+
+function ModulePermissionsSection({ userId, userPermission }: { userId: string; userPermission: string }) {
   const { data: existingPerms = [], isLoading } = useUserModulePermissions(userId);
   const bulkSet = useBulkSetModulePermissions();
 
@@ -537,7 +546,8 @@ function ModulePermissionsSection({ userId }: { userId: string }) {
 
     ALL_MODULES.forEach((m) => {
       const perm = existingPerms.find((p) => p.module === m.key);
-      states[m.key] = perm ? perm.can_access : true;
+      // Use role-based default when no explicit permission exists
+      states[m.key] = perm ? perm.can_access : getDefaultModuleAccess(userPermission, m.key);
     });
 
     const dashPerm = existingPerms.find((p) => p.module === "dashboard");
@@ -548,7 +558,7 @@ function ModulePermissionsSection({ userId }: { userId: string }) {
 
     setModuleStates(states);
     setDashboardSubs(subs);
-  }, [existingPerms]);
+  }, [existingPerms, userPermission]);
 
   const handleSave = () => {
     const permissions = ALL_MODULES.map((m) => ({
