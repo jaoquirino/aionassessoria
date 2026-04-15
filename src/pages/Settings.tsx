@@ -1154,6 +1154,12 @@ export default function Settings() {
               <ModulesManagementTab />
             </TabsContent>
           )}
+          {isAdmin && (
+            <TabsContent value="module_permissions">
+              <ModulePermissionsTab />
+            </TabsContent>
+          )}
+          )}
         </Tabs>
       </motion.div>
 
