@@ -7,7 +7,6 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import {
   Calculator,
   Send,
