@@ -672,16 +672,15 @@ function ProductionRatesSection({ teamMemberId }: { teamMemberId: string }) {
 
   const handleAdd = async () => {
     if (!newModuleId || newRate <= 0) return;
-    const deliverableType = newDeliverableType === "__custom" ? customType.trim() : (newDeliverableType && newDeliverableType !== "__none" ? newDeliverableType : null);
+    const deliverableType = newDeliverableType && newDeliverableType !== "__none" ? newDeliverableType : null;
     await upsertRate.mutateAsync({
       team_member_id: teamMemberId,
       module_id: newModuleId,
-      deliverable_type: deliverableType || null,
+      deliverable_type: deliverableType,
       rate_per_unit: newRate,
     });
     setNewModuleId("");
     setNewDeliverableType("");
-    setCustomType("");
     setNewRate(0);
   };
 
