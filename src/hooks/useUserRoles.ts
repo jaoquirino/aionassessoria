@@ -63,9 +63,16 @@ export function useIsTeamMember() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("useIsTeamMember error:", error);
+        throw error;
+      }
+      console.log("useIsTeamMember result for", user.id, ":", data);
       return !!data;
     },
+    staleTime: 0,
+    retry: 3,
+    retryDelay: 1000,
   });
 }
 
