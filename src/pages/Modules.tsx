@@ -39,6 +39,7 @@ export default function Modules() {
   const [deletingModule, setDeletingModule] = useState<ModuleWithStats | null>(null);
 
   const { data: modules = [], isLoading } = useAllModules();
+  const { data: allDeliverableTypes = [] } = useAllModuleDeliverableTypes();
   const deleteModule = useDeleteModule();
 
   const allRoles = useMemo(() => {
