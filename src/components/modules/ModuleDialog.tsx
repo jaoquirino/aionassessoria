@@ -128,16 +128,6 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descrição do serviço..."
-              rows={2}
-            />
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="weight">Peso Padrão</Label>
@@ -168,15 +158,6 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
             </Select>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <p className="font-medium">Recorrente</p>
-              <p className="text-sm text-muted-foreground">
-                Este módulo gera entregas mensais
-              </p>
-            </div>
-            <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
-          </div>
 
           {/* Sub-services / Deliverable Types - only when editing */}
           {isEditing && module && (

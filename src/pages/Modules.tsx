@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+
 import { useAllModules, useDeleteModule, type ServiceModule } from "@/hooks/useModules";
 import { useAllModuleDeliverableTypes } from "@/hooks/useModuleDeliverableTypes";
 import { ModuleDialog } from "@/components/modules/ModuleDialog";
@@ -58,7 +58,7 @@ export default function Modules() {
 
       return matchesSearch && matchesRole;
     });
-  }, [modules, search, recurrenceFilter, roleFilter]);
+  }, [modules, search, roleFilter]);
 
   const activeModules = modules.filter(m => m.is_active);
 
