@@ -650,7 +650,7 @@ function ModulePermissionsSection({ userId, userPermission }: { userId: string; 
 }
 
 /* ========== Production Rates Section (inline) ========== */
-function ProductionRatesSection({ teamMemberId, userName }: { teamMemberId: string; userName: string }) {
+function ProductionRatesSection({ teamMemberId }: { teamMemberId: string }) {
   const [newModuleId, setNewModuleId] = useState("");
   const [newDeliverableType, setNewDeliverableType] = useState("");
   const [customType, setCustomType] = useState("");
@@ -658,19 +658,17 @@ function ProductionRatesSection({ teamMemberId, userName }: { teamMemberId: stri
 
   const { data: rates = [], isLoading } = useFreelancerRates(teamMemberId);
   const { data: modules = [] } = useAllModules();
+  const { data: allDeliverableTypes = [] } = useAllModuleDeliverableTypes();
   const upsertRate = useUpsertFreelancerRate();
   const deleteRate = useDeleteFreelancerRate();
 
   const activeModules = modules.filter(m => m.is_active);
 
-  const existingTypes = useMemo(() => {
-    const types = new Set<string>();
-    COMMON_DELIVERABLE_TYPES.forEach(t => types.add(t));
-    rates.forEach(r => {
-      if (r.deliverable_type) types.add(r.deliverable_type);
-    });
-    return Array.from(types).sort();
-  }, [rates]);
+  // Get deliverable types for the selected module
+  const moduleDeliverableTypes = useMemo(() => {
+    if (!newModuleId) return [];
+    return allDeliverableTypes.filter(dt => dt.module_id === newModuleId).map(dt => dt.name);
+  }, [newModuleId, allDeliverableTypes]);
 
   const handleAdd = async () => {
     if (!newModuleId || newRate <= 0) return;
