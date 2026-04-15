@@ -300,6 +300,12 @@ export function UserSettingsDialog({
                     Administrador
                   </div>
                 </SelectItem>
+                <SelectItem value="gestor">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-3 w-3" />
+                    Gestor de Equipe
+                  </div>
+                </SelectItem>
                 <SelectItem value="member">
                   <div className="flex items-center gap-2">
                     <Shield className="h-3 w-3" />
