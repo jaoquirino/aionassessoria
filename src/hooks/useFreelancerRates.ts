@@ -39,14 +39,19 @@ export function useUpsertFreelancerRate() {
       rate_per_unit: number;
     }) => {
       // Try update first, then insert
-      const { data: existing } = await supabase
+      let query = supabase
         .from("freelancer_rates")
         .select("id")
         .eq("team_member_id", input.team_member_id)
-        .eq("module_id", input.module_id)
-        .is("deliverable_type", input.deliverable_type === null ? null : undefined)
-        .eq("deliverable_type", input.deliverable_type || "")
-        .maybeSingle();
+        .eq("module_id", input.module_id);
+
+      if (input.deliverable_type) {
+        query = query.eq("deliverable_type", input.deliverable_type);
+      } else {
+        query = query.is("deliverable_type", null);
+      }
+
+      const { data: existing } = await query.maybeSingle();
 
       if (existing) {
         const { error } = await supabase
