@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign, Briefcase, Puzzle, Clock } from "lucide-react";
+import { Save, User, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, AtSign, Puzzle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +31,7 @@ import { PasswordRequirements } from "@/components/settings/PasswordRequirements
 import { isPasswordStrong } from "@/lib/passwordValidation";
 import { OnboardingTemplatesTab } from "@/components/settings/OnboardingTemplatesTab";
 import { ArchivedTasksTab } from "@/components/settings/ArchivedTasksTab";
-import { ClientDataExportTab } from "@/components/settings/ClientDataExportTab";
+
 import { CreateUserDialog } from "@/components/settings/CreateUserDialog";
 import { RolesManagementTab } from "@/components/settings/RolesManagementTab";
 import { PrioritiesManagementTab } from "@/components/settings/PrioritiesManagementTab";
