@@ -665,7 +665,7 @@ function ProductionRatesSection({ teamMemberId, userName }: { teamMemberId: stri
 
   const handleAdd = async () => {
     if (!newModuleId || newRate <= 0) return;
-    const deliverableType = newDeliverableType === "__custom" ? customType.trim() : (newDeliverableType || null);
+    const deliverableType = newDeliverableType === "__custom" ? customType.trim() : (newDeliverableType && newDeliverableType !== "__none" ? newDeliverableType : null);
     await upsertRate.mutateAsync({
       team_member_id: teamMemberId,
       module_id: newModuleId,
