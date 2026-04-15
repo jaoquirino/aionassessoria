@@ -16,9 +16,10 @@ import { cn } from "@/lib/utils";
 
 interface UserProfileDropdownProps {
   isCollapsed?: boolean;
+  isTopbar?: boolean;
 }
 
-export function UserProfileDropdown({ isCollapsed = false }: UserProfileDropdownProps) {
+export function UserProfileDropdown({ isCollapsed = false, isTopbar = false }: UserProfileDropdownProps) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null; username: string | null }>({
