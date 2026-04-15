@@ -290,10 +290,10 @@ export default function Team() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                   {(member as any).employment_type === "freelancer" && (
                     <button
-                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                      className="rounded-lg p-1.5 text-primary hover:bg-primary/10 transition-colors"
                       onClick={(e) => { e.stopPropagation(); setRatesMember(member); }}
                       title="Valores por produção"
                     >
