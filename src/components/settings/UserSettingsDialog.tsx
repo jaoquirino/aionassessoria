@@ -764,15 +764,6 @@ function ProductionRatesSection({ teamMemberId }: { teamMemberId: string }) {
             </Select>
           </div>
         )}
-          {newDeliverableType === "__custom" && (
-            <Input
-              placeholder="Digite o tipo de entrega"
-              value={customType}
-              onChange={(e) => setCustomType(e.target.value)}
-              className="h-9"
-            />
-          )}
-        </div>
 
         <div className="space-y-2">
           <Label className="text-xs">Valor por peça *</Label>
@@ -781,7 +772,7 @@ function ProductionRatesSection({ teamMemberId }: { teamMemberId: string }) {
 
         <Button
           onClick={handleAdd}
-          disabled={!newModuleId || newRate <= 0 || upsertRate.isPending || (newDeliverableType === "__custom" && !customType.trim())}
+          disabled={!newModuleId || newRate <= 0 || upsertRate.isPending}
           className="w-full gap-2"
           size="sm"
         >
