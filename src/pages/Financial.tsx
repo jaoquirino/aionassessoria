@@ -68,7 +68,7 @@ import {
   useMarkContractPaymentPaid,
   useUnmarkContractPayment,
 } from "@/hooks/useContractPayments";
-import { useContracts } from "@/hooks/useContracts";
+import { useQuery } from "@tanstack/react-query";
 import { subMonths } from "date-fns";
 
 export default function Financial() {
