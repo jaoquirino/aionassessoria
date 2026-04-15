@@ -101,6 +101,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           permission,
           capacity_limit: capacityLimit,
           restricted_view: restrictedView,
+          employment_type: employmentType,
         });
         onOpenChange(false);
       } else if (username.trim() && password.trim()) {
