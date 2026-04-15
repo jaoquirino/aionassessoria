@@ -4,19 +4,12 @@ import { Save, User, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserP
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, type AppRole } from "@/hooks/useUserRoles";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
@@ -40,17 +33,6 @@ import { ModulesManagementTab } from "@/components/settings/ModulesManagementTab
 import { UserSettingsDialog } from "@/components/settings/UserSettingsDialog";
 // ModulePermissionsTab moved into UserSettingsDialog
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { capitalizeName } from "@/lib/utils";
 
 export default function Settings() {
