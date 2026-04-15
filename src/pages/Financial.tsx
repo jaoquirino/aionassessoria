@@ -332,7 +332,7 @@ export default function Financial() {
 
         {/* Recebimentos Tab */}
         <TabsContent value="recebimentos">
-          <ContractPaymentsTab hideValues={hideValues} currentMonth={currentMonth} />
+          <ContractPaymentsTab hideValues={hideValues} />
         </TabsContent>
 
         {/* Freelancers Tab */}
