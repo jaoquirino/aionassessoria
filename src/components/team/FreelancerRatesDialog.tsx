@@ -120,28 +120,22 @@ export function FreelancerRatesDialog({ member, open, onOpenChange }: Freelancer
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Tipo de entrega (opcional)</Label>
-              <Select value={newDeliverableType} onValueChange={setNewDeliverableType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Módulo inteiro (qualquer tipo)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Módulo inteiro</SelectItem>
-                  {existingTypes.map((dt) => (
-                    <SelectItem key={dt} value={dt}>{dt}</SelectItem>
-                  ))}
-                  <SelectItem value="__custom">Outro (digitar)</SelectItem>
-                </SelectContent>
-              </Select>
-              {newDeliverableType === "__custom" && (
-                <Input
-                  placeholder="Digite o tipo de entrega"
-                  value={customType}
-                  onChange={(e) => setCustomType(e.target.value)}
-                />
-              )}
-            </div>
+            {newModuleId && deliverableTypes.length > 0 && (
+              <div className="space-y-2">
+                <Label>Tipo de entrega (opcional)</Label>
+                <Select value={newDeliverableType} onValueChange={setNewDeliverableType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Módulo inteiro (qualquer tipo)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Módulo inteiro</SelectItem>
+                    {deliverableTypes.map((dt) => (
+                      <SelectItem key={dt.id} value={dt.name}>{dt.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Valor por peça *</Label>
@@ -150,7 +144,7 @@ export function FreelancerRatesDialog({ member, open, onOpenChange }: Freelancer
 
             <Button
               onClick={handleAdd}
-              disabled={!newModuleId || newRate <= 0 || upsertRate.isPending || (newDeliverableType === "__custom" && !customType.trim())}
+              disabled={!newModuleId || newRate <= 0 || upsertRate.isPending}
               className="w-full gap-2"
             >
               <Plus className="h-4 w-4" />
