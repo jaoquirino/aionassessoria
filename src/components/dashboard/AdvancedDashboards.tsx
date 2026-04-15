@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, Image, Video, GalleryHorizontal, AlertTriangle, X, CornerDownRight, ChevronDown, ChevronRight } from "lucide-react";
+import { Package, CheckCircle, Clock, Filter, TrendingUp, TrendingDown, DollarSign, FileText, AlertTriangle, X, CornerDownRight, ChevronDown, ChevronRight } from "lucide-react";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { PeriodSelector, type PeriodOption, type CustomDateRange, getPeriodDates } from "./PeriodSelector";
 import { normalizeDeliverableType, getDeliverableTypeKind, getDeliverableTypeLabel } from "@/lib/deliverableType";
+import { DeliverableTypeBadge } from "@/components/tasks/DeliverableTypeBadge";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   todo: { label: "A fazer", color: "bg-muted text-muted-foreground", icon: Clock },
@@ -460,14 +461,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {delivery.deliverableType && (
-                              <Badge variant="outline" className={cn(
-                                "text-xs shrink-0",
-                                 getDeliverableTypeKind(delivery.deliverableType) === "arte" ? "border-purple/30 text-purple" : getDeliverableTypeKind(delivery.deliverableType) === "carrossel" ? "border-orange-500/30 text-orange-500" : getDeliverableTypeKind(delivery.deliverableType) === "video" ? "border-info/30 text-info" : "border-border text-muted-foreground"
-                              )}>
-                                 {getDeliverableTypeLabel(delivery.deliverableType)}
-                              </Badge>
-                            )}
+                            <DeliverableTypeBadge value={delivery.deliverableType} />
                             <Badge className={cn("shrink-0", statusConfig[delivery.status]?.color)}>
                               {statusConfig[delivery.status]?.label || delivery.status}
                             </Badge>

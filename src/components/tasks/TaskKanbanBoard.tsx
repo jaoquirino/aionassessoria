@@ -1,6 +1,6 @@
  import { useState, useMemo, useEffect } from "react";
  import { motion, Reorder } from "framer-motion";
- import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare, Image, Video, GalleryHorizontal, CheckCircle2, RotateCcw } from "lucide-react";
+ import { AlertTriangle, GripVertical, Plus, Calendar, MoreHorizontal, Archive, Pencil, CheckSquare, CheckCircle2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn, parseLocalDate } from "@/lib/utils";
-import { getDeliverableTypeKind, getDeliverableTypeLabel } from "@/lib/deliverableType";
 import type { Task, TaskStatusDB, TaskPriority, TeamMember, Client } from "@/types/tasks";
 import { taskStatusConfig, priorityConfig } from "@/types/tasks";
 import { PriorityBadge } from "./PriorityBadge";
@@ -24,6 +23,7 @@ import { PriorityBadge } from "./PriorityBadge";
  import { useTasksAssignees, useSetTaskAssignees } from "@/hooks/useTaskAssignees";
 import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
 import { usePriorities } from "@/hooks/usePriorities";
+import { DeliverableTypeBadge } from "./DeliverableTypeBadge";
 import { format } from "date-fns";
 
  interface TaskKanbanBoardProps {
@@ -409,15 +409,7 @@ interface TaskCardProps {
            </PriorityPopover>
 
           {/* Deliverable Type Badge (Arte/Vídeo) */}
-          {task.deliverable_type && (
-            <Badge variant="outline" className={cn(
-              "text-xs gap-1",
-              getDeliverableTypeKind(task.deliverable_type) === "arte" ? "border-purple/30 text-purple" : getDeliverableTypeKind(task.deliverable_type) === "carrossel" ? "border-orange/30 text-orange" : getDeliverableTypeKind(task.deliverable_type) === "video" ? "border-info/30 text-info" : "border-border text-muted-foreground"
-            )}>
-              {getDeliverableTypeKind(task.deliverable_type) === "arte" ? <Image className="h-3 w-3" /> : getDeliverableTypeKind(task.deliverable_type) === "carrossel" ? <GalleryHorizontal className="h-3 w-3" /> : getDeliverableTypeKind(task.deliverable_type) === "video" ? <Video className="h-3 w-3" /> : null}
-              {getDeliverableTypeLabel(task.deliverable_type)}
-            </Badge>
-          )}
+          <DeliverableTypeBadge value={task.deliverable_type} />
 
           {/* Responsável - Clicável */}
            <MultiAssigneePopover

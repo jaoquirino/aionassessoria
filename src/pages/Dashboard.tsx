@@ -45,6 +45,7 @@ import { DeliveriesDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
+import { DeliverableTypeBadge } from "@/components/tasks/DeliverableTypeBadge";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
 import {
   AreaChart,
@@ -278,11 +279,28 @@ export default function Dashboard() {
                       <td className="py-4">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2.5 flex-wrap">
-                            {Object.entries(client.deliverableTypeCounts || {}).map(([type, count]) => (
-                              <span key={type} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                                {type.charAt(0).toUpperCase() + type.slice(1)}: {count as number}
-                              </span>
-                            ))}
+                            {Object.entries(client.deliverableTypeCounts || {}).map(([type, count]) => {
+                              const kind = getDeliverableTypeKind(type);
+
+                              return (
+                                <span
+                                  key={type}
+                                  className={cn(
+                                    "inline-flex items-center gap-1 text-xs font-medium",
+                                    kind === "arte"
+                                      ? "text-primary"
+                                      : kind === "carrossel"
+                                        ? "text-warning"
+                                        : kind === "video"
+                                          ? "text-info"
+                                          : "text-muted-foreground",
+                                  )}
+                                >
+                                  {kind === "arte" ? <ImageIcon className="h-3.5 w-3.5" /> : kind === "carrossel" ? <GalleryHorizontal className="h-3.5 w-3.5" /> : kind === "video" ? <Video className="h-3.5 w-3.5" /> : <Package className="h-3.5 w-3.5" />}
+                                  {getDeliverableTypeLabel(type) || type}: {count as number}
+                                </span>
+                              );
+                            })}
                           </div>
                           {client.designLimit != null && (
                             <span className="text-xs font-medium text-foreground">
@@ -788,14 +806,7 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              {task.deliverableType && (
-                                <Badge variant="outline" className={cn(
-                                  "text-xs",
-                                  getDeliverableTypeKind(task.deliverableType) === "arte" ? "border-purple-500/30 text-purple-500" : getDeliverableTypeKind(task.deliverableType) === "carrossel" ? "border-orange-500/30 text-orange-500" : getDeliverableTypeKind(task.deliverableType) === "video" ? "border-info/30 text-info" : "border-border text-muted-foreground"
-                                )}>
-                                  {getDeliverableTypeLabel(task.deliverableType)}
-                                </Badge>
-                              )}
+                              <DeliverableTypeBadge value={task.deliverableType} />
                               <Badge className={cn("text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
                                 {statusConfig[task.status]?.label || task.status}
                               </Badge>
