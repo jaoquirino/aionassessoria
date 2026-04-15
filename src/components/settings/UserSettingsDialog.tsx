@@ -572,8 +572,8 @@ function ModulePermissionsSection({ userId, userPermission }: { userId: string; 
   const hasChanges = () => {
     for (const m of ALL_MODULES) {
       const perm = existingPerms.find((p) => p.module === m.key);
-      const currentVal = moduleStates[m.key] ?? true;
-      const originalVal = perm ? perm.can_access : true;
+      const currentVal = moduleStates[m.key] ?? getDefaultModuleAccess(userPermission, m.key);
+      const originalVal = perm ? perm.can_access : getDefaultModuleAccess(userPermission, m.key);
       if (currentVal !== originalVal) return true;
     }
     const dashPerm = existingPerms.find((p) => p.module === "dashboard");
