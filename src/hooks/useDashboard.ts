@@ -398,14 +398,18 @@ export function useDashboardData() {
         clientRevenueMap.set(c.client_id, curr + Number(c.monthly_value));
       });
 
-      // Design limits
+      // Deliverable limits — count from all modules that have deliverable_limit set
       const clientDesignLimitMap = new Map<string, number>();
       contractModules.forEach((cm: any) => {
-        if (cm.contract?.status === "active" && cm.service_module?.name?.toLowerCase().includes("design")) {
-          const clientId = cm.contract?.client_id;
-          if (clientId) {
-            const curr = clientDesignLimitMap.get(clientId) || 0;
-            clientDesignLimitMap.set(clientId, curr + (cm.deliverable_limit || 0));
+        if (cm.contract?.status === "active" && cm.deliverable_limit) {
+          // Only count modules that have registered deliverable types
+          const hasTypes = moduleDeliverableTypesMap.has(cm.module_id);
+          if (hasTypes) {
+            const clientId = cm.contract?.client_id;
+            if (clientId) {
+              const curr = clientDesignLimitMap.get(clientId) || 0;
+              clientDesignLimitMap.set(clientId, curr + (cm.deliverable_limit || 0));
+            }
           }
         }
       });
