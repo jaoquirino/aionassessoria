@@ -118,6 +118,9 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
     if (!isInternal && !noValue && monthlyValue <= 0) return;
     if (!isInternal && isRecurring && !startDate) return;
 
+    // Close immediately for optimistic UX
+    onOpenChange(false);
+
     try {
       if (isEditing && contract) {
         await updateContract.mutateAsync({
@@ -173,9 +176,8 @@ export function ContractDialog({ clientId, contract, open, onOpenChange }: Contr
           }
         }
       }
-      onOpenChange(false);
     } catch (error) {
-      // Error handled by mutation
+      // Error handled by mutation (toast + rollback)
     }
   };
 

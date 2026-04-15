@@ -133,6 +133,14 @@ export function useGlobalRealtime() {
       .on("postgres_changes", { event: "*", schema: "public", table: "module_permissions" }, () => {
         enqueue("my_module_permissions", "user_module_permissions");
       })
+      // Financial categories
+      .on("postgres_changes", { event: "*", schema: "public", table: "financial_categories" }, () => {
+        enqueue("financial_categories");
+      })
+      // Financial transactions
+      .on("postgres_changes", { event: "*", schema: "public", table: "financial_transactions" }, () => {
+        enqueue("financial_transactions");
+      })
       .subscribe();
 
     return () => {

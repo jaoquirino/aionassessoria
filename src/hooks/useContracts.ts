@@ -114,7 +114,7 @@ export function useClientContractsWithModules(clientId: string | null) {
   });
 }
 
-// Create contract
+// Create contract with optimistic update
 export function useCreateContract() {
   const queryClient = useQueryClient();
 
@@ -130,30 +130,54 @@ export function useCreateContract() {
 
       if (error) throw error;
 
-      // Add modules if provided
       if (modules && modules.length > 0) {
         const moduleInserts = modules.map(moduleId => ({
           contract_id: contract.id,
           module_id: moduleId,
         }));
-        
         await supabase.from("contract_modules").insert(moduleInserts);
       }
 
       return contract;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["client_contracts_full", variables.client_id] });
-      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+    onMutate: async (input) => {
+      const { modules, ...contractData } = input;
+      await queryClient.cancelQueries({ queryKey: ["client_contracts_full", input.client_id] });
+      const previous = queryClient.getQueryData(["client_contracts_full", input.client_id]);
+
+      const optimistic = {
+        id: `temp-${Date.now()}`,
+        ...contractData,
+        status: "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        modules: [],
+      } as unknown as ContractWithModules;
+
+      queryClient.setQueryData(["client_contracts_full", input.client_id], (old: ContractWithModules[] | undefined) => {
+        const { status, daysUntilRenewal } = computeContractStatus(optimistic);
+        return old ? [{ ...optimistic, computedStatus: status, daysUntilRenewal }, ...old] : [{ ...optimistic, computedStatus: status, daysUntilRenewal }];
+      });
+
+      return { previous };
+    },
+    onError: (error, variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["client_contracts_full", variables.client_id], context.previous);
+      }
+      toast.error("Erro ao criar contrato: " + error.message);
+    },
+    onSuccess: () => {
       toast.success("Contrato criado com sucesso");
     },
-    onError: (error) => {
-      toast.error("Erro ao criar contrato: " + error.message);
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["client_contracts_full", variables.client_id] });
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
     },
   });
 }
 
-// Update contract
+// Update contract with optimistic update
 export function useUpdateContract() {
   const queryClient = useQueryClient();
 
@@ -170,13 +194,33 @@ export function useUpdateContract() {
       if (error) throw error;
       return data;
     },
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: ["client_contracts_full"] });
+      const allQueries = queryClient.getQueriesData({ queryKey: ["client_contracts_full"] });
+
+      // Optimistically update all matching caches
+      queryClient.setQueriesData(
+        { queryKey: ["client_contracts_full"] },
+        (old: ContractWithModules[] | undefined) => {
+          if (!old) return old;
+          return old.map((c) => (c.id === input.id ? { ...c, ...input } : c));
+        }
+      );
+
+      return { allQueries };
+    },
+    onError: (error, _vars, context) => {
+      context?.allQueries?.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      toast.error("Erro ao atualizar contrato: " + error.message);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["client_contracts_full"] });
-      queryClient.invalidateQueries({ queryKey: ["contracts"] });
       toast.success("Contrato atualizado");
     },
-    onError: (error) => {
-      toast.error("Erro ao atualizar contrato: " + error.message);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["client_contracts_full"] });
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
     },
   });
 }
