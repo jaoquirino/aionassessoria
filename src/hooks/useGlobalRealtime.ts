@@ -1,133 +1,139 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Centralized realtime subscription that listens to all relevant tables
  * and invalidates the corresponding React Query caches.
- * Mount once at the layout level.
+ *
+ * Optimizations vs previous version:
+ *  - Debounced invalidation: batches rapid-fire events into a single flush
+ *  - Reduced cascade: each table only invalidates its own query keys +
+ *    the minimum set of dependent keys
+ *  - Covers ALL tables in supabase_realtime publication
  */
 export function useGlobalRealtime() {
   const queryClient = useQueryClient();
+
+  // Debounce: collect keys, flush once per animation frame
+  const pendingKeys = useRef<Set<string>>(new Set());
+  const rafId = useRef<number | null>(null);
+
+  const flush = useCallback(() => {
+    const keys = Array.from(pendingKeys.current);
+    pendingKeys.current.clear();
+    rafId.current = null;
+    keys.forEach((key) => {
+      queryClient.invalidateQueries({ queryKey: [key] });
+    });
+  }, [queryClient]);
+
+  const enqueue = useCallback(
+    (...keys: string[]) => {
+      keys.forEach((k) => pendingKeys.current.add(k));
+      if (!rafId.current) {
+        rafId.current = requestAnimationFrame(flush);
+      }
+    },
+    [flush]
+  );
 
   useEffect(() => {
     const channel = supabase
       .channel("global-realtime")
       // Tasks
       .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["task"] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard_onboarding_tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-        queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
-        queryClient.invalidateQueries({ queryKey: ["client_onboarding_progress"] });
-        queryClient.invalidateQueries({ queryKey: ["onboarding_module_tasks"] });
+        enqueue("tasks", "task", "dashboard", "dashboard_onboarding_tasks", "deliveries", "all_team_members", "client_onboarding_progress", "onboarding_module_tasks");
       })
       // Task assignees
       .on("postgres_changes", { event: "*", schema: "public", table: "task_assignees" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["task_assignees"] });
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+        enqueue("task_assignees", "tasks", "all_team_members", "dashboard");
       })
       // Task checklist
       .on("postgres_changes", { event: "*", schema: "public", table: "task_checklist" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["task"] });
+        enqueue("tasks", "task");
       })
       // Task comments
       .on("postgres_changes", { event: "*", schema: "public", table: "task_comments" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["task_comments"] });
+        enqueue("task_comments");
       })
       // Task attachments
       .on("postgres_changes", { event: "*", schema: "public", table: "task_attachments" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["task"] });
+        enqueue("task");
       })
       // Task history
       .on("postgres_changes", { event: "*", schema: "public", table: "task_history" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["task"] });
+        enqueue("task");
+      })
+      // Task priorities
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_priorities" }, () => {
+        enqueue("task_priorities");
       })
       // Team members
       .on("postgres_changes", { event: "*", schema: "public", table: "team_members" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["all_team_members"] });
-        queryClient.invalidateQueries({ queryKey: ["team_members"] });
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["task_assignees"] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-        queryClient.invalidateQueries({ queryKey: ["current_team_member"] });
+        enqueue("all_team_members", "team_members", "current_team_member", "dashboard");
       })
       // Profiles
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["task_comments"] });
-        queryClient.invalidateQueries({ queryKey: ["current_team_member"] });
-        queryClient.invalidateQueries({ queryKey: ["profile"] });
+        enqueue("task_comments", "current_team_member", "profile");
       })
       // Clients
       .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["all_clients"] });
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
-        queryClient.invalidateQueries({ queryKey: ["client"] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+        enqueue("all_clients", "clients", "client", "dashboard");
       })
       // Contracts
       .on("postgres_changes", { event: "*", schema: "public", table: "contracts" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["client_contracts_full"] });
-        queryClient.invalidateQueries({ queryKey: ["contracts"] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-        queryClient.invalidateQueries({ queryKey: ["financial_evolution"] });
-        queryClient.invalidateQueries({ queryKey: ["all_clients"] });
+        enqueue("client_contracts_full", "contracts", "dashboard", "financial_evolution", "all_clients");
       })
       // Contract modules
       .on("postgres_changes", { event: "*", schema: "public", table: "contract_modules" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["client_contracts_full"] });
-        queryClient.invalidateQueries({ queryKey: ["contracts"] });
-        queryClient.invalidateQueries({ queryKey: ["all_service_modules"] });
+        enqueue("client_contracts_full", "contracts", "all_service_modules");
       })
       // Service modules
       .on("postgres_changes", { event: "*", schema: "public", table: "service_modules" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["all_service_modules"] });
-        queryClient.invalidateQueries({ queryKey: ["service_modules"] });
+        enqueue("all_service_modules", "service_modules");
       })
       // Kanban columns
       .on("postgres_changes", { event: "*", schema: "public", table: "kanban_columns" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["kanban_columns"] });
+        enqueue("kanban_columns");
       })
       // Client module onboarding
       .on("postgres_changes", { event: "*", schema: "public", table: "client_module_onboarding" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["client_module_onboarding"] });
-        queryClient.invalidateQueries({ queryKey: ["client_onboarding_progress"] });
+        enqueue("client_module_onboarding", "client_onboarding_progress");
       })
       // Onboarding responses
       .on("postgres_changes", { event: "*", schema: "public", table: "client_onboarding_responses" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["onboarding_responses"] });
-        queryClient.invalidateQueries({ queryKey: ["all_onboarding_responses"] });
-        queryClient.invalidateQueries({ queryKey: ["client_onboarding_progress"] });
+        enqueue("onboarding_responses", "all_onboarding_responses", "client_onboarding_progress");
       })
       // Onboarding templates
       .on("postgres_changes", { event: "*", schema: "public", table: "onboarding_templates" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["onboarding_templates"] });
-        queryClient.invalidateQueries({ queryKey: ["onboarding_template"] });
+        enqueue("onboarding_templates", "onboarding_template");
       })
       // Onboarding template steps
       .on("postgres_changes", { event: "*", schema: "public", table: "onboarding_template_steps" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["onboarding_templates"] });
-        queryClient.invalidateQueries({ queryKey: ["onboarding_template_steps"] });
-        queryClient.invalidateQueries({ queryKey: ["onboarding_template"] });
+        enqueue("onboarding_templates", "onboarding_template_steps", "onboarding_template");
       })
       // User roles
       .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["users_with_roles"] });
-        queryClient.invalidateQueries({ queryKey: ["user_roles"] });
+        enqueue("users_with_roles", "user_roles");
       })
       // Notifications
       .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        enqueue("notifications");
+      })
+      // Editorial posts
+      .on("postgres_changes", { event: "*", schema: "public", table: "editorial_posts" }, () => {
+        enqueue("editorial_posts");
+      })
+      // Editorial post attachments
+      .on("postgres_changes", { event: "*", schema: "public", table: "editorial_post_attachments" }, () => {
+        enqueue("editorial_posts");
       })
       .subscribe();
 
     return () => {
+      if (rafId.current) cancelAnimationFrame(rafId.current);
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, enqueue]);
 }
