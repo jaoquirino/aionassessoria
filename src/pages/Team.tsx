@@ -27,8 +27,6 @@ import { cn } from "@/lib/utils";
 import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
 import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
-import { FreelancerRatesDialog } from "@/components/team/FreelancerRatesDialog";
-import { DollarSign } from "lucide-react";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
 
 interface TeamMemberWithStats extends TeamMember {
@@ -52,7 +50,7 @@ export default function Team() {
   const [editingMember, setEditingMember] = useState<TeamMemberWithStats | null>(null);
   const [deletingMember, setDeletingMember] = useState<TeamMemberWithStats | null>(null);
   const [tasksDialogMember, setTasksDialogMember] = useState<TeamMemberWithStats | null>(null);
-  const [ratesMember, setRatesMember] = useState<TeamMemberWithStats | null>(null);
+  
   
 
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
@@ -291,15 +289,6 @@ export default function Team() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {(member as any).employment_type === "freelancer" && (
-                    <button
-                      className="rounded-lg p-1.5 text-primary hover:bg-primary/10 transition-colors"
-                      onClick={(e) => { e.stopPropagation(); setRatesMember(member); }}
-                      title="Valores por produção"
-                    >
-                      <DollarSign className="h-4 w-4" />
-                    </button>
-                  )}
                   <button 
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
                     onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
@@ -375,11 +364,6 @@ export default function Team() {
         onOpenChange={(open) => { if (!open) setTasksDialogMember(null); }}
       />
 
-      <FreelancerRatesDialog
-        member={ratesMember}
-        open={!!ratesMember}
-        onOpenChange={(open) => { if (!open) setRatesMember(null); }}
-      />
 
 
       <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
