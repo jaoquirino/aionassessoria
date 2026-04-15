@@ -38,7 +38,7 @@ export function DeliveriesDashboard({ period: _externalPeriod }: DeliveriesDashb
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "done" | "pending" | "overdue">("all");
-  const [designFilter, setDesignFilter] = useState<"all" | "arte" | "video" | "carrossel">("all");
+  const [designFilter, setDesignFilter] = useState<string>("all");
   const [collapsedParents, setCollapsedParents] = useState<Set<string>>(new Set());
 
   const toggleParentCollapse = useCallback((parentId: string) => {
