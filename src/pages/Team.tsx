@@ -295,6 +295,15 @@ export default function Team() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  {(member as any).employment_type === "freelancer" && (
+                    <button
+                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setRatesMember(member); }}
+                      title="Valores por produção"
+                    >
+                      <DollarSign className="h-4 w-4" />
+                    </button>
+                  )}
                   <button 
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
                     onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
