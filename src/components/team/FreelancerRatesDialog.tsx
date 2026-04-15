@@ -20,47 +20,39 @@ interface FreelancerRatesDialogProps {
 export function FreelancerRatesDialog({ member, open, onOpenChange }: FreelancerRatesDialogProps) {
   const [newModuleId, setNewModuleId] = useState("");
   const [newDeliverableType, setNewDeliverableType] = useState("");
-  const [customType, setCustomType] = useState("");
   const [newRate, setNewRate] = useState(0);
 
   const { data: rates = [], isLoading } = useFreelancerRates(member?.id);
   const { data: modules = [] } = useAllModules();
+  const { data: deliverableTypes = [] } = useModuleDeliverableTypes(newModuleId || undefined);
   const upsertRate = useUpsertFreelancerRate();
   const deleteRate = useDeleteFreelancerRate();
 
   const activeModules = modules.filter(m => m.is_active);
 
-  // Gather existing deliverable types from current rates to suggest them
-  const existingTypes = useMemo(() => {
-    const types = new Set<string>();
-    COMMON_DELIVERABLE_TYPES.forEach(t => types.add(t));
-    rates.forEach(r => {
-      if (r.deliverable_type) types.add(r.deliverable_type);
-    });
-    return Array.from(types).sort();
-  }, [rates]);
-
   useEffect(() => {
     if (open) {
       setNewModuleId("");
       setNewDeliverableType("");
-      setCustomType("");
       setNewRate(0);
     }
   }, [open]);
 
+  // Reset deliverable type when module changes
+  useEffect(() => {
+    setNewDeliverableType("");
+  }, [newModuleId]);
+
   const handleAdd = async () => {
     if (!member || !newModuleId || newRate <= 0) return;
-    const deliverableType = newDeliverableType === "__custom" ? customType.trim() : (newDeliverableType || null);
     await upsertRate.mutateAsync({
       team_member_id: member.id,
       module_id: newModuleId,
-      deliverable_type: deliverableType || null,
+      deliverable_type: newDeliverableType || null,
       rate_per_unit: newRate,
     });
     setNewModuleId("");
     setNewDeliverableType("");
-    setCustomType("");
     setNewRate(0);
   };
 
