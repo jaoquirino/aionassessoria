@@ -153,7 +153,7 @@ export default function Tasks() {
     setSelectedTaskTab(initialTab || "details");
   };
 
-  // Quick create task - opens modal immediately using optimistic temp ID
+  // Quick create task - opens modal immediately using the same optimistic ID as cache
   const handleQuickAddTask = (status: TaskStatusDB) => {
     if (clients.length === 0) {
       toast.error("Cadastre um cliente ativo primeiro");
@@ -161,6 +161,7 @@ export default function Tasks() {
     }
 
     const tempId = `temp-${Date.now()}`;
+    setSelectedTaskId(tempId);
 
     createTask.mutate(
       {
@@ -170,19 +171,19 @@ export default function Tasks() {
         required_role: "Designer",
         due_date: format(addDays(new Date(), 7), "yyyy-MM-dd"),
         status,
+        optimisticId: tempId,
       },
       {
         onSuccess: (result) => {
-          // Swap temp ID to real ID once server responds
-          if (result?.id && selectedTaskId === tempId) {
-            setSelectedTaskId(result.id);
+          if (result?.id) {
+            setSelectedTaskId((current) => (current === tempId ? result.id : current));
           }
+        },
+        onError: () => {
+          setSelectedTaskId((current) => (current === tempId ? null : current));
         },
       }
     );
-
-    // Open modal instantly with optimistic temp ID
-    setSelectedTaskId(tempId);
   };
   // Handle inline field updates
   const handleUpdateField = (taskId: string, field: string, value: unknown) => {
