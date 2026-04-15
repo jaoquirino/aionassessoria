@@ -117,10 +117,26 @@ export function useClientContractsWithModules(clientId: string | null) {
 
       if (error) throw error;
       
+      // Auto-end expired contracts in DB
+      const contractsToEnd = (data as ContractWithModules[]).filter(c => {
+        if (c.status === "ended") return false;
+        const { shouldAutoEnd } = computeContractStatus(c);
+        return shouldAutoEnd;
+      });
+
+      if (contractsToEnd.length > 0) {
+        await Promise.all(
+          contractsToEnd.map(c =>
+            supabase.from("contracts").update({ status: "ended" }).eq("id", c.id)
+          )
+        );
+      }
+
       return (data as ContractWithModules[]).map(contract => {
         const { status, daysUntilRenewal } = computeContractStatus(contract);
         return {
           ...contract,
+          status: status === "ended" ? "ended" : contract.status,
           computedStatus: status,
           daysUntilRenewal,
         };

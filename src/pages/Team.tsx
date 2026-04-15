@@ -27,8 +27,7 @@ import { cn } from "@/lib/utils";
 import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
 import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
-import { FreelancerRatesDialog } from "@/components/team/FreelancerRatesDialog";
-import { DollarSign } from "lucide-react";
+import { useRoleNames } from "@/hooks/useAvailableRoles";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
 
 interface TeamMemberWithStats extends TeamMember {
