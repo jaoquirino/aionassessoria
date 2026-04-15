@@ -319,7 +319,9 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
        await setTaskAssignees.mutateAsync({ taskId: displayTask.id, memberIds: selectedAssignees });
       isDirtyRef.current = false;
       return true;
-    } catch {
+    } catch (error: any) {
+      console.error("Erro ao salvar tarefa:", error);
+      import("sonner").then(({ toast }) => toast.error("Erro ao salvar tarefa: " + (error?.message || "Tente novamente")));
       return false;
     } finally {
       setIsSaving(false);
@@ -351,8 +353,12 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
 
   const handleOpenChange = async (newOpen: boolean) => {
     if (!newOpen && displayTask && isDirtyRef.current) {
-      const saved = await handleSave();
-      if (!saved) return;
+      // Always attempt save, but close regardless to avoid trapping users
+      try {
+        await handleSave();
+      } catch (err) {
+        console.error("Erro ao auto-salvar:", err);
+      }
     }
     onOpenChange(newOpen);
   };
