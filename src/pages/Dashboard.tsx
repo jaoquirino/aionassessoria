@@ -45,6 +45,7 @@ import { DeliveriesDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
+import { DeliverableTypeBadge } from "@/components/tasks/DeliverableTypeBadge";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
 import {
   AreaChart,
@@ -788,14 +789,7 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              {task.deliverableType && (
-                                <Badge variant="outline" className={cn(
-                                  "text-xs",
-                                  getDeliverableTypeKind(task.deliverableType) === "arte" ? "border-purple-500/30 text-purple-500" : getDeliverableTypeKind(task.deliverableType) === "carrossel" ? "border-orange-500/30 text-orange-500" : getDeliverableTypeKind(task.deliverableType) === "video" ? "border-info/30 text-info" : "border-border text-muted-foreground"
-                                )}>
-                                  {getDeliverableTypeLabel(task.deliverableType)}
-                                </Badge>
-                              )}
+                              <DeliverableTypeBadge value={task.deliverableType} />
                               <Badge className={cn("text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
                                 {statusConfig[task.status]?.label || task.status}
                               </Badge>
