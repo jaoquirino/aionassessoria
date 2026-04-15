@@ -11,6 +11,7 @@ export interface TeamMember {
   capacity_limit: number;
   is_active: boolean;
   restricted_view: boolean;
+  employment_type: string;
   created_at: string;
   updated_at: string;
 }
@@ -32,6 +33,7 @@ export interface UpdateTeamMemberInput {
   capacity_limit?: number;
   is_active?: boolean;
   restricted_view?: boolean;
+  employment_type?: string;
 }
 
 // Fetch all team members with their task weights

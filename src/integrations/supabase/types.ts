@@ -309,6 +309,57 @@ export type Database = {
           },
         ]
       }
+      contract_payments: {
+        Row: {
+          contract_id: string
+          created_at: string
+          financial_transaction_id: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          reference_month: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          financial_transaction_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          reference_month: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          financial_transaction_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          reference_month?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_payments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_payments_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           client_id: string
@@ -685,6 +736,58 @@ export type Database = {
           },
         ]
       }
+      freelancer_rates: {
+        Row: {
+          created_at: string
+          deliverable_type: string | null
+          id: string
+          module_id: string
+          rate_per_unit: number
+          team_member_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deliverable_type?: string | null
+          id?: string
+          module_id: string
+          rate_per_unit?: number
+          team_member_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deliverable_type?: string | null
+          id?: string
+          module_id?: string
+          rate_per_unit?: number
+          team_member_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freelancer_rates_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "service_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freelancer_rates_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freelancer_rates_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kanban_columns: {
         Row: {
           color_class: string
@@ -876,6 +979,115 @@ export type Database = {
             columns: ["module_id"]
             isOneToOne: true
             referencedRelation: "service_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_period_tasks: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          is_included: boolean
+          payment_period_id: string
+          task_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_included?: boolean
+          payment_period_id: string
+          task_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_included?: boolean
+          payment_period_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_period_tasks_payment_period_id_fkey"
+            columns: ["payment_period_id"]
+            isOneToOne: false
+            referencedRelation: "payment_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_period_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_periods: {
+        Row: {
+          approved_at: string | null
+          created_at: string
+          end_date: string
+          financial_transaction_id: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          start_date: string
+          status: string
+          team_member_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          created_at?: string
+          end_date: string
+          financial_transaction_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          start_date: string
+          status?: string
+          team_member_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          created_at?: string
+          end_date?: string
+          financial_transaction_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          start_date?: string
+          status?: string
+          team_member_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_periods_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_periods_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_periods_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1414,6 +1626,7 @@ export type Database = {
           capacity_limit: number
           created_at: string
           email: string | null
+          employment_type: string
           id: string
           is_active: boolean
           name: string
@@ -1428,6 +1641,7 @@ export type Database = {
           capacity_limit?: number
           created_at?: string
           email?: string | null
+          employment_type?: string
           id?: string
           is_active?: boolean
           name: string
@@ -1442,6 +1656,7 @@ export type Database = {
           capacity_limit?: number
           created_at?: string
           email?: string | null
+          employment_type?: string
           id?: string
           is_active?: boolean
           name?: string

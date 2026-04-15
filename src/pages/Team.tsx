@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Loader2, Trash2 } from "lucide-react";
+import { Plus, Search, Loader2, Trash2, DollarSign, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,8 @@ import { cn } from "@/lib/utils";
 import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
 import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
+import { FreelancerRatesDialog } from "@/components/team/FreelancerRatesDialog";
+import { PaymentPeriodsDialog } from "@/components/team/PaymentPeriodsDialog";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
 
 interface TeamMemberWithStats extends TeamMember {
@@ -50,6 +52,8 @@ export default function Team() {
   const [editingMember, setEditingMember] = useState<TeamMemberWithStats | null>(null);
   const [deletingMember, setDeletingMember] = useState<TeamMemberWithStats | null>(null);
   const [tasksDialogMember, setTasksDialogMember] = useState<TeamMemberWithStats | null>(null);
+  const [ratesMember, setRatesMember] = useState<TeamMemberWithStats | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
 
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
   const deleteMember = useDeleteTeamMember();
@@ -133,10 +137,16 @@ export default function Team() {
             Gerenciamento de capacidade e carga
           </p>
         </div>
-        <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
-          <Plus className="h-4 w-4" />
-          Novo Integrante
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setPaymentDialogOpen(true)}>
+            <DollarSign className="h-4 w-4" />
+            Pagamentos
+          </Button>
+          <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
+            <Plus className="h-4 w-4" />
+            Novo Integrante
+          </Button>
+        </div>
       </motion.div>
 
       {/* Filters */}
@@ -272,6 +282,11 @@ export default function Team() {
                     >
                       {member.permission === "admin" ? "Admin" : "Operacional"}
                     </Badge>
+                    {(member as any).employment_type === "freelancer" && (
+                      <Badge variant="outline" className="text-xs mt-0.5 border-primary/30 text-primary">
+                        Freelancer
+                      </Badge>
+                    )}
                     {(member as any).restricted_view && (
                       <Badge variant="outline" className="text-xs mt-0.5 border-warning/30 text-warning">
                         Visão restrita
@@ -280,6 +295,15 @@ export default function Team() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  {(member as any).employment_type === "freelancer" && (
+                    <button
+                      className="rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setRatesMember(member); }}
+                      title="Valores por produção"
+                    >
+                      <DollarSign className="h-4 w-4" />
+                    </button>
+                  )}
                   <button 
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
                     onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
@@ -353,6 +377,17 @@ export default function Team() {
         member={tasksDialogMember}
         open={!!tasksDialogMember}
         onOpenChange={(open) => { if (!open) setTasksDialogMember(null); }}
+      />
+
+      <FreelancerRatesDialog
+        member={ratesMember}
+        open={!!ratesMember}
+        onOpenChange={(open) => { if (!open) setRatesMember(null); }}
+      />
+
+      <PaymentPeriodsDialog
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
       />
 
       <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>

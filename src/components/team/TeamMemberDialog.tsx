@@ -36,6 +36,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
   const [capacityLimit, setCapacityLimit] = useState(15);
   const [restrictedView, setRestrictedView] = useState(false);
   const [isCreatingWithLogin, setIsCreatingWithLogin] = useState(false);
+  const [employmentType, setEmploymentType] = useState<"employee" | "freelancer">("employee");
 
   const { user } = useAuth();
   const { data: isAdmin } = useIsAdmin();
@@ -54,12 +55,12 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
   useEffect(() => {
     if (member) {
       setName(member.name);
-      // Parse multiple roles from comma-separated string
       const memberRoles = member.role?.split(",").map(r => r.trim()).filter(Boolean) || ["Designer"];
       setRoles(memberRoles);
       setPermission(member.permission);
       setCapacityLimit(member.capacity_limit);
       setRestrictedView((member as any).restricted_view ?? false);
+      setEmploymentType((member as any).employment_type || "employee");
     } else {
       setName("");
       setUsername("");
@@ -69,6 +70,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
       setPermission("operational");
       setCapacityLimit(15);
       setRestrictedView(false);
+      setEmploymentType("employee");
     }
   }, [member, open]);
 
@@ -99,6 +101,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
           permission,
           capacity_limit: capacityLimit,
           restricted_view: restrictedView,
+          employment_type: employmentType,
         });
         onOpenChange(false);
       } else if (username.trim() && password.trim()) {
@@ -354,6 +357,25 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
               value={capacityLimit}
               onChange={(e) => setCapacityLimit(Number(e.target.value))}
             />
+          </div>
+
+          {/* Employment Type Toggle */}
+          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+            <div>
+              <p className="text-sm font-medium">Tipo de contratação</p>
+              <p className="text-xs text-muted-foreground">
+                {employmentType === "freelancer" ? "Pagamento por produção" : "Contratação fixa"}
+              </p>
+            </div>
+            <Select value={employmentType} onValueChange={(v) => setEmploymentType(v as any)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="employee">Contratado</SelectItem>
+                <SelectItem value="freelancer">Freelancer</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Restricted View Toggle */}
