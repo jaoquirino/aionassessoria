@@ -824,6 +824,35 @@ export type Database = {
         }
         Relationships: []
       }
+      module_deliverable_types: {
+        Row: {
+          created_at: string
+          id: string
+          module_id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_deliverable_types_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "service_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_permissions: {
         Row: {
           can_access: boolean
