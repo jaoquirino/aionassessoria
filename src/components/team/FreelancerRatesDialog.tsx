@@ -3,16 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Trash2, Plus } from "lucide-react";
 import { useFreelancerRates, useUpsertFreelancerRate, useDeleteFreelancerRate } from "@/hooks/useFreelancerRates";
 import { useAllModules } from "@/hooks/useModules";
+import { useModuleDeliverableTypes } from "@/hooks/useModuleDeliverableTypes";
 import type { TeamMember } from "@/hooks/useTeamMembers";
-
-// Common deliverable types as suggestions, but user can type custom ones
-const COMMON_DELIVERABLE_TYPES = ["Arte", "Vídeo", "Carrossel", "Fotografia", "Reels", "Stories", "Post"];
 
 interface FreelancerRatesDialogProps {
   member: TeamMember | null;
