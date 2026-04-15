@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+
 import { useAllModules, useDeleteModule, type ServiceModule } from "@/hooks/useModules";
 import { useAllModuleDeliverableTypes } from "@/hooks/useModuleDeliverableTypes";
 import { ModuleDialog } from "@/components/modules/ModuleDialog";
@@ -32,7 +32,6 @@ interface ModuleWithStats extends ServiceModule {
 
 export default function Modules() {
   const [search, setSearch] = useState("");
-  const [recurrenceFilter, setRecurrenceFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<ModuleWithStats | null>(null);
@@ -53,19 +52,13 @@ export default function Modules() {
       
       const matchesSearch =
         search === "" ||
-        module.name.toLowerCase().includes(search.toLowerCase()) ||
-        module.description?.toLowerCase().includes(search.toLowerCase());
-
-      const matchesRecurrence =
-        recurrenceFilter === "all" ||
-        (recurrenceFilter === "recurring" && module.is_recurring) ||
-        (recurrenceFilter === "one_time" && !module.is_recurring);
+        module.name.toLowerCase().includes(search.toLowerCase());
 
       const matchesRole = roleFilter === "all" || module.primary_role === roleFilter;
 
-      return matchesSearch && matchesRecurrence && matchesRole;
+      return matchesSearch && matchesRole;
     });
-  }, [modules, search, recurrenceFilter, roleFilter]);
+  }, [modules, search, roleFilter]);
 
   const activeModules = modules.filter(m => m.is_active);
 
@@ -125,16 +118,6 @@ export default function Modules() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Select value={recurrenceFilter} onValueChange={setRecurrenceFilter}>
-          <SelectTrigger className="w-full sm:w-[160px] bg-background">
-            <SelectValue placeholder="Recorrência" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border-border z-50">
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="recurring">Recorrente</SelectItem>
-            <SelectItem value="one_time">Pontual</SelectItem>
-          </SelectContent>
-        </Select>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="w-full sm:w-[180px] bg-background">
             <SelectValue placeholder="Função" />
@@ -162,9 +145,9 @@ export default function Modules() {
           <p className="text-2xl font-bold text-foreground">{activeModules.length}</p>
         </div>
         <div className="glass rounded-xl p-4">
-          <p className="text-sm text-muted-foreground">Recorrentes</p>
+          <p className="text-sm text-muted-foreground">Com Entregas</p>
           <p className="text-2xl font-bold text-foreground">
-            {activeModules.filter((m) => m.is_recurring).length}
+            {activeModules.filter((m) => allDeliverableTypes.some(dt => dt.module_id === m.id)).length}
           </p>
         </div>
         <div className="glass rounded-xl p-4">
@@ -211,10 +194,6 @@ export default function Modules() {
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-              {module.description || "Sem descrição"}
-            </p>
-
             {/* Sub-services */}
             {(() => {
               const subs = allDeliverableTypes.filter(dt => dt.module_id === module.id);
@@ -232,16 +211,6 @@ export default function Modules() {
             <div className="flex flex-wrap gap-2 mb-4">
               <Badge variant="outline" className="border-primary/30 text-primary">
                 Peso: {module.default_weight}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={cn(
-                  module.is_recurring
-                    ? "border-success/30 text-success"
-                    : "border-muted text-muted-foreground"
-                )}
-              >
-                {module.is_recurring ? "Recorrente" : "Pontual"}
               </Badge>
             </div>
 

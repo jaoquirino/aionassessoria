@@ -4,9 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useCreateModule, useUpdateModule, type ServiceModule } from "@/hooks/useModules";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
@@ -128,16 +126,6 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descrição do serviço..."
-              rows={2}
-            />
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="weight">Peso Padrão</Label>
@@ -168,15 +156,6 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
             </Select>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <p className="font-medium">Recorrente</p>
-              <p className="text-sm text-muted-foreground">
-                Este módulo gera entregas mensais
-              </p>
-            </div>
-            <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
-          </div>
 
           {/* Sub-services / Deliverable Types - only when editing */}
           {isEditing && module && (
