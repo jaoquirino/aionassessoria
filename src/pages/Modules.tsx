@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useAllModules, useDeleteModule, type ServiceModule } from "@/hooks/useModules";
+import { useAllModuleDeliverableTypes } from "@/hooks/useModuleDeliverableTypes";
 import { ModuleDialog } from "@/components/modules/ModuleDialog";
 
 interface ModuleWithStats extends ServiceModule {
