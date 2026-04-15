@@ -502,15 +502,9 @@ export default function Settings() {
               </TabsTrigger>
             )}
             {isAdmin && (
-              <TabsTrigger value="module_permissions" className="gap-2">
-                <Eye className="h-4 w-4" />
-                <span className="hidden sm:inline">Módulos Acesso</span>
-              </TabsTrigger>
-            )}
-            {isAdmin && (
               <TabsTrigger value="permissions" className="gap-2 relative">
                 <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Permissões</span>
+                <span className="hidden sm:inline">Usuários</span>
                 {(users?.filter(u => !u.role).length ?? 0) > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-[10px] font-bold text-warning-foreground">
                     {users?.filter(u => !u.role).length}
@@ -1178,11 +1172,6 @@ export default function Settings() {
           {isAdmin && (
             <TabsContent value="modules">
               <ModulesManagementTab />
-            </TabsContent>
-          )}
-          {isAdmin && (
-            <TabsContent value="module_permissions">
-              <ModulePermissionsTab />
             </TabsContent>
           )}
         </Tabs>
