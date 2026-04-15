@@ -8,7 +8,7 @@ import {
   DollarSign,
   ArrowRight,
   Package,
-  TrendingUp,
+  
   CornerDownRight,
   Activity,
   Heart,
@@ -105,13 +105,16 @@ export default function Dashboard() {
   const hasAnimated = useRef(false);
   const isRestricted = currentMember?.restricted_view === true;
   const isOperational = currentMember?.permission === "operational";
+  const isGestor = currentMember?.permission === "gestor";
   const dashboardPermission = modulePermissions.find((permission) => permission.module === "dashboard");
   const dashboardSubPermissions = dashboardPermission?.sub_permissions || {};
-  const canViewClientHealth = isOperational ? false : dashboardSubPermissions.client_health !== false;
-  const canViewTeamCapacity = isOperational ? false : dashboardSubPermissions.team_capacity !== false;
-  const canViewRevenue = isOperational ? false : dashboardSubPermissions.revenue !== false;
-  const canViewContractAlerts = isOperational ? false : dashboardSubPermissions.contracts_alert !== false;
-  const canViewOnboarding = isOperational ? false : dashboardSubPermissions.onboarding !== false;
+  
+  // Defaults by role: Admin sees all, Gestor sees capacity+tasks, Operational sees only tasks
+  const canViewClientHealth = isAdmin ? (dashboardSubPermissions.client_health !== false) : isGestor ? (dashboardSubPermissions.client_health === true) : false;
+  const canViewTeamCapacity = isAdmin ? (dashboardSubPermissions.team_capacity !== false) : isGestor ? (dashboardSubPermissions.team_capacity !== false) : false;
+  const canViewRevenue = isAdmin ? (dashboardSubPermissions.revenue !== false) : false;
+  const _canViewContractAlerts = isAdmin ? (dashboardSubPermissions.contracts_alert !== false) : false;
+  const canViewOnboarding = isAdmin ? (dashboardSubPermissions.onboarding !== false) : false;
   const canViewTasksOverview = dashboardSubPermissions.tasks_overview !== false;
 
   const revenueChartData = useMemo(() => {
@@ -195,7 +198,7 @@ export default function Dashboard() {
     );
   }
 
-  const { stats, tasks, team, clients, isAdmin, baseTasks, filteredTeam, displayStats } = derivedData;
+  const { stats, team, clients, isAdmin, baseTasks, filteredTeam, displayStats } = derivedData;
 
   const handleTaskClick = (task: { id: string; isSubtask: boolean; parentTaskId: string | null }) => {
     if (task.isSubtask && task.parentTaskId) {
