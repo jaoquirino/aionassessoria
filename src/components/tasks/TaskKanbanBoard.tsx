@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn, parseLocalDate } from "@/lib/utils";
+import { getDeliverableTypeKind, getDeliverableTypeLabel } from "@/lib/deliverableType";
 import type { Task, TaskStatusDB, TaskPriority, TeamMember, Client } from "@/types/tasks";
 import { taskStatusConfig, priorityConfig } from "@/types/tasks";
 import { PriorityBadge } from "./PriorityBadge";
@@ -411,10 +412,10 @@ interface TaskCardProps {
           {task.deliverable_type && (
             <Badge variant="outline" className={cn(
               "text-xs gap-1",
-              task.deliverable_type === "arte" ? "border-purple/30 text-purple" : task.deliverable_type === "carrossel" ? "border-orange/30 text-orange" : "border-info/30 text-info"
+              getDeliverableTypeKind(task.deliverable_type) === "arte" ? "border-purple/30 text-purple" : getDeliverableTypeKind(task.deliverable_type) === "carrossel" ? "border-orange/30 text-orange" : getDeliverableTypeKind(task.deliverable_type) === "video" ? "border-info/30 text-info" : "border-border text-muted-foreground"
             )}>
-              {task.deliverable_type === "arte" ? <Image className="h-3 w-3" /> : task.deliverable_type === "carrossel" ? <GalleryHorizontal className="h-3 w-3" /> : <Video className="h-3 w-3" />}
-              {task.deliverable_type === "arte" ? "Arte" : task.deliverable_type === "carrossel" ? "Carrossel" : "Vídeo"}
+              {getDeliverableTypeKind(task.deliverable_type) === "arte" ? <Image className="h-3 w-3" /> : getDeliverableTypeKind(task.deliverable_type) === "carrossel" ? <GalleryHorizontal className="h-3 w-3" /> : getDeliverableTypeKind(task.deliverable_type) === "video" ? <Video className="h-3 w-3" /> : null}
+              {getDeliverableTypeLabel(task.deliverable_type)}
             </Badge>
           )}
 
