@@ -734,7 +734,7 @@ function ProductionRatesSection({ teamMemberId }: { teamMemberId: string }) {
 
         <div className="space-y-2">
           <Label className="text-xs">Módulo *</Label>
-          <Select value={newModuleId} onValueChange={setNewModuleId}>
+          <Select value={newModuleId} onValueChange={(v) => { setNewModuleId(v); setNewDeliverableType(""); }}>
             <SelectTrigger className="h-9">
               <SelectValue placeholder="Selecionar módulo" />
             </SelectTrigger>
