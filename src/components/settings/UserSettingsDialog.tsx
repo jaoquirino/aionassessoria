@@ -748,20 +748,22 @@ function ProductionRatesSection({ teamMemberId }: { teamMemberId: string }) {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-xs">Tipo de entrega (opcional)</Label>
-          <Select value={newDeliverableType} onValueChange={setNewDeliverableType}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="Módulo inteiro" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none">Módulo inteiro</SelectItem>
-              {existingTypes.map((dt) => (
-                <SelectItem key={dt} value={dt}>{dt}</SelectItem>
-              ))}
-              <SelectItem value="__custom">Outro (digitar)</SelectItem>
-            </SelectContent>
-          </Select>
+        {moduleDeliverableTypes.length > 0 && (
+          <div className="space-y-2">
+            <Label className="text-xs">Tipo de entrega</Label>
+            <Select value={newDeliverableType} onValueChange={setNewDeliverableType}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Módulo inteiro" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">Módulo inteiro</SelectItem>
+                {moduleDeliverableTypes.map((dt) => (
+                  <SelectItem key={dt} value={dt}>{dt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
           {newDeliverableType === "__custom" && (
             <Input
               placeholder="Digite o tipo de entrega"
