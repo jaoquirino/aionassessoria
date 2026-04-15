@@ -111,13 +111,14 @@ export function useDashboardData() {
         return allTasks;
       };
 
-      const [tasks, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes] = await Promise.all([
+      const [tasks, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes, deliverableTypesRes] = await Promise.all([
         fetchAllTasks(),
         supabase.from("clients").select("*, is_internal"),
         supabase.from("contracts").select("*, client:clients(name)").eq("status", "active"),
         supabase.from("team_members_public").select("*").eq("is_active", true),
         supabase.from("contract_modules").select("*, service_module:service_modules(name, primary_role), contract:contracts(client_id, status)"),
         supabase.from("task_assignees").select("task_id, team_member_id"),
+        supabase.from("module_deliverable_types").select("name, module_id"),
       ]);
 
       const clients = clientsRes.data || [];
