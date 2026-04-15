@@ -282,6 +282,11 @@ export default function Team() {
                     >
                       {member.permission === "admin" ? "Admin" : "Operacional"}
                     </Badge>
+                    {(member as any).employment_type === "freelancer" && (
+                      <Badge variant="outline" className="text-xs mt-0.5 border-primary/30 text-primary">
+                        Freelancer
+                      </Badge>
+                    )}
                     {(member as any).restricted_view && (
                       <Badge variant="outline" className="text-xs mt-0.5 border-warning/30 text-warning">
                         Visão restrita
