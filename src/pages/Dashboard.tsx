@@ -294,22 +294,16 @@ export default function Dashboard() {
                             {Object.entries(client.deliverableTypeCounts || {}).map(([type, count]) => {
                               const kind = getDeliverableTypeKind(type);
 
+                              const KindIcon = kindIconMap[kind];
+                              const colorClass = kindColorMap[kind];
+
                               return (
                                 <span
                                   key={type}
-                                  className={cn(
-                                    "inline-flex items-center gap-1 text-xs font-medium",
-                                    kind === "arte"
-                                      ? "text-primary"
-                                      : kind === "carrossel"
-                                        ? "text-warning"
-                                        : kind === "video"
-                                          ? "text-info"
-                                          : "text-muted-foreground",
-                                  )}
+                                  className={cn("inline-flex items-center gap-1 text-xs font-medium", colorClass)}
                                   title={`${getDeliverableTypeLabel(type) || type}: ${count as number}`}
                                 >
-                                  {kind === "arte" ? <ImageIcon className="h-3.5 w-3.5" /> : kind === "carrossel" ? <GalleryHorizontal className="h-3.5 w-3.5" /> : kind === "video" ? <Video className="h-3.5 w-3.5" /> : <Package className="h-3.5 w-3.5" />}
+                                  <KindIcon className="h-3.5 w-3.5" />
                                   <span>{count as number}</span>
                                 </span>
                               );
@@ -707,17 +701,12 @@ export default function Dashboard() {
                     <div className="flex items-center justify-center gap-3 flex-wrap">
                       {Object.entries(selectedClientHealth.deliverableTypeCounts || {}).map(([type, count]) => {
                         const kind = getDeliverableTypeKind(type);
-                        const colorClass = kind === "arte"
-                          ? "text-primary"
-                          : kind === "carrossel"
-                            ? "text-warning"
-                            : kind === "video"
-                              ? "text-info"
-                              : "text-muted-foreground";
+                        const KindIcon = kindIconMap[kind];
+                        const colorClass = kindColorMap[kind];
 
                         return (
                           <span key={type} className={cn("inline-flex items-center gap-1 text-sm font-bold", colorClass)} title={`${getDeliverableTypeLabel(type) || type}: ${count as number}`}>
-                            {kind === "arte" ? <ImageIcon className="h-4 w-4" /> : kind === "carrossel" ? <GalleryHorizontal className="h-4 w-4" /> : kind === "video" ? <Video className="h-4 w-4" /> : <Package className="h-4 w-4" />}
+                            <KindIcon className="h-4 w-4" />
                             {count as number}
                           </span>
                         );
