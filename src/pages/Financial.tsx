@@ -374,37 +374,29 @@ export default function Financial() {
 }
 
 // ===== Contract Payments Tab =====
-function ContractPaymentsTab({ hideValues, currentMonth }: { hideValues: boolean; currentMonth: string }) {
+function ContractPaymentsTab({ hideValues }: { hideValues: boolean }) {
   const { data: clients = [] } = useAllClients();
-  const { data: contracts = [] } = useContracts();
 
-  // Group contracts by client
+  // Group active contracts by client using data from useAllClients
   const clientContracts = useMemo(() => {
-    const activeContracts = contracts.filter((c: any) => c.status === "active");
     const grouped: Array<{
       client: { id: string; name: string; logo_url: string | null; color: string | null };
       contracts: any[];
     }> = [];
 
-    const clientMap = new Map(clients.map((c) => [c.id, c]));
+    clients.forEach((client: any) => {
+      if (client.is_internal) return;
+      const activeContracts = (client.contracts || []).filter((c: any) => c.status === "active");
+      if (activeContracts.length === 0) return;
 
-    activeContracts.forEach((contract: any) => {
-      const client = clientMap.get(contract.client_id);
-      if (!client || (client as any).is_internal) return;
-
-      const existing = grouped.find((g) => g.client.id === client.id);
-      if (existing) {
-        existing.contracts.push(contract);
-      } else {
-        grouped.push({
-          client: { id: client.id, name: client.name, logo_url: (client as any).logo_url, color: (client as any).color },
-          contracts: [contract],
-        });
-      }
+      grouped.push({
+        client: { id: client.id, name: client.name, logo_url: client.logo_url, color: client.color },
+        contracts: activeContracts,
+      });
     });
 
     return grouped.sort((a, b) => a.client.name.localeCompare(b.client.name));
-  }, [contracts, clients]);
+  }, [clients]);
 
   if (clientContracts.length === 0) {
     return (
