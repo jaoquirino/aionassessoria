@@ -299,21 +299,32 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         contractId = null;
       }
 
-      await updateTask.mutateAsync({
+      // Build update payload — only include deliverable_type if user explicitly changed it
+      // (module change or direct selection), to prevent accidental overwrites
+      const moduleChanged = contractModuleId !== (displayTask.contract_module_id || "");
+      const deliverableChanged = (deliverableType || null) !== (displayTask.deliverable_type || null);
+
+      const updatePayload: Record<string, any> = {
         id: displayTask.id,
         title,
         status,
         priority,
         client_id: clientId,
-         assigned_to: selectedAssignees[0] || null,
+        assigned_to: selectedAssignees[0] || null,
         due_date: dueDate ? `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-${String(dueDate.getDate()).padStart(2, "0")}` : displayTask.due_date,
         description_notes: descriptionNotes || null,
         contract_id: contractId,
         contract_module_id: contractModuleId || null,
         type: taskType,
         weight,
-        deliverable_type: deliverableType ? normalizeDeliverableType(deliverableType) : null,
-      } as any);
+      };
+
+      // Only send deliverable_type when explicitly changed to avoid wiping existing values
+      if (deliverableChanged || moduleChanged) {
+        updatePayload.deliverable_type = deliverableType ? normalizeDeliverableType(deliverableType) : null;
+      }
+
+      await updateTask.mutateAsync(updatePayload as any);
 
        // Save multiple assignees
        await setTaskAssignees.mutateAsync({ taskId: displayTask.id, memberIds: selectedAssignees });

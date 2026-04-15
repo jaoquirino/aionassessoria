@@ -15,9 +15,12 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  Camera,
   Video,
   Image as ImageIcon,
   GalleryHorizontal,
+  Scissors,
+  SlidersHorizontal,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -35,7 +38,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { getDeliverableTypeKind, getDeliverableTypeLabel } from "@/lib/deliverableType";
+import { getDeliverableTypeKind, getDeliverableTypeLabel, type DeliverableKind } from "@/lib/deliverableType";
+
+const kindIconMap: Record<DeliverableKind, React.ElementType> = {
+  arte: ImageIcon, carrossel: GalleryHorizontal, video: Video,
+  edicao: SlidersHorizontal, fotografar: Camera, selecao: Scissors, generic: Package,
+};
+const kindColorMap: Record<DeliverableKind, string> = {
+  arte: "text-primary", carrossel: "text-warning", video: "text-info",
+  edicao: "text-purple-400", fotografar: "text-emerald-400", selecao: "text-amber-400", generic: "text-muted-foreground",
+};
 import { useDashboardData, type ClientTask } from "@/hooks/useDashboard";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
@@ -282,22 +294,16 @@ export default function Dashboard() {
                             {Object.entries(client.deliverableTypeCounts || {}).map(([type, count]) => {
                               const kind = getDeliverableTypeKind(type);
 
+                              const KindIcon = kindIconMap[kind];
+                              const colorClass = kindColorMap[kind];
+
                               return (
                                 <span
                                   key={type}
-                                  className={cn(
-                                    "inline-flex items-center gap-1 text-xs font-medium",
-                                    kind === "arte"
-                                      ? "text-primary"
-                                      : kind === "carrossel"
-                                        ? "text-warning"
-                                        : kind === "video"
-                                          ? "text-info"
-                                          : "text-muted-foreground",
-                                  )}
+                                  className={cn("inline-flex items-center gap-1 text-xs font-medium", colorClass)}
                                   title={`${getDeliverableTypeLabel(type) || type}: ${count as number}`}
                                 >
-                                  {kind === "arte" ? <ImageIcon className="h-3.5 w-3.5" /> : kind === "carrossel" ? <GalleryHorizontal className="h-3.5 w-3.5" /> : kind === "video" ? <Video className="h-3.5 w-3.5" /> : <Package className="h-3.5 w-3.5" />}
+                                  <KindIcon className="h-3.5 w-3.5" />
                                   <span>{count as number}</span>
                                 </span>
                               );
@@ -695,17 +701,12 @@ export default function Dashboard() {
                     <div className="flex items-center justify-center gap-3 flex-wrap">
                       {Object.entries(selectedClientHealth.deliverableTypeCounts || {}).map(([type, count]) => {
                         const kind = getDeliverableTypeKind(type);
-                        const colorClass = kind === "arte"
-                          ? "text-primary"
-                          : kind === "carrossel"
-                            ? "text-warning"
-                            : kind === "video"
-                              ? "text-info"
-                              : "text-muted-foreground";
+                        const KindIcon = kindIconMap[kind];
+                        const colorClass = kindColorMap[kind];
 
                         return (
                           <span key={type} className={cn("inline-flex items-center gap-1 text-sm font-bold", colorClass)} title={`${getDeliverableTypeLabel(type) || type}: ${count as number}`}>
-                            {kind === "arte" ? <ImageIcon className="h-4 w-4" /> : kind === "carrossel" ? <GalleryHorizontal className="h-4 w-4" /> : kind === "video" ? <Video className="h-4 w-4" /> : <Package className="h-4 w-4" />}
+                            <KindIcon className="h-4 w-4" />
                             {count as number}
                           </span>
                         );
