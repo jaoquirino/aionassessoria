@@ -16,9 +16,10 @@ import { cn } from "@/lib/utils";
 
 interface UserProfileDropdownProps {
   isCollapsed?: boolean;
+  isTopbar?: boolean;
 }
 
-export function UserProfileDropdown({ isCollapsed = false }: UserProfileDropdownProps) {
+export function UserProfileDropdown({ isCollapsed = false, isTopbar = false }: UserProfileDropdownProps) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null; username: string | null }>({
@@ -103,28 +104,34 @@ export function UserProfileDropdown({ isCollapsed = false }: UserProfileDropdown
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            "flex items-center gap-3 w-full rounded-lg px-3 py-2.5 transition-all duration-200",
-            "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            "flex items-center gap-2 rounded-lg transition-all duration-200",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            isCollapsed && "justify-center px-2"
+            isTopbar
+              ? "px-2 py-1.5 hover:bg-sidebar-accent text-sidebar-foreground"
+              : cn(
+                  "w-full px-3 py-2.5",
+                  "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  isCollapsed && "justify-center px-2"
+                )
           )}
         >
-          <Avatar className="h-8 w-8 shrink-0">
+          <Avatar className={cn("shrink-0", isTopbar ? "h-7 w-7" : "h-8 w-8")}>
             <AvatarImage src={profile.avatar_url || undefined} />
             <AvatarFallback className="text-xs bg-primary/10 text-primary">
               {getInitials(getDisplayName())}
             </AvatarFallback>
           </Avatar>
-          {!isCollapsed && (
-            <>
-              <span className="flex-1 text-left text-sm font-medium truncate">{getDisplayName()}</span>
-            </>
+          {!isCollapsed && !isTopbar && (
+            <span className="flex-1 text-left text-sm font-medium truncate">{getDisplayName()}</span>
+          )}
+          {isTopbar && (
+            <span className="text-sm font-medium hidden sm:inline">{getDisplayName()}</span>
           )}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
-        side="top" 
-        align={isCollapsed ? "center" : "start"}
+        side={isTopbar ? "bottom" : "top"}
+        align="end"
         className="w-56"
       >
         <DropdownMenuItem onClick={() => navigate("/configuracoes")} className="gap-2 cursor-pointer">
