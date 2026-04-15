@@ -104,17 +104,18 @@ export default function Dashboard() {
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   const hasAnimated = useRef(false);
   const isRestricted = currentMember?.restricted_view === true;
-  const isOperational = currentMember?.permission === "operational";
-  const isGestor = currentMember?.permission === "gestor";
+  const isOperationalRole = currentMember?.permission === "operational";
+  const isGestorRole = currentMember?.permission === "gestor";
+  const isAdminRole = currentMember?.permission === "admin";
   const dashboardPermission = modulePermissions.find((permission) => permission.module === "dashboard");
   const dashboardSubPermissions = dashboardPermission?.sub_permissions || {};
   
   // Defaults by role: Admin sees all, Gestor sees capacity+tasks, Operational sees only tasks
-  const canViewClientHealth = isAdmin ? (dashboardSubPermissions.client_health !== false) : isGestor ? (dashboardSubPermissions.client_health === true) : false;
-  const canViewTeamCapacity = isAdmin ? (dashboardSubPermissions.team_capacity !== false) : isGestor ? (dashboardSubPermissions.team_capacity !== false) : false;
-  const canViewRevenue = isAdmin ? (dashboardSubPermissions.revenue !== false) : false;
-  const _canViewContractAlerts = isAdmin ? (dashboardSubPermissions.contracts_alert !== false) : false;
-  const canViewOnboarding = isAdmin ? (dashboardSubPermissions.onboarding !== false) : false;
+  const canViewClientHealth = isAdminRole ? (dashboardSubPermissions.client_health !== false) : isGestorRole ? (dashboardSubPermissions.client_health === true) : false;
+  const canViewTeamCapacity = isAdminRole ? (dashboardSubPermissions.team_capacity !== false) : isGestorRole ? (dashboardSubPermissions.team_capacity !== false) : false;
+  const canViewRevenue = isAdminRole ? (dashboardSubPermissions.revenue !== false) : false;
+  const _canViewContractAlerts = isAdminRole ? (dashboardSubPermissions.contracts_alert !== false) : false;
+  const canViewOnboarding = isAdminRole ? (dashboardSubPermissions.onboarding !== false) : false;
   const canViewTasksOverview = dashboardSubPermissions.tasks_overview !== false;
 
   const revenueChartData = useMemo(() => {
