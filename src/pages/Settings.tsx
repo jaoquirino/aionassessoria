@@ -1159,7 +1159,6 @@ export default function Settings() {
               <ModulePermissionsTab />
             </TabsContent>
           )}
-          )}
         </Tabs>
       </motion.div>
 
