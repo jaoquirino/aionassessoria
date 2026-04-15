@@ -988,6 +988,9 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Roles Management */}
+              <RolesManagementTab />
             </TabsContent>
           )}
 
@@ -998,12 +1001,6 @@ export default function Settings() {
             </TabsContent>
           )}
 
-          {/* Client Data Export Tab (Admin Only) */}
-          {isAdmin && (
-            <TabsContent value="export">
-              <ClientDataExportTab />
-            </TabsContent>
-          )}
           {isAdmin && (
             <TabsContent value="modules">
               <ModulesManagementTab />
