@@ -50,6 +50,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { capitalizeName } from "@/lib/utils";
 
 export default function Settings() {
   const queryClient = useQueryClient();
