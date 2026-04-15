@@ -43,11 +43,12 @@ export function TopNavbar() {
   const { data: modulePerms = [] } = useMyModulePermissions();
   const { data: isAdminRole } = useIsAdmin();
 
-  const isAdmin = currentMember?.permission === "admin";
+  const isAdmin = currentMember?.permission === "admin" || !!isAdminRole;
+  const isGestor = currentMember?.permission === "gestor";
 
   const navigation = allNavigation.filter((item) => {
-    if (item.adminOnly && !isAdmin) return false;
-    if (isAdminRole) return true;
+    if (item.adminOnly && !isAdmin && !isGestor) return false;
+    if (isAdmin) return true;
     const perm = modulePerms.find((p) => p.module === item.moduleKey);
     return perm ? perm.can_access : true;
   });
