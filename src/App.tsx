@@ -79,6 +79,28 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
   
   const isAdmin = currentMember?.permission === "admin" || !!isAdminByRole;
+  const isGestor = currentMember?.permission === "gestor";
+  if (!isAdmin && !isGestor) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
+// Strict admin-only route (no gestor access)
+function StrictAdminRoute({ children }: { children: React.ReactNode }) {
+  const { data: currentMember, isLoading } = useCurrentTeamMember();
+  const { data: isAdminByRole, isLoading: isAdminLoading } = useIsAdmin();
+  
+  if (isLoading || isAdminLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  const isAdmin = currentMember?.permission === "admin" || !!isAdminByRole;
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
