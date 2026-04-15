@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, addMonths } from "date-fns";
 import { parseLocalDate } from "@/lib/utils";
 
 export interface Contract {
@@ -13,6 +13,7 @@ export interface Contract {
   renewal_date: string | null;
   status: string;
   notes: string | null;
+  is_recurring: boolean;
   created_at: string;
   updated_at: string;
   // Computed
