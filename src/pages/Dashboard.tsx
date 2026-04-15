@@ -15,9 +15,12 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  Camera,
   Video,
   Image as ImageIcon,
   GalleryHorizontal,
+  Scissors,
+  SlidersHorizontal,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
