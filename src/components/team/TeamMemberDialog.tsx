@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { X, Link2, Unlink, Eye, EyeOff, AtSign, Loader2 } from "lucide-react";
 import { useCreateTeamMember, useUpdateTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
+import { capitalizeName } from "@/lib/utils";
 import { useLinkToTeamMember, useUnlinkTeamMember, useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRoles";
@@ -93,7 +94,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
       if (isEditing && member) {
         await updateMember.mutateAsync({
           id: member.id,
-          name: name.trim(),
+          name: capitalizeName(name.trim()),
           role: roleString,
           permission,
           capacity_limit: capacityLimit,
@@ -118,7 +119,7 @@ export function TeamMemberDialog({ member, open, onOpenChange }: TeamMemberDialo
             body: {
               username: username.trim(),
               password,
-              fullName: name.trim(),
+              fullName: capitalizeName(name.trim()),
               roles,
               permission,
             },
