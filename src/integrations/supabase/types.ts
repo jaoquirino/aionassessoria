@@ -607,6 +607,36 @@ export type Database = {
         }
         Relationships: []
       }
+      module_permissions: {
+        Row: {
+          can_access: boolean
+          created_at: string
+          id: string
+          module: string
+          sub_permissions: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_access?: boolean
+          created_at?: string
+          id?: string
+          module: string
+          sub_permissions?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_access?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          sub_permissions?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1409,6 +1439,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      has_module_access: {
+        Args: { _module: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
