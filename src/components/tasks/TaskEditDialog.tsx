@@ -64,7 +64,7 @@ import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { useQuery } from "@tanstack/react-query";
 import type { Task } from "@/types/tasks";
-import { useModuleDeliverableTypes } from "@/hooks/useModuleDeliverableTypes";
+import { DeliverableTypeSelector } from "./DeliverableTypeSelector";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TaskEditDialogProps {
