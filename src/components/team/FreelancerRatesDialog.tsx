@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { Trash2, Plus } from "lucide-react";
@@ -10,7 +11,8 @@ import { useFreelancerRates, useUpsertFreelancerRate, useDeleteFreelancerRate } 
 import { useAllModules } from "@/hooks/useModules";
 import type { TeamMember } from "@/hooks/useTeamMembers";
 
-const DELIVERABLE_TYPES = ["Arte", "Vídeo", "Carrossel", "Fotografia"];
+// Common deliverable types as suggestions, but user can type custom ones
+const COMMON_DELIVERABLE_TYPES = ["Arte", "Vídeo", "Carrossel", "Fotografia", "Reels", "Stories", "Post"];
 
 interface FreelancerRatesDialogProps {
   member: TeamMember | null;
@@ -21,6 +23,7 @@ interface FreelancerRatesDialogProps {
 export function FreelancerRatesDialog({ member, open, onOpenChange }: FreelancerRatesDialogProps) {
   const [newModuleId, setNewModuleId] = useState("");
   const [newDeliverableType, setNewDeliverableType] = useState("");
+  const [customType, setCustomType] = useState("");
   const [newRate, setNewRate] = useState(0);
 
   const { data: rates = [], isLoading } = useFreelancerRates(member?.id);
@@ -30,24 +33,37 @@ export function FreelancerRatesDialog({ member, open, onOpenChange }: Freelancer
 
   const activeModules = modules.filter(m => m.is_active);
 
+  // Gather existing deliverable types from current rates to suggest them
+  const existingTypes = useMemo(() => {
+    const types = new Set<string>();
+    COMMON_DELIVERABLE_TYPES.forEach(t => types.add(t));
+    rates.forEach(r => {
+      if (r.deliverable_type) types.add(r.deliverable_type);
+    });
+    return Array.from(types).sort();
+  }, [rates]);
+
   useEffect(() => {
     if (open) {
       setNewModuleId("");
       setNewDeliverableType("");
+      setCustomType("");
       setNewRate(0);
     }
   }, [open]);
 
   const handleAdd = async () => {
     if (!member || !newModuleId || newRate <= 0) return;
+    const deliverableType = newDeliverableType === "__custom" ? customType.trim() : (newDeliverableType || null);
     await upsertRate.mutateAsync({
       team_member_id: member.id,
       module_id: newModuleId,
-      deliverable_type: newDeliverableType || null,
+      deliverable_type: deliverableType || null,
       rate_per_unit: newRate,
     });
     setNewModuleId("");
     setNewDeliverableType("");
+    setCustomType("");
     setNewRate(0);
   };
 
@@ -119,15 +135,23 @@ export function FreelancerRatesDialog({ member, open, onOpenChange }: Freelancer
               <Label>Tipo de entrega (opcional)</Label>
               <Select value={newDeliverableType} onValueChange={setNewDeliverableType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Qualquer tipo (módulo inteiro)" />
+                  <SelectValue placeholder="Módulo inteiro (qualquer tipo)" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Módulo inteiro</SelectItem>
-                  {DELIVERABLE_TYPES.map((dt) => (
+                  {existingTypes.map((dt) => (
                     <SelectItem key={dt} value={dt}>{dt}</SelectItem>
                   ))}
+                  <SelectItem value="__custom">Outro (digitar)</SelectItem>
                 </SelectContent>
               </Select>
+              {newDeliverableType === "__custom" && (
+                <Input
+                  placeholder="Digite o tipo de entrega"
+                  value={customType}
+                  onChange={(e) => setCustomType(e.target.value)}
+                />
+              )}
             </div>
 
             <div className="space-y-2">
@@ -137,7 +161,7 @@ export function FreelancerRatesDialog({ member, open, onOpenChange }: Freelancer
 
             <Button
               onClick={handleAdd}
-              disabled={!newModuleId || newRate <= 0 || upsertRate.isPending}
+              disabled={!newModuleId || newRate <= 0 || upsertRate.isPending || (newDeliverableType === "__custom" && !customType.trim())}
               className="w-full gap-2"
             >
               <Plus className="h-4 w-4" />
