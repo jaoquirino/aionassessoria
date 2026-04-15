@@ -24,7 +24,16 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,      // 30s — dados considerados frescos (evita refetch em navegação)
+      gcTime: 5 * 60_000,     // 5min — mantém cache em memória após unmount
+      refetchOnWindowFocus: false, // evita refetch ao trocar de aba
+      retry: 1,
+    },
+  },
+});
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
