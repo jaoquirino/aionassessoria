@@ -653,7 +653,6 @@ function ModulePermissionsSection({ userId, userPermission }: { userId: string; 
 function ProductionRatesSection({ teamMemberId }: { teamMemberId: string }) {
   const [newModuleId, setNewModuleId] = useState("");
   const [newDeliverableType, setNewDeliverableType] = useState("");
-  const [customType, setCustomType] = useState("");
   const [newRate, setNewRate] = useState(0);
 
   const { data: rates = [], isLoading } = useFreelancerRates(teamMemberId);

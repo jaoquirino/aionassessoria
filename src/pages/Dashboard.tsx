@@ -209,7 +209,7 @@ export default function Dashboard() {
 
   const shouldAnimate = !hasAnimated.current;
 
-  const showFullDashboard = isAdmin || (!isOperational && !isRestricted);
+  
 
   const overviewContent = (
     <>
