@@ -1,21 +1,28 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Save, User, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, AtSign, Puzzle, Clock } from "lucide-react";
+import { Save, User, Bell, Database, Palette, Shield, ShieldCheck, UserX, Loader2, Search, UserPlus, Camera, Key, Sun, Moon, Monitor, Trash2, ClipboardList, Archive, FileDown, AtSign, Briefcase, Puzzle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useUsersWithRoles, useSetUserRole, useRemoveUserRole, type AppRole } from "@/hooks/useUserRoles";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserPreferences, type ThemePreference } from "@/hooks/useUserPreferences";
-
+import { useCapacitySettings } from "@/hooks/useCapacitySettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AvatarCropDialog } from "@/components/settings/AvatarCropDialog";
@@ -24,16 +31,25 @@ import { PasswordRequirements } from "@/components/settings/PasswordRequirements
 import { isPasswordStrong } from "@/lib/passwordValidation";
 import { OnboardingTemplatesTab } from "@/components/settings/OnboardingTemplatesTab";
 import { ArchivedTasksTab } from "@/components/settings/ArchivedTasksTab";
-
+import { ClientDataExportTab } from "@/components/settings/ClientDataExportTab";
 import { CreateUserDialog } from "@/components/settings/CreateUserDialog";
 import { RolesManagementTab } from "@/components/settings/RolesManagementTab";
 import { PrioritiesManagementTab } from "@/components/settings/PrioritiesManagementTab";
 import { SavedColorsManagementTab } from "@/components/settings/SavedColorsManagementTab";
 import { ModulesManagementTab } from "@/components/settings/ModulesManagementTab";
 import { UserSettingsDialog } from "@/components/settings/UserSettingsDialog";
-// ModulePermissionsTab moved into UserSettingsDialog
 import { useQueryClient } from "@tanstack/react-query";
-import { capitalizeName } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Settings() {
   const queryClient = useQueryClient();
@@ -67,6 +83,15 @@ export default function Settings() {
   // Theme preferences
   const { theme, setTheme, isDark } = useUserPreferences();
 
+  // Capacity settings
+  const { settings: capacitySettings, updateSettings: updateCapacitySettings, updateTypeWeight } = useCapacitySettings();
+  const [capacityLimit, setCapacityLimit] = useState(capacitySettings.defaultCapacityLimit.toString());
+  const [alertAt80, setAlertAt80] = useState(capacitySettings.alertAt80Percent);
+  const [blockAboveLimit, setBlockAboveLimit] = useState(capacitySettings.blockAboveLimit);
+  const [recurringWeight, setRecurringWeight] = useState(capacitySettings.typeWeights.recurring.toString());
+  const [planningWeight, setPlanningWeight] = useState(capacitySettings.typeWeights.planning.toString());
+  const [projectWeight, setProjectWeight] = useState(capacitySettings.typeWeights.project.toString());
+  const [extraWeight, setExtraWeight] = useState(capacitySettings.typeWeights.extra.toString());
 
   const { data: users, isLoading: usersLoading } = useUsersWithRoles();
   const { data: currentMember } = useCurrentTeamMember();
@@ -221,7 +246,7 @@ export default function Settings() {
         .from("profiles")
         .upsert({
           user_id: user.id,
-          full_name: fullName.trim() ? capitalizeName(fullName.trim()) : null,
+          full_name: fullName.trim() || null,
           username: username.trim() || null,
           avatar_url: avatarUrl || null,
           updated_at: new Date().toISOString(),
@@ -290,8 +315,38 @@ export default function Settings() {
     }
   };
 
+  // Sync capacity state when settings change
+  useEffect(() => {
+    setCapacityLimit(capacitySettings.defaultCapacityLimit.toString());
+    setAlertAt80(capacitySettings.alertAt80Percent);
+    setBlockAboveLimit(capacitySettings.blockAboveLimit);
+    setRecurringWeight(capacitySettings.typeWeights.recurring.toString());
+    setPlanningWeight(capacitySettings.typeWeights.planning.toString());
+    setProjectWeight(capacitySettings.typeWeights.project.toString());
+    setExtraWeight(capacitySettings.typeWeights.extra.toString());
+  }, [capacitySettings]);
 
+  const handleSaveCapacitySettings = () => {
+    const limit = parseInt(capacityLimit) || 15;
+    updateCapacitySettings({
+      defaultCapacityLimit: limit,
+      alertAt80Percent: alertAt80,
+      blockAboveLimit: blockAboveLimit,
+    });
+    toast.success("Configurações de capacidade salvas");
+  };
 
+  const handleSaveWeights = () => {
+    updateCapacitySettings({
+      typeWeights: {
+        recurring: parseInt(recurringWeight) || 2,
+        planning: parseInt(planningWeight) || 1,
+        project: parseInt(projectWeight) || 4,
+        extra: parseInt(extraWeight) || 3,
+      },
+    });
+    toast.success("Pesos salvos com sucesso");
+  };
 
   const filteredUsers = users?.filter(
     (u) =>
@@ -352,14 +407,6 @@ export default function Settings() {
         </Badge>
       );
     }
-    if (role === "gestor") {
-      return (
-        <Badge className="bg-info text-info-foreground">
-          <Shield className="h-3 w-3 mr-1" />
-          Gestor
-        </Badge>
-      );
-    }
     return (
       <Badge variant="secondary">
         <Shield className="h-3 w-3 mr-1" />
@@ -403,6 +450,18 @@ export default function Settings() {
               <span className="hidden sm:inline">Aparência</span>
             </TabsTrigger>
             {isAdmin && (
+              <TabsTrigger value="notifications" className="gap-2">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Notificações</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="capacity" className="gap-2">
+                <Database className="h-4 w-4" />
+                <span className="hidden sm:inline">Capacidade</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
               <TabsTrigger value="onboarding" className="gap-2">
                 <ClipboardList className="h-4 w-4" />
                 <span className="hidden sm:inline">Onboarding</span>
@@ -411,7 +470,19 @@ export default function Settings() {
             {isAdmin && (
               <TabsTrigger value="archived" className="gap-2">
                 <Archive className="h-4 w-4" />
-                <span className="hidden sm:inline">Tarefas</span>
+                <span className="hidden sm:inline">Arquivadas</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="export" className="gap-2">
+                <FileDown className="h-4 w-4" />
+                <span className="hidden sm:inline">Exportar</span>
+              </TabsTrigger>
+            )}
+            {isAdmin && (
+              <TabsTrigger value="roles" className="gap-2">
+                <Briefcase className="h-4 w-4" />
+                <span className="hidden sm:inline">Cargos</span>
               </TabsTrigger>
             )}
             {isAdmin && (
@@ -423,7 +494,7 @@ export default function Settings() {
             {isAdmin && (
               <TabsTrigger value="permissions" className="gap-2 relative">
                 <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Usuários</span>
+                <span className="hidden sm:inline">Permissões</span>
                 {(users?.filter(u => !u.role).length ?? 0) > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning text-[10px] font-bold text-warning-foreground">
                     {users?.filter(u => !u.role).length}
@@ -611,8 +682,144 @@ export default function Settings() {
             </div>
           </TabsContent>
 
+          <TabsContent value="notifications" className="space-y-6">
+            <div className="glass rounded-xl p-6 space-y-6">
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">Alertas de Contrato</h3>
+                <p className="text-sm text-muted-foreground">
+                  Configure quando receber alertas de renovação
+                </p>
+              </div>
+              <Separator />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">30 dias antes da renovação</p>
+                    <p className="text-sm text-muted-foreground">Receber alerta antecipado</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">Último mês de contrato</p>
+                    <p className="text-sm text-muted-foreground">Alerta quando entrar no último mês</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">Tarefas atrasadas</p>
+                    <p className="text-sm text-muted-foreground">Notificar quando uma tarefa atrasar</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </div>
+              <Button className="gap-2">
+                <Save className="h-4 w-4" />
+                Salvar Preferências
+              </Button>
+            </div>
+          </TabsContent>
 
+          <TabsContent value="capacity" className="space-y-6">
+            <div className="glass rounded-xl p-6 space-y-6">
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">Limites de Capacidade</h3>
+                <p className="text-sm text-muted-foreground">
+                  Configure os limites padrão de peso por funcionário
+                </p>
+              </div>
+              <Separator />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="defaultWeight">Peso máximo padrão por funcionário</Label>
+                  <Input 
+                    id="defaultWeight" 
+                    type="number" 
+                    value={capacityLimit}
+                    onChange={(e) => setCapacityLimit(e.target.value)}
+                    className="max-w-[200px]" 
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">Alerta de capacidade em 80%</p>
+                    <p className="text-sm text-muted-foreground">Mostrar status de atenção</p>
+                  </div>
+                  <Switch 
+                    checked={alertAt80}
+                    onCheckedChange={setAlertAt80}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">Bloquear atribuição acima do limite</p>
+                    <p className="text-sm text-muted-foreground">Impedir atribuição quando capacidade excedida</p>
+                  </div>
+                  <Switch 
+                    checked={blockAboveLimit}
+                    onCheckedChange={setBlockAboveLimit}
+                  />
+                </div>
+              </div>
+              <Button className="gap-2" onClick={handleSaveCapacitySettings}>
+                <Save className="h-4 w-4" />
+                Salvar Configurações
+              </Button>
+            </div>
 
+            <div className="glass rounded-xl p-6 space-y-6">
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">Pesos de Tipos de Tarefa</h3>
+                <p className="text-sm text-muted-foreground">
+                  Configure o peso padrão para cada tipo de tarefa
+                </p>
+              </div>
+              <Separator />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="recurringWeight">Entrega Recorrente</Label>
+                  <Input 
+                    id="recurringWeight" 
+                    type="number" 
+                    value={recurringWeight}
+                    onChange={(e) => setRecurringWeight(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="planningWeight">Planejamento</Label>
+                  <Input 
+                    id="planningWeight" 
+                    type="number" 
+                    value={planningWeight}
+                    onChange={(e) => setPlanningWeight(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="projectWeight">Projeto</Label>
+                  <Input 
+                    id="projectWeight" 
+                    type="number" 
+                    value={projectWeight}
+                    onChange={(e) => setProjectWeight(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="extraWeight">Extra</Label>
+                  <Input 
+                    id="extraWeight" 
+                    type="number" 
+                    value={extraWeight}
+                    onChange={(e) => setExtraWeight(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button className="gap-2" onClick={handleSaveWeights}>
+                <Save className="h-4 w-4" />
+                Salvar Pesos
+              </Button>
+            </div>
+          </TabsContent>
 
           <TabsContent value="appearance" className="space-y-6">
             <div className="glass rounded-xl p-6 space-y-6">
@@ -674,6 +881,11 @@ export default function Settings() {
             </TabsContent>
           )}
 
+          {isAdmin && (
+            <TabsContent value="roles">
+              <RolesManagementTab />
+            </TabsContent>
+          )}
 
           {isAdmin && (
             <TabsContent value="permissions" className="space-y-6">
@@ -700,23 +912,6 @@ export default function Settings() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <Shield className="h-4 w-4 text-info" />
-                      Gestores
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {users?.filter(u => u.role === "gestor").length || 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Gestão de equipe
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-muted-foreground" />
                       Operacionais
                     </CardTitle>
                   </CardHeader>
@@ -903,15 +1098,6 @@ export default function Settings() {
                     </p>
                   </div>
                   <div className="flex items-start gap-3">
-                    <Badge className="bg-info text-info-foreground shrink-0">
-                      <Shield className="h-3 w-3 mr-1" />
-                      Gestor
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">
-                      Gestão de equipe: pode visualizar permissões, gerenciar tarefas e integrantes conforme configurado.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
                     <Badge variant="secondary" className="shrink-0">
                       <Shield className="h-3 w-3 mr-1" />
                       Operacional
@@ -931,9 +1117,6 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Roles Management */}
-              <RolesManagementTab />
             </TabsContent>
           )}
 
@@ -944,6 +1127,12 @@ export default function Settings() {
             </TabsContent>
           )}
 
+          {/* Client Data Export Tab (Admin Only) */}
+          {isAdmin && (
+            <TabsContent value="export">
+              <ClientDataExportTab />
+            </TabsContent>
+          )}
           {isAdmin && (
             <TabsContent value="modules">
               <ModulesManagementTab />

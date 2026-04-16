@@ -1,18 +1,13 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { useCreateModule, useUpdateModule, type ServiceModule } from "@/hooks/useModules";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
-import {
-  useModuleDeliverableTypes,
-  useAddModuleDeliverableType,
-  useDeleteModuleDeliverableType,
-} from "@/hooks/useModuleDeliverableTypes";
 
 interface ModuleDialogProps {
   module?: ServiceModule | null;
@@ -27,17 +22,12 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
   const [isRecurring, setIsRecurring] = useState(true);
   const [primaryRole, setPrimaryRole] = useState("Designer");
   const [deliverableLimit, setDeliverableLimit] = useState<number | null>(null);
-  const [newSubService, setNewSubService] = useState("");
 
   const createModule = useCreateModule();
   const updateModule = useUpdateModule();
   const roleOptions = useRoleNames();
 
   const isEditing = !!module;
-
-  const { data: subServices = [] } = useModuleDeliverableTypes(module?.id);
-  const addSubService = useAddModuleDeliverableType();
-  const deleteSubService = useDeleteModuleDeliverableType();
 
   useEffect(() => {
     if (module) {
@@ -55,7 +45,6 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
       setPrimaryRole("Designer");
       setDeliverableLimit(null);
     }
-    setNewSubService("");
   }, [module, open]);
 
   const handleSave = async () => {
@@ -88,12 +77,6 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
     }
   };
 
-  const handleAddSubService = async () => {
-    if (!newSubService.trim() || !module?.id) return;
-    await addSubService.mutateAsync({ moduleId: module.id, name: newSubService.trim() });
-    setNewSubService("");
-  };
-
   const isSaving = createModule.isPending || updateModule.isPending;
 
   const handleDialogKeyDown = (e: React.KeyboardEvent) => {
@@ -102,9 +85,7 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
       const tagName = target.tagName.toLowerCase();
       if (tagName === "textarea") return;
       e.preventDefault();
-      if (!isEditing) {
-        handleSave();
-      }
+      handleSave();
     }
   };
 
@@ -126,6 +107,16 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Descrição do serviço..."
+              rows={2}
+            />
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="weight">Peso Padrão</Label>
@@ -156,59 +147,15 @@ export function ModuleDialog({ module, open, onOpenChange }: ModuleDialogProps) 
             </Select>
           </div>
 
-
-          {/* Sub-services / Deliverable Types - only when editing */}
-          {isEditing && module && (
-            <div className="space-y-3 rounded-lg border p-4">
-              <div>
-                <p className="font-medium text-sm">Tipos de Entrega</p>
-                <p className="text-xs text-muted-foreground">
-                  Subserviços que este módulo produz (ex: Arte, Vídeo, Carrossel)
-                </p>
-              </div>
-
-              {subServices.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {subServices.map((sub) => (
-                    <Badge key={sub.id} variant="secondary" className="gap-1 pr-1">
-                      {sub.name}
-                      <button
-                        onClick={() => deleteSubService.mutate(sub.id)}
-                        className="ml-1 rounded-full p-0.5 hover:bg-destructive/20 transition-colors"
-                      >
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Input
-                  value={newSubService}
-                  onChange={(e) => setNewSubService(e.target.value)}
-                  placeholder="Ex: Arte, Vídeo..."
-                  className="h-8 text-sm"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleAddSubService();
-                    }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAddSubService}
-                  disabled={!newSubService.trim() || addSubService.isPending}
-                  className="h-8 shrink-0"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="font-medium">Recorrente</p>
+              <p className="text-sm text-muted-foreground">
+                Este módulo gera entregas mensais
+              </p>
             </div>
-          )}
+            <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
+          </div>
         </div>
 
         <div className="flex justify-end gap-2">

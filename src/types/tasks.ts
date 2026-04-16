@@ -182,7 +182,6 @@ export interface CreateTaskInput {
   description_notes?: string | null;
   is_deliverable?: boolean;
   checklist?: string[];
-  optimisticId?: string;
 }
 
 export interface UpdateTaskInput {

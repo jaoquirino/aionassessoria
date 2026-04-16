@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { parseLocalDate } from "@/lib/utils";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
-import { getDeliverableTypeKind, normalizeDeliverableType } from "@/lib/deliverableType";
 
 export interface DashboardStats {
   overdueTasks: number;
@@ -54,7 +53,9 @@ export interface DashboardClientHealth {
   healthStatus: "normal" | "attention" | "critical";
   designDeliverables: number;
   designLimit: number | null;
-  deliverableTypeCounts: Record<string, number>;
+  arteCount: number;
+  videoCount: number;
+  carrosselCount: number;
   delivered: number;
 }
 
@@ -112,14 +113,13 @@ export function useDashboardData() {
         return allTasks;
       };
 
-      const [tasks, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes, deliverableTypesRes] = await Promise.all([
+      const [tasks, clientsRes, contractsRes, teamMembersRes, contractModulesRes, taskAssigneesRes] = await Promise.all([
         fetchAllTasks(),
         supabase.from("clients").select("*, is_internal"),
         supabase.from("contracts").select("*, client:clients(name)").eq("status", "active"),
         supabase.from("team_members_public").select("*").eq("is_active", true),
         supabase.from("contract_modules").select("*, service_module:service_modules(name, primary_role), contract:contracts(client_id, status)"),
         supabase.from("task_assignees").select("task_id, team_member_id"),
-        supabase.from("module_deliverable_types").select("name, module_id"),
       ]);
 
       const clients = clientsRes.data || [];
@@ -127,21 +127,6 @@ export function useDashboardData() {
       const teamMembers = teamMembersRes.data || [];
       const contractModules = contractModulesRes.data || [];
       const taskAssignees = taskAssigneesRes.data || [];
-      const allDeliverableTypes = (deliverableTypesRes.data || []) as { name: string; module_id: string }[];
-
-      // Build map: module_id -> set of deliverable type names
-      const moduleDeliverableTypesMap = new Map<string, Set<string>>();
-      allDeliverableTypes.forEach(dt => {
-        const existing = moduleDeliverableTypesMap.get(dt.module_id) || new Set();
-        existing.add(normalizeDeliverableType(dt.name));
-        moduleDeliverableTypesMap.set(dt.module_id, existing);
-      });
-
-      const designContractModuleIds = new Set(
-        contractModules
-          .filter((cm: any) => (cm.service_module?.primary_role || "").toLowerCase().includes("design"))
-          .map((cm: any) => cm.id)
-      );
 
       // Build a map of task_id -> team_member_ids
       const taskAssigneeMap = new Map<string, string[]>();
@@ -239,14 +224,10 @@ export function useDashboardData() {
         if (cm.service_module?.name) contractModuleNameMap.set(cm.id, cm.service_module.name);
       });
 
-      const getAssigneeIds = (task: any) => {
+      const getAssigneeName = (task: any) => {
         const assigneeIds = taskAssigneeMap.get(task.id) || [];
         if (task.assigned_to) assigneeIds.push(task.assigned_to);
-        return [...new Set(assigneeIds)];
-      };
-
-      const getAssigneeName = (task: any) => {
-        const uniqueIds = getAssigneeIds(task);
+        const uniqueIds = [...new Set(assigneeIds)];
         if (uniqueIds.length === 0) return "Não atribuído";
         const names = uniqueIds.map(id => memberMap.get(id)).filter(Boolean);
         return names.length > 0 ? names.join(", ") : "Não atribuído";
@@ -259,10 +240,7 @@ export function useDashboardData() {
         clientName: clientMap.get(t.client_id) || "—",
         clientLogo: clientLogoMap.get(t.client_id) || null,
         assigneeName: getAssigneeName(t),
-        assigneeAvatar: (() => {
-          const firstAssigneeId = getAssigneeIds(t)[0];
-          return firstAssigneeId ? (teamMembers.find(m => m.id === firstAssigneeId)?.avatar_url || null) : null;
-        })(),
+        assigneeAvatar: t.assigned_to ? (teamMembers.find(m => m.id === t.assigned_to)?.avatar_url || null) : null,
         dueDate: t.due_date,
         status: t.status,
         isOverdue: parseLocalDate(t.due_date) < todayMidnight && t.status !== "done",
@@ -274,53 +252,39 @@ export function useDashboardData() {
 
       // Client health - fixed to current month, only design deliveries (arte/vídeo/carrossel),
       // matching Deliveries dashboard logic (subtasks count, parent with subtasks does not duplicate)
-      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; deliverableTypeCounts: Record<string, number>; tasks: ClientTask[] }>();
+      const clientTaskStats2 = new Map<string, { weight: number; pending: number; delivered: number; designDeliverables: number; arteCount: number; videoCount: number; carrosselCount: number; tasks: ClientTask[] }>();
 
       const healthTasks = operationalTasksFiltered.filter(t => !internalClientIds.has(t.client_id));
 
       // Build a map of parent task deliverable_type so subtasks can inherit
       const parentDeliverableTypeMap = new Map<string, string>();
-      const parentContractModuleMap = new Map<string, string | null>();
       operationalTasks.forEach(t => {
         if (t.deliverable_type) {
           parentDeliverableTypeMap.set(t.id, t.deliverable_type);
         }
-        parentContractModuleMap.set(t.id, t.contract_module_id || null);
-      });
-
-      // Build map: contract_module_id -> module_id for quick lookup
-      const cmToModuleId = new Map<string, string>();
-      contractModules.forEach((cm: any) => {
-        if (cm.module_id) cmToModuleId.set(cm.id, cm.module_id);
       });
 
       healthTasks.forEach(t => {
-        const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, deliverableTypeCounts: {}, tasks: [] };
+        const curr = clientTaskStats2.get(t.client_id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, arteCount: 0, videoCount: 0, carrosselCount: 0, tasks: [] };
         const taskDue = parseLocalDate(t.due_date);
         const isCurrentMonth = taskDue >= startOfMonth && taskDue <= endOfMonth;
         
         // Inherit deliverable_type from parent if subtask doesn't have one
         const rawDeliverableType = t.deliverable_type || (t.parent_task_id ? parentDeliverableTypeMap.get(t.parent_task_id) : null) || "";
-        const deliverableType = normalizeDeliverableType(rawDeliverableType);
-        const deliverableKind = getDeliverableTypeKind(rawDeliverableType);
-        const effectiveContractModuleId = t.contract_module_id || (t.parent_task_id ? parentContractModuleMap.get(t.parent_task_id) : null) || null;
-        const effectiveModuleId = effectiveContractModuleId ? cmToModuleId.get(effectiveContractModuleId) || null : null;
-        const validTypesForModule = effectiveModuleId ? moduleDeliverableTypesMap.get(effectiveModuleId) : null;
-        const isCanonicalDesignDeliverable = deliverableKind === "arte" || deliverableKind === "carrossel" || deliverableKind === "video";
-        const isRegisteredDeliverable = !!deliverableType && !!validTypesForModule?.has(deliverableType);
-        const isValidDeliverable = isCanonicalDesignDeliverable || isRegisteredDeliverable;
-        const isDesignModule = !!effectiveContractModuleId && designContractModuleIds.has(effectiveContractModuleId);
+        const deliverableType = rawDeliverableType.toLowerCase();
+        const isDesignDeliverable = deliverableType === "arte" || deliverableType === "video" || deliverableType === "vídeo" || deliverableType === "carrossel";
 
         // Keep operational weight behavior
         if (t.status !== "done") {
           curr.weight += t.weight;
         }
 
-        // Health deliveries = tasks with valid deliverable types in current month
-        if (isCurrentMonth && isDesignModule && isValidDeliverable) {
+        // Health deliveries = design tasks in current month (any status), same as Deliveries total
+        if (isCurrentMonth && isDesignDeliverable) {
           curr.designDeliverables += 1;
-          const countKey = isCanonicalDesignDeliverable ? deliverableKind : deliverableType;
-          curr.deliverableTypeCounts[countKey] = (curr.deliverableTypeCounts[countKey] || 0) + 1;
+          if (deliverableType === "arte") curr.arteCount += 1;
+          else if (deliverableType === "carrossel") curr.carrosselCount += 1;
+          else curr.videoCount += 1;
           if (t.status === "done") curr.delivered += 1;
           else curr.pending += 1;
 
@@ -417,18 +381,14 @@ export function useDashboardData() {
         clientRevenueMap.set(c.client_id, curr + Number(c.monthly_value));
       });
 
-      // Deliverable limits — count from all modules that have deliverable_limit set
+      // Design limits
       const clientDesignLimitMap = new Map<string, number>();
       contractModules.forEach((cm: any) => {
-        if (cm.contract?.status === "active" && cm.deliverable_limit) {
-          // Only count modules that have registered deliverable types
-          const hasTypes = moduleDeliverableTypesMap.has(cm.module_id);
-          if (hasTypes) {
-            const clientId = cm.contract?.client_id;
-            if (clientId) {
-              const curr = clientDesignLimitMap.get(clientId) || 0;
-              clientDesignLimitMap.set(clientId, curr + (cm.deliverable_limit || 0));
-            }
+        if (cm.contract?.status === "active" && cm.service_module?.name?.toLowerCase().includes("design")) {
+          const clientId = cm.contract?.client_id;
+          if (clientId) {
+            const curr = clientDesignLimitMap.get(clientId) || 0;
+            clientDesignLimitMap.set(clientId, curr + (cm.deliverable_limit || 0));
           }
         }
       });
@@ -438,7 +398,7 @@ export function useDashboardData() {
           c.status === "active" && !c.is_internal && clientDesignLimitMap.has(c.id)
         )
         .map(c => {
-          const stats = clientTaskStats2.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, deliverableTypeCounts: {}, tasks: [] };
+          const stats = clientTaskStats2.get(c.id) || { weight: 0, pending: 0, delivered: 0, designDeliverables: 0, arteCount: 0, videoCount: 0, carrosselCount: 0, tasks: [] };
           const revenue = clientRevenueMap.get(c.id) || 0;
           let healthStatus: "normal" | "attention" | "critical" = "normal";
           const designLimit = clientDesignLimitMap.get(c.id) || null;
@@ -459,7 +419,9 @@ export function useDashboardData() {
             healthStatus,
             designDeliverables: stats.designDeliverables,
             designLimit,
-            deliverableTypeCounts: stats.deliverableTypeCounts,
+            arteCount: stats.arteCount,
+            videoCount: stats.videoCount,
+            carrosselCount: stats.carrosselCount,
             delivered: stats.delivered,
             tasks: stats.tasks,
           };

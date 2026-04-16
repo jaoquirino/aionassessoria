@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Loader2 } from "lucide-react";
+import { Plus, Search, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { useAllTeamMembers, type TeamMember } from "@/hooks/useTeamMembers";
+import { useAllTeamMembers, useDeleteTeamMember, type TeamMember } from "@/hooks/useTeamMembers";
 import { TeamMemberDialog } from "@/components/team/TeamMemberDialog";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
 import { useRoleNames } from "@/hooks/useAvailableRoles";
@@ -38,10 +48,27 @@ export default function Team() {
   const [capacityFilter, setCapacityFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMemberWithStats | null>(null);
+  const [deletingMember, setDeletingMember] = useState<TeamMemberWithStats | null>(null);
   const [tasksDialogMember, setTasksDialogMember] = useState<TeamMemberWithStats | null>(null);
 
   const { data: teamMembers = [], isLoading } = useAllTeamMembers();
+  const deleteMember = useDeleteTeamMember();
   const roleOptions = useRoleNames();
+
+  const allRoles = useMemo(() => {
+    // Coleta cargos reais atribuídos aos membros
+    const assignedRoles = new Set<string>();
+    teamMembers.forEach((m) => {
+      const raw = (m.role || "").split(",").map((r) => r.trim()).filter(Boolean);
+      raw.forEach((r) => {
+        // Só inclui se for um dos cargos válidos
+        if (roleOptions.some(opt => opt.toLowerCase() === r.toLowerCase())) {
+          assignedRoles.add(r);
+        }
+      });
+    });
+    return Array.from(assignedRoles).sort();
+  }, [teamMembers]);
 
   const filteredTeam = useMemo(() => {
     return teamMembers.filter((member) => {
@@ -68,8 +95,20 @@ export default function Team() {
   const totalCapacity = teamMembers.reduce((acc, m) => acc + m.capacity_limit, 0);
   const usedCapacity = teamMembers.reduce((acc, m) => acc + m.currentWeight, 0);
 
+  const handleEdit = (member: TeamMemberWithStats) => {
+    setEditingMember(member);
+    setDialogOpen(true);
+  };
+
   const handleViewTasks = (member: TeamMemberWithStats) => {
     setTasksDialogMember(member);
+  };
+
+  const handleDelete = async () => {
+    if (deletingMember) {
+      await deleteMember.mutateAsync(deletingMember.id);
+      setDeletingMember(null);
+    }
   };
 
   if (isLoading) {
@@ -94,12 +133,10 @@ export default function Team() {
             Gerenciamento de capacidade e carga
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
-            <Plus className="h-4 w-4" />
-            Novo Integrante
-          </Button>
-        </div>
+        <Button className="gap-2" onClick={() => { setEditingMember(null); setDialogOpen(true); }}>
+          <Plus className="h-4 w-4" />
+          Novo Integrante
+        </Button>
       </motion.div>
 
       {/* Filters */}
@@ -199,7 +236,6 @@ export default function Team() {
         {filteredTeam.map((member, index) => {
           const status = getCapacityStatus(member.currentWeight, member.capacity_limit);
           const percentage = Math.min((member.currentWeight / member.capacity_limit) * 100, 100);
-          const memberRoles = (member.role || "").split(",").map(r => r.trim()).filter(Boolean);
 
           return (
             <motion.div
@@ -214,28 +250,52 @@ export default function Team() {
               )}
               onClick={() => handleViewTasks(member)}
             >
-              {/* Row 1: Avatar + Name + Roles */}
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarImage src={member.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
-                    {member.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-foreground truncate">{member.name}</h3>
-                  <div className="flex flex-wrap gap-1 mt-0.5">
-                    {memberRoles.map((role) => (
-                      <Badge key={role} variant="outline" className="text-xs border-muted text-muted-foreground">
-                        {role}
-                      </Badge>
-                    ))}
-                    {(member as any).employment_type === "freelancer" && (
-                      <Badge variant="outline" className="text-xs border-primary/30 text-primary">
-                        Freelancer
+              {/* Row 1: Avatar + Name + Permission + Actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarImage src={member.avatar_url || undefined} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
+                      {member.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">{member.name}</h3>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-xs mt-0.5",
+                        member.permission === "admin"
+                          ? "border-primary/30 text-primary"
+                          : "border-muted text-muted-foreground"
+                      )}
+                    >
+                      {member.permission === "admin" ? "Admin" : "Operacional"}
+                    </Badge>
+                    {(member as any).restricted_view && (
+                      <Badge variant="outline" className="text-xs mt-0.5 border-warning/30 text-warning">
+                        Visão restrita
                       </Badge>
                     )}
                   </div>
+                </div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <button 
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
+                    onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
+                    title="Editar"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
+                    title="Remover"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
 
@@ -294,6 +354,24 @@ export default function Team() {
         open={!!tasksDialogMember}
         onOpenChange={(open) => { if (!open) setTasksDialogMember(null); }}
       />
+
+      <AlertDialog open={!!deletingMember} onOpenChange={() => setDeletingMember(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover integrante da equipe?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingMember?.name} será movido para "Sem acesso" e não aparecerá mais na equipe. 
+              As tarefas atribuídas não serão excluídas. Você pode restaurar o acesso nas Configurações.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

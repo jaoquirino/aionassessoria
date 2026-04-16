@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export type AppRole = "admin" | "gestor" | "member";
+export type AppRole = "admin" | "member";
 
 export interface UserRole {
   id: string;
@@ -63,16 +63,9 @@ export function useIsTeamMember() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (error) {
-        console.error("useIsTeamMember error:", error);
-        throw error;
-      }
-      console.log("useIsTeamMember result for", user.id, ":", data);
+      if (error) throw error;
       return !!data;
     },
-    staleTime: 0,
-    retry: 3,
-    retryDelay: 1000,
   });
 }
 
@@ -179,7 +172,7 @@ export function useSetUserRole() {
           .from("team_members")
           .update({ 
             is_active: true,
-            permission: role === "admin" ? "admin" : role === "gestor" ? "gestor" : "operational",
+            permission: role === "admin" ? "admin" : "operational",
             ...(teamConfig?.roles && { role: teamConfig.roles }),
             ...(teamConfig?.capacityLimit !== undefined && { capacity_limit: teamConfig.capacityLimit }),
             ...(teamConfig?.restrictedView !== undefined && { restricted_view: teamConfig.restrictedView }),
@@ -200,7 +193,7 @@ export function useSetUserRole() {
               user_id: userId,
               name: profile.full_name || "Novo Integrante",
               role: teamConfig?.roles || "A definir",
-              permission: role === "admin" ? "admin" : role === "gestor" ? "gestor" : "operational",
+              permission: role === "admin" ? "admin" : "operational",
               avatar_url: profile.avatar_url,
               is_active: true,
               capacity_limit: teamConfig?.capacityLimit ?? 15,

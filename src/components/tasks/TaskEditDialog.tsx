@@ -42,7 +42,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MentionTextarea } from "@/components/ui/mention-textarea";
 import { cn, parseLocalDate } from "@/lib/utils";
-import { normalizeDeliverableType } from "@/lib/deliverableType";
  import {
    useTask,
    useUpdateTask,
@@ -63,9 +62,8 @@ import { usePriorities } from "@/hooks/usePriorities";
 import { SubtaskRow } from "./SubtaskRow";
 import { TaskComments } from "./TaskComments";
 import { useTaskComments } from "@/hooks/useTaskComments";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import type { Task } from "@/types/tasks";
-import { DeliverableTypeSelector } from "./DeliverableTypeSelector";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TaskEditDialogProps {
@@ -135,19 +133,17 @@ function useClientModules(clientId: string | null) {
 }
 
 export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "details", initialSubtaskId = null }: TaskEditDialogProps) {
-  const isOptimisticTask = taskId?.startsWith("temp-") ?? false;
   const { data: task, isLoading: taskLoading } = useTask(taskId);
-  const { data: tasksCache = [] } = useQuery({
-    queryKey: ["tasks"],
-    enabled: open,
-    staleTime: Infinity,
-  });
+  // Pre-populate from tasks list cache for instant display
+  const queryClient = useQueryClient();
   const cachedTask = useMemo(() => {
     if (!taskId) return null;
-    return (tasksCache as Task[]).find((t) => t.id === taskId) || null;
-  }, [taskId, tasksCache]);
+    const tasks = queryClient.getQueryData<Task[]>(["tasks"]);
+    return tasks?.find(t => t.id === taskId) || null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId]);
   const displayTask = task || cachedTask;
-  const isLoading = isOptimisticTask ? !displayTask : !displayTask && taskLoading;
+  const isLoading = !displayTask && taskLoading;
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: clients = [] } = useClients();
   const { data: comments = [] } = useTaskComments(taskId);
@@ -268,7 +264,6 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   const handleModuleChange = (newModuleId: string) => {
     markDirty();
     setContractModuleId(newModuleId);
-    setDeliverableType(null);
     const selectedModule = clientModules.find(m => m.contractModuleId === newModuleId);
     if (selectedModule) {
       setWeight(selectedModule.defaultWeight);
@@ -277,7 +272,7 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
   };
 
   const handleSave = async () => {
-    if (!displayTask) return false;
+    if (!displayTask) return;
 
     setIsSaving(true);
     try {
@@ -299,41 +294,23 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
         contractId = null;
       }
 
-      // Build update payload — only include deliverable_type if user explicitly changed it
-      // (module change or direct selection), to prevent accidental overwrites
-      const moduleChanged = contractModuleId !== (displayTask.contract_module_id || "");
-      const deliverableChanged = (deliverableType || null) !== (displayTask.deliverable_type || null);
-
-      const updatePayload: Record<string, any> = {
+      await updateTask.mutateAsync({
         id: displayTask.id,
         title,
         status,
         priority,
         client_id: clientId,
-        assigned_to: selectedAssignees[0] || null,
+         assigned_to: selectedAssignees[0] || null,
         due_date: dueDate ? `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, "0")}-${String(dueDate.getDate()).padStart(2, "0")}` : displayTask.due_date,
         description_notes: descriptionNotes || null,
-        contract_id: contractId,
         contract_module_id: contractModuleId || null,
         type: taskType,
-        weight,
-      };
-
-      // Only send deliverable_type when explicitly changed to avoid wiping existing values
-      if (deliverableChanged || moduleChanged) {
-        updatePayload.deliverable_type = deliverableType ? normalizeDeliverableType(deliverableType) : null;
-      }
-
-      await updateTask.mutateAsync(updatePayload as any);
+        deliverable_type: deliverableType,
+      } as any);
 
        // Save multiple assignees
        await setTaskAssignees.mutateAsync({ taskId: displayTask.id, memberIds: selectedAssignees });
       isDirtyRef.current = false;
-      return true;
-    } catch (error: any) {
-      console.error("Erro ao salvar tarefa:", error);
-      import("sonner").then(({ toast }) => toast.error("Erro ao salvar tarefa: " + (error?.message || "Tente novamente")));
-      return false;
     } finally {
       setIsSaving(false);
     }
@@ -350,26 +327,15 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       setDescriptionNotes(displayTask.description_notes || "");
       setClientId(displayTask.client_id || "");
       setContractModuleId(displayTask.contract_module_id || "");
-      setTaskType(displayTask.type);
-      setWeight(displayTask.weight);
-      setDeliverableType(displayTask.deliverable_type || null);
     }
     onOpenChange(false);
   };
 
-  const closeWithSave = async () => {
-    const saved = await handleSave();
-    if (saved) onOpenChange(false);
-  };
-
-  const handleOpenChange = async (newOpen: boolean) => {
+  // Auto-save on outside click - close immediately, save in background
+  const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen && displayTask && isDirtyRef.current) {
-      // Always attempt save, but close regardless to avoid trapping users
-      try {
-        await handleSave();
-      } catch (err) {
-        console.error("Erro ao auto-salvar:", err);
-      }
+      // Fire and forget - close immediately
+      handleSave();
     }
     onOpenChange(newOpen);
   };
@@ -440,7 +406,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
       const tagName = target.tagName.toLowerCase();
       if (tagName === "textarea" || tagName === "input") return;
       e.preventDefault();
-      void closeWithSave();
+      handleSave();
+      onOpenChange(false);
     }
   };
 
@@ -453,12 +420,6 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
           isSubtask ? "max-w-lg" : "max-w-2xl"
         )}
         onKeyDown={handleDialogKeyDown}
-        onInteractOutside={(e) => {
-          if (isSaving) e.preventDefault();
-        }}
-        onEscapeKeyDown={(e) => {
-          if (isSaving) e.preventDefault();
-        }}
       >
         {isLoading ? (
           <div className="p-6 space-y-4">
@@ -788,8 +749,10 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                             if (selectedMod) {
                               setWeight(selectedMod.defaultWeight);
                             }
-                            // Reset deliverable type when changing module
-                            setDeliverableType(null);
+                            const selIsDesign = selectedMod?.moduleName?.toLowerCase().includes("design");
+                            if (!selIsDesign) {
+                              setDeliverableType(null);
+                            }
                             markDirty();
                           }}
                         >
@@ -806,26 +769,60 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
                         </Select>
                       </div>
 
-                      {/* Dynamic deliverable types from module */}
-                      <DeliverableTypeSelector
-                        contractModuleId={contractModuleId}
-                        clientModules={clientModules}
-                        value={deliverableType}
-                        onChange={(val) => { setDeliverableType(val); markDirty(); }}
-                      />
+                      {/* Only show deliverable type if module is design */}
+                      {(() => {
+                        const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);
+                        const isDesignModule = selectedModule?.moduleName?.toLowerCase().includes("design");
+                        if (!isDesignModule) return null;
+                        return (
+                          <div className="space-y-2">
+                            <Label>Tipo de Entregável</Label>
+                            <Select 
+                              value={deliverableType || "none"} 
+                              onValueChange={(val) => { setDeliverableType(val === "none" ? null : val); markDirty(); }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Nenhum" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Nenhum</SelectItem>
+                                <SelectItem value="arte">🎨 Arte</SelectItem>
+                                <SelectItem value="video">🎬 Vídeo</SelectItem>
+                                <SelectItem value="carrossel">📸 Carrossel</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
-                   {/* Deliverable Type - for parent tasks, dynamic from module */}
-                  {!isSubtask && (
-                    <DeliverableTypeSelector
-                      contractModuleId={contractModuleId}
-                      clientModules={clientModules}
-                      value={deliverableType}
-                      onChange={(val) => { setDeliverableType(val); markDirty(); }}
-                      showIcon
-                    />
-                  )}
+                   {/* Deliverable Type - only for design modules (parent tasks) */}
+                  {!isSubtask && (() => {
+                    const selectedModule = clientModules.find(m => m.contractModuleId === contractModuleId);
+                    const isDesignModule = selectedModule?.moduleName?.toLowerCase().includes("design");
+                    if (!isDesignModule) return null;
+                    return (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-1">
+                          <Package className="h-3 w-3" /> Tipo de Entregável
+                        </Label>
+                        <Select 
+                          value={deliverableType || ""} 
+                          onValueChange={(val) => { setDeliverableType(val || null); markDirty(); }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="arte">🎨 Arte</SelectItem>
+                            <SelectItem value="video">🎬 Vídeo</SelectItem>
+                            <SelectItem value="carrossel">📸 Carrossel</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })()}
 
                   <Separator />
 
@@ -1284,8 +1281,8 @@ export function TaskEditDialog({ taskId, open, onOpenChange, initialTab = "detai
               <Button variant="outline" onClick={handleCancel}>
                 Cancelar
               </Button>
-              <Button onClick={() => void closeWithSave()} disabled={isSaving}>
-                {isSaving ? "Salvando..." : "Salvar"}
+              <Button onClick={() => { handleSave(); onOpenChange(false); }}>
+                Salvar
               </Button>
             </DialogFooter>
           </div>

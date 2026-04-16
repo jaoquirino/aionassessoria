@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,36 +111,31 @@ export function EditContractDialog({
   const handleSave = async () => {
     if (!contract) return;
 
-    // Close immediately for optimistic UX
+    await updateContract.mutateAsync({
+      id: contract.id,
+      monthly_value: monthlyValue,
+      start_date: startDate,
+      renewal_date: isRecurring ? (renewalDate || null) : null,
+      payment_due_day: paymentDueDay,
+      minimum_duration_months: minimumDuration,
+      status,
+      notes: notes || null,
+      is_recurring: isRecurring,
+    });
+
+    const selectedModules = moduleConfigs
+      .filter(c => c.selected)
+      .map(c => ({
+        moduleId: c.moduleId,
+        deliverableLimit: c.deliverableLimit,
+      }));
+
+    await updateModules.mutateAsync({
+      contractId: contract.id,
+      modules: selectedModules,
+    });
+
     onOpenChange(false);
-
-    try {
-      await updateContract.mutateAsync({
-        id: contract.id,
-        monthly_value: monthlyValue,
-        start_date: startDate,
-        renewal_date: isRecurring ? (renewalDate || null) : null,
-        payment_due_day: paymentDueDay,
-        minimum_duration_months: minimumDuration,
-        status,
-        notes: notes || null,
-        is_recurring: isRecurring,
-      });
-
-      const selectedModules = moduleConfigs
-        .filter(c => c.selected)
-        .map(c => ({
-          moduleId: c.moduleId,
-          deliverableLimit: c.deliverableLimit,
-        }));
-
-      await updateModules.mutateAsync({
-        contractId: contract.id,
-        modules: selectedModules,
-      });
-    } catch {
-      // Error handled by mutation (toast + rollback)
-    }
   };
 
   if (!contract) return null;

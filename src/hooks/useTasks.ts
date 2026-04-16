@@ -96,7 +96,6 @@ export function useArchivedTasks() {
 
 // Fetch single task with all details
 export function useTask(taskId: string | null) {
-  const isTemp = taskId?.startsWith("temp-") ?? false;
   return useQuery({
     queryKey: ["task", taskId],
     queryFn: async () => {
@@ -142,6 +141,7 @@ export function useTask(taskId: string | null) {
           }));
 
         // Add synthetic "created" entry at the end (oldest)
+        // Use created_by if available, otherwise infer from the earliest history entry
         const earliestEntry = enrichedHistory.length > 0 ? enrichedHistory[enrichedHistory.length - 1] : null;
         const creatorId = data.created_by || earliestEntry?.performed_by || null;
         const creatorMember = creatorId ? membersMap.get(creatorId) || null : null;
@@ -169,7 +169,7 @@ export function useTask(taskId: string | null) {
 
       return data as Task | null;
     },
-    enabled: !!taskId && !isTemp,
+    enabled: !!taskId,
   });
 }
 
@@ -179,7 +179,7 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: async (input: CreateTaskInput) => {
-      const { checklist, status, optimisticId: _optimisticId, ...taskData } = input;
+      const { checklist, status, ...taskData } = input;
       
       // Get current user's team member id
       const { data: { user } } = await supabase.auth.getUser();
@@ -199,7 +199,7 @@ export function useCreateTask() {
         .insert({
           ...taskData,
           status: status || "todo",
-          weight: 0,
+          weight: 0, // Will be set by trigger
           created_by: teamMemberId,
         })
         .select()
@@ -207,6 +207,7 @@ export function useCreateTask() {
 
       if (error) throw error;
 
+      // Insert checklist items if provided
       if (checklist && checklist.length > 0) {
         const checklistItems = checklist.map((text, index) => ({
           task_id: task.id,
@@ -217,6 +218,7 @@ export function useCreateTask() {
         await supabase.from("task_checklist").insert(checklistItems);
       }
 
+      // Log creation in history with performer
       await supabase.from("task_history").insert({
         task_id: task.id,
         action_type: "created",
@@ -229,10 +231,10 @@ export function useCreateTask() {
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ["tasks"] });
       const previousTasks = queryClient.getQueryData(["tasks"]);
-      const optimisticId = input.optimisticId || `temp-${Date.now()}`;
 
+      // Create optimistic task
       const optimisticTask = {
-        id: optimisticId,
+        id: `temp-${Date.now()}`,
         title: input.title,
         status: input.status || "todo",
         priority: input.priority || "medium",
@@ -266,7 +268,7 @@ export function useCreateTask() {
         return old ? [optimisticTask, ...old] : [optimisticTask];
       });
 
-      return { previousTasks, optimisticId };
+      return { previousTasks };
     },
     onError: (error, _, context) => {
       if (context?.previousTasks) {
@@ -274,23 +276,11 @@ export function useCreateTask() {
       }
       toast.error("Erro ao criar tarefa: " + error.message);
     },
-    onSuccess: (task, _variables, context) => {
-      if (context?.optimisticId) {
-        queryClient.setQueryData(["tasks"], (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((item) =>
-            item.id === context.optimisticId
-              ? ({ ...item, ...task, id: task.id } as Task)
-              : item
-          );
-        });
-      }
+    onSuccess: () => {
       toast.success("Tarefa criada com sucesso");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -339,8 +329,6 @@ export function useUpdateTask() {
     onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task", variables.id] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -389,8 +377,6 @@ export function useUpdateTaskStatus() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task", variables.taskId] });
       queryClient.invalidateQueries({ queryKey: ["onboarding_module_tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -438,8 +424,6 @@ export function useUpdateTaskField() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["onboarding_module_tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -498,8 +482,6 @@ export function useArchiveTask() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     },
   });
 }
@@ -518,8 +500,6 @@ export function useUnarchiveTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
       toast.success("Tarefa restaurada");
     },
     onError: (error) => {

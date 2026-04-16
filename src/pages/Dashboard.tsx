@@ -8,19 +8,16 @@ import {
   DollarSign,
   ArrowRight,
   Package,
-  
+  TrendingUp,
   CornerDownRight,
   Activity,
   Heart,
   Eye,
   EyeOff,
   RefreshCw,
-  Camera,
   Video,
   Image as ImageIcon,
   GalleryHorizontal,
-  Scissors,
-  SlidersHorizontal,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -38,26 +35,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { getDeliverableTypeKind, getDeliverableTypeLabel, type DeliverableKind } from "@/lib/deliverableType";
-
-const kindIconMap: Record<DeliverableKind, React.ElementType> = {
-  arte: ImageIcon, carrossel: GalleryHorizontal, video: Video,
-  edicao: SlidersHorizontal, fotografar: Camera, selecao: Scissors, generic: Package,
-};
-const kindColorMap: Record<DeliverableKind, string> = {
-  arte: "text-primary", carrossel: "text-warning", video: "text-info",
-  edicao: "text-purple-400", fotografar: "text-emerald-400", selecao: "text-amber-400", generic: "text-muted-foreground",
-};
 import { useDashboardData, type ClientTask } from "@/hooks/useDashboard";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useFinancialEvolution } from "@/hooks/useDeliveriesDashboard";
 import { useHideValues } from "@/hooks/useHideValues";
-import { useMyModulePermissions } from "@/hooks/useModulePermissions";
 import { DeliveriesDashboard } from "@/components/dashboard/AdvancedDashboards";
 import { OnboardingOverview } from "@/components/dashboard/OnboardingOverview";
 import { OnboardingTasksSection } from "@/components/dashboard/OnboardingTasksSection";
 import { TaskEditDialog } from "@/components/tasks/TaskEditDialog";
-import { DeliverableTypeBadge } from "@/components/tasks/DeliverableTypeBadge";
 import { TeamMemberTasksDialog } from "@/components/team/TeamMemberTasksDialog";
 import {
   AreaChart,
@@ -96,7 +81,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { data, isLoading } = useDashboardData();
   const { data: currentMember } = useCurrentTeamMember();
-  const { data: modulePermissions = [] } = useMyModulePermissions();
   const { data: financialData } = useFinancialEvolution();
   const [activeTab, setActiveTab] = useState("overview");
   const { hidden: hideValues, toggle: toggleHideValues, mask: maskCurrency } = useHideValues();
@@ -118,19 +102,6 @@ export default function Dashboard() {
   const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
   const hasAnimated = useRef(false);
   const isRestricted = currentMember?.restricted_view === true;
-  const isOperationalRole = currentMember?.permission === "operational";
-  const isGestorRole = currentMember?.permission === "gestor";
-  const isAdminRole = currentMember?.permission === "admin";
-  const dashboardPermission = modulePermissions.find((permission) => permission.module === "dashboard");
-  const dashboardSubPermissions = dashboardPermission?.sub_permissions || {};
-  
-  // Defaults by role: Admin sees all, Gestor sees capacity+tasks, Operational sees only tasks
-  const canViewClientHealth = isAdminRole ? (dashboardSubPermissions.client_health !== false) : isGestorRole ? (dashboardSubPermissions.client_health === true) : false;
-  const canViewTeamCapacity = isAdminRole ? (dashboardSubPermissions.team_capacity !== false) : isGestorRole ? (dashboardSubPermissions.team_capacity !== false) : false;
-  const canViewRevenue = isAdminRole ? (dashboardSubPermissions.revenue !== false) : false;
-  const _canViewContractAlerts = isAdminRole ? (dashboardSubPermissions.contracts_alert !== false) : false;
-  const canViewOnboarding = isAdminRole ? (dashboardSubPermissions.onboarding !== false) : false;
-  const canViewTasksOverview = dashboardSubPermissions.tasks_overview !== false;
 
   const revenueChartData = useMemo(() => {
     if (!financialData?.data) return [];
@@ -213,7 +184,7 @@ export default function Dashboard() {
     );
   }
 
-  const { stats, team, clients, isAdmin, baseTasks, filteredTeam, displayStats } = derivedData;
+  const { stats, tasks, team, clients, isAdmin, baseTasks, filteredTeam, displayStats } = derivedData;
 
   const handleTaskClick = (task: { id: string; isSubtask: boolean; parentTaskId: string | null }) => {
     if (task.isSubtask && task.parentTaskId) {
@@ -237,14 +208,12 @@ export default function Dashboard() {
 
   const shouldAnimate = !hasAnimated.current;
 
-  
-
   const overviewContent = (
     <>
       {/* ROW 1: Client Health */}
-      {canViewClientHealth && (
+      {isAdmin && (
         <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")}>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
                 <Heart className="h-5 w-5 text-success" />
@@ -290,24 +259,19 @@ export default function Dashboard() {
                       <td className="py-4 text-sm text-foreground">{maskCurrency(formatCurrency(client.monthlyValue))}</td>
                       <td className="py-4">
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-3 flex-wrap">
-                            {Object.entries(client.deliverableTypeCounts || {}).map(([type, count]) => {
-                              const kind = getDeliverableTypeKind(type);
-
-                              const KindIcon = kindIconMap[kind];
-                              const colorClass = kindColorMap[kind];
-
-                              return (
-                                <span
-                                  key={type}
-                                  className={cn("inline-flex items-center gap-1 text-xs font-medium", colorClass)}
-                                  title={`${getDeliverableTypeLabel(type) || type}: ${count as number}`}
-                                >
-                                  <KindIcon className="h-3.5 w-3.5" />
-                                  <span>{count as number}</span>
-                                </span>
-                              );
-                            })}
+                          <div className="flex items-center gap-2.5">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
+                              <Video className="h-3.5 w-3.5" />
+                              {client.videoCount}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-500">
+                              <ImageIcon className="h-3.5 w-3.5" />
+                              {client.arteCount}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-500">
+                              <GalleryHorizontal className="h-3.5 w-3.5" />
+                              {client.carrosselCount}
+                            </span>
                           </div>
                           {client.designLimit != null && (
                             <span className="text-xs font-medium text-foreground">
@@ -336,287 +300,281 @@ export default function Dashboard() {
       )}
 
       {/* ROW 2: Capacity + Revenue */}
-      {(canViewTeamCapacity || canViewRevenue) && (
-        <div className="grid gap-6 lg:grid-cols-5">
-          {canViewTeamCapacity && (
-            <div className={cn("glass rounded-xl p-6 lg:col-span-3", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.1s", animationFillMode: "both" } : undefined}>
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Activity className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">Capacidade da Equipe</h3>
-                    <p className="text-sm text-muted-foreground">Peso × Capacidade</p>
-                  </div>
-                </div>
-                {!isRestricted && (
-                  <button onClick={() => navigate("/equipe")} className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-                    Ver equipe <ArrowRight className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Peso Total</span>
-                  <span className={cn("text-lg font-bold",
-                    displayStats.totalWeight > displayStats.totalCapacity ? "text-destructive" :
-                    displayStats.totalWeight > displayStats.totalCapacity * 0.8 ? "text-warning" : "text-success"
-                  )}>{displayStats.totalWeight} / {displayStats.totalCapacity}</span>
-                </div>
-                <Progress
-                  value={Math.min((displayStats.totalWeight / (displayStats.totalCapacity || 1)) * 100, 100)}
-                  className={cn("h-3",
-                    displayStats.totalWeight > displayStats.totalCapacity && "[&>div]:bg-destructive",
-                    displayStats.totalWeight > displayStats.totalCapacity * 0.8 && displayStats.totalWeight <= displayStats.totalCapacity && "[&>div]:bg-warning",
-                    displayStats.totalWeight <= displayStats.totalCapacity * 0.8 && "[&>div]:bg-success"
-                  )}
-                />
-              </div>
-              <div className="space-y-4">
-                {(isRestricted ? filteredTeam : team).length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">Nenhum membro</p>
-                ) : (
-                  (isRestricted ? filteredTeam : team).map((member) => {
-                    const status = getCapacityStatus(member.currentWeight, member.maxWeight);
-                    const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
-                    return (
-                      <div key={member.id} className="space-y-2 cursor-pointer rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50"
-                        onClick={() => setSelectedTeamMember({ id: member.id, name: member.name, role: member.role, avatar_url: member.avatar_url })}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                              <AvatarImage src={member.avatar_url || undefined} />
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                                {member.name.split(" ").map(n => n[0]).join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{member.name}</p>
-                              <p className="text-xs text-muted-foreground">{member.role}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={cn("status-indicator", `status-${status}`)} />
-                            <span className="text-sm font-medium text-foreground">{member.currentWeight}/{member.maxWeight}</span>
-                          </div>
-                        </div>
-                        <Progress value={percentage} className={cn("h-2",
-                          status === "critical" && "[&>div]:bg-destructive",
-                          status === "attention" && "[&>div]:bg-warning",
-                          status === "normal" && "[&>div]:bg-success"
-                        )} />
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{member.tasksCount} tarefas ativas</span>
-                          {member.overdueTasks > 0 && (
-                            <span className="text-destructive">{member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
-
-          {canViewRevenue && (
-            <div className={cn("lg:col-span-2 flex flex-col gap-6", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.2s", animationFillMode: "both" } : undefined}>
-              <div className="glass rounded-xl p-6 flex-1 flex flex-col">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
-                    <DollarSign className="h-6 w-6 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Receita Mensal</p>
-                    <p className="text-2xl font-bold text-foreground">{maskCurrency(formatCurrency(stats.monthlyRevenue))}</p>
-                  </div>
-                </div>
-                {revenueChartData.length > 1 && (
-                  <div className="flex-1 min-h-0">
-                    <div className="h-24">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={revenueChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
-                              <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0.05} />
-                            </linearGradient>
-                          </defs>
-                          <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                          <Tooltip
-                            formatter={(value: number) => [maskCurrency(formatCurrency(value)), "Receita"]}
-                            contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                          />
-                          <Area type="monotone" dataKey="value" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#revenueGradient)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-                <div className="h-px bg-border my-3" />
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Clientes Ativos</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.activeClients}</p>
-                  </div>
-                </div>
-                <button onClick={() => navigate("/clientes")} className="mt-4 flex items-center gap-1 text-sm font-medium text-primary hover:underline self-end">
-                  Ver clientes <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {canViewOnboarding && <OnboardingOverview />}
-      {canViewOnboarding && <OnboardingTasksSection />}
-
-      {/* ROW 3: Tasks */}
-      {canViewTasksOverview && (
-        <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.3s", animationFillMode: "both" } : undefined}>
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className={cn("glass rounded-xl p-6 lg:col-span-3", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.1s", animationFillMode: "both" } : undefined}>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Package className="h-5 w-5 text-primary" />
+                <Activity className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">{isRestricted ? "Minhas Tarefas" : "Tarefas"}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {displayStats.overdueTasks} atrasadas · {baseTasks.length} em andamento
-                </p>
+                <h3 className="text-lg font-semibold text-foreground">Capacidade da Equipe</h3>
+                <p className="text-sm text-muted-foreground">Peso × Capacidade</p>
               </div>
             </div>
-            <button
-              onClick={() => navigate("/tarefas")}
-              className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-            >
-              Ver todas
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            {!isRestricted && (
+              <button onClick={() => navigate("/equipe")} className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                Ver equipe <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
           </div>
-
-          <div className="flex flex-wrap gap-2 mb-5">
-            <button
-              onClick={() => setTaskFilter(taskFilter === "overdue" ? "all" : "overdue")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
-                taskFilter === "overdue"
-                  ? "bg-destructive text-destructive-foreground border border-destructive shadow-sm"
-                  : displayStats.overdueTasks > 0
-                    ? "bg-destructive/10 text-destructive border border-destructive/20"
-                    : "bg-muted/50 text-muted-foreground border border-border"
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Peso Total</span>
+              <span className={cn("text-lg font-bold",
+                displayStats.totalWeight > displayStats.totalCapacity ? "text-destructive" :
+                displayStats.totalWeight > displayStats.totalCapacity * 0.8 ? "text-warning" : "text-success"
+              )}>{displayStats.totalWeight} / {displayStats.totalCapacity}</span>
+            </div>
+            <Progress
+              value={Math.min((displayStats.totalWeight / (displayStats.totalCapacity || 1)) * 100, 100)}
+              className={cn("h-3",
+                displayStats.totalWeight > displayStats.totalCapacity && "[&>div]:bg-destructive",
+                displayStats.totalWeight > displayStats.totalCapacity * 0.8 && displayStats.totalWeight <= displayStats.totalCapacity && "[&>div]:bg-warning",
+                displayStats.totalWeight <= displayStats.totalCapacity * 0.8 && "[&>div]:bg-success"
               )}
-            >
-              {displayStats.overdueTasks} Atrasadas
-            </button>
-            <button
-              onClick={() => setTaskFilter(taskFilter === "today" ? "all" : "today")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
-                taskFilter === "today"
-                  ? "bg-success text-success-foreground border border-success shadow-sm"
-                  : "bg-success/10 text-success border border-success/20"
-              )}
-            >
-              {displayStats.todayDeliveries} Entregas Hoje
-            </button>
-            <button
-              onClick={() => setTaskFilter(taskFilter === "week" ? "all" : "week")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
-                taskFilter === "week"
-                  ? "bg-primary text-primary-foreground border border-primary shadow-sm"
-                  : "bg-primary/10 text-primary border border-primary/20"
-              )}
-            >
-              {displayStats.weekDeliveries} Da Semana
-            </button>
-            <button
-              onClick={() => setTaskFilter(taskFilter === "active" ? "all" : "active")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
-                taskFilter === "active"
-                  ? "bg-foreground text-background border border-foreground shadow-sm"
-                  : "bg-muted/50 text-foreground border border-border"
-              )}
-            >
-              {displayStats.activeTasks} Ativas
-            </button>
+            />
           </div>
-
-          <div className="space-y-2">
-            {filteredTasks.length === 0 ? (
-              <p className="text-center text-muted-foreground py-6">
-                {taskFilter !== "all" ? "Nenhuma tarefa neste filtro" : "Nenhuma tarefa ativa"}
-              </p>
+          <div className="space-y-4">
+            {(isRestricted ? filteredTeam : team).length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">Nenhum membro</p>
             ) : (
-              filteredTasks.slice(0, 8).map((task) => (
-                  <div
-                  key={task.id}
-                  className={cn(
-                    "group flex items-center gap-4 rounded-lg border border-l-4 p-3 transition-all hover:bg-muted/50 cursor-pointer",
-                    task.isOverdue
-                      ? "border-destructive/30 bg-destructive/5 !border-l-destructive"
-                      : task.status === "done" ? "border-border !border-l-success"
-                      : task.status === "review" ? "border-border !border-l-warning"
-                      : task.status === "in_progress" ? "border-border !border-l-primary"
-                      : task.status === "waiting_client" ? "border-border !border-l-info"
-                      : "border-border !border-l-muted-foreground"
-                  )}
-                  onClick={() => handleTaskClick(task)}
-                >
-                  <div
-                    className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                      task.isOverdue ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
-                    )}
+              (isRestricted ? filteredTeam : team).map((member) => {
+                const status = getCapacityStatus(member.currentWeight, member.maxWeight);
+                const percentage = Math.min((member.currentWeight / member.maxWeight) * 100, 100);
+                return (
+                  <div key={member.id} className="space-y-2 cursor-pointer rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50"
+                    onClick={() => setSelectedTeamMember({ id: member.id, name: member.name, role: member.role, avatar_url: member.avatar_url })}
                   >
-                    {task.isOverdue ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      {task.isSubtask && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                      <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1.5">
-                        {task.clientLogo && (
-                          <img src={task.clientLogo} alt="" className="h-4 w-4 rounded object-contain" />
-                        )}
-                        {task.clientName}
-                      </span>
-                      <span>·</span>
-                      <div className="flex items-center gap-1">
-                        {task.assigneeAvatar && (
-                          <Avatar className="h-4 w-4">
-                            <AvatarImage src={task.assigneeAvatar} />
-                            <AvatarFallback className="text-[8px]">
-                              {task.assigneeName.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                        <span>{task.assigneeName}</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={member.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                            {member.name.split(" ").map(n => n[0]).join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{member.name}</p>
+                          <p className="text-xs text-muted-foreground">{member.role}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={cn("status-indicator", `status-${status}`)} />
+                        <span className="text-sm font-medium text-foreground">{member.currentWeight}/{member.maxWeight}</span>
                       </div>
                     </div>
+                    <Progress value={percentage} className={cn("h-2",
+                      status === "critical" && "[&>div]:bg-destructive",
+                      status === "attention" && "[&>div]:bg-warning",
+                      status === "normal" && "[&>div]:bg-success"
+                    )} />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{member.tasksCount} tarefas ativas</span>
+                      {member.overdueTasks > 0 && (
+                        <span className="text-destructive">{member.overdueTasks} atrasada{member.overdueTasks > 1 ? "s" : ""}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={cn("shrink-0 text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
-                      {statusConfig[task.status]?.label || task.status}
-                    </Badge>
-                    {task.isOverdue && <span className="text-xs font-medium text-destructive">Atrasada</span>}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
-      )}
+
+        {isAdmin && (
+          <div className={cn("lg:col-span-2 flex flex-col gap-6", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.2s", animationFillMode: "both" } : undefined}>
+            <div className="glass rounded-xl p-6 flex-1 flex flex-col">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
+                  <DollarSign className="h-6 w-6 text-success" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Receita Mensal</p>
+                  <p className="text-2xl font-bold text-foreground">{maskCurrency(formatCurrency(stats.monthlyRevenue))}</p>
+                </div>
+              </div>
+              {revenueChartData.length > 1 && (
+                <div className="flex-1 min-h-0">
+                  <div className="h-24">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={revenueChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                            <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0.05} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          formatter={(value: number) => [maskCurrency(formatCurrency(value)), "Receita"]}
+                          contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                        />
+                        <Area type="monotone" dataKey="value" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#revenueGradient)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+              <div className="h-px bg-border my-3" />
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Clientes Ativos</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.activeClients}</p>
+                </div>
+              </div>
+              <button onClick={() => navigate("/clientes")} className="mt-4 flex items-center gap-1 text-sm font-medium text-primary hover:underline self-end">
+                Ver clientes <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {isAdmin && <OnboardingOverview />}
+      {isAdmin && <OnboardingTasksSection />}
+
+      {/* ROW 3: Tasks */}
+      <div className={cn("glass rounded-xl p-6", shouldAnimate && "animate-fade-in")} style={shouldAnimate ? { animationDelay: "0.3s", animationFillMode: "both" } : undefined}>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Package className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">{isRestricted ? "Minhas Tarefas" : "Tarefas"}</h3>
+              <p className="text-sm text-muted-foreground">
+                {displayStats.overdueTasks} atrasadas · {baseTasks.length} em andamento
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate("/tarefas")}
+            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          >
+            Ver todas
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-5">
+          <button
+            onClick={() => setTaskFilter(taskFilter === "overdue" ? "all" : "overdue")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "overdue"
+                ? "bg-destructive text-destructive-foreground border border-destructive shadow-sm"
+                : displayStats.overdueTasks > 0
+                  ? "bg-destructive/10 text-destructive border border-destructive/20"
+                  : "bg-muted/50 text-muted-foreground border border-border"
+            )}
+          >
+            {displayStats.overdueTasks} Atrasadas
+          </button>
+          <button
+            onClick={() => setTaskFilter(taskFilter === "today" ? "all" : "today")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "today"
+                ? "bg-success text-success-foreground border border-success shadow-sm"
+                : "bg-success/10 text-success border border-success/20"
+            )}
+          >
+            {displayStats.todayDeliveries} Entregas Hoje
+          </button>
+          <button
+            onClick={() => setTaskFilter(taskFilter === "week" ? "all" : "week")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "week"
+                ? "bg-primary text-primary-foreground border border-primary shadow-sm"
+                : "bg-primary/10 text-primary border border-primary/20"
+            )}
+          >
+            {displayStats.weekDeliveries} Da Semana
+          </button>
+          <button
+            onClick={() => setTaskFilter(taskFilter === "active" ? "all" : "active")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:scale-105",
+              taskFilter === "active"
+                ? "bg-foreground text-background border border-foreground shadow-sm"
+                : "bg-muted/50 text-foreground border border-border"
+            )}
+          >
+            {displayStats.activeTasks} Ativas
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {filteredTasks.length === 0 ? (
+            <p className="text-center text-muted-foreground py-6">
+              {taskFilter !== "all" ? "Nenhuma tarefa neste filtro" : "Nenhuma tarefa ativa"}
+            </p>
+          ) : (
+            filteredTasks.slice(0, 8).map((task) => (
+                <div
+                key={task.id}
+                className={cn(
+                  "group flex items-center gap-4 rounded-lg border border-l-4 p-3 transition-all hover:bg-muted/50 cursor-pointer",
+                  task.isOverdue
+                    ? "border-destructive/30 bg-destructive/5 !border-l-destructive"
+                    : task.status === "done" ? "border-border !border-l-success"
+                    : task.status === "review" ? "border-border !border-l-warning"
+                    : task.status === "in_progress" ? "border-border !border-l-primary"
+                    : task.status === "waiting_client" ? "border-border !border-l-info"
+                    : "border-border !border-l-muted-foreground"
+                )}
+                onClick={() => handleTaskClick(task)}
+              >
+                <div
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                    task.isOverdue ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                  )}
+                >
+                  {task.isOverdue ? <AlertTriangle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {task.isSubtask && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                    <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      {task.clientLogo && (
+                        <img src={task.clientLogo} alt="" className="h-4 w-4 rounded object-contain" />
+                      )}
+                      {task.clientName}
+                    </span>
+                    <span>·</span>
+                    <div className="flex items-center gap-1">
+                      {task.assigneeAvatar && (
+                        <Avatar className="h-4 w-4">
+                          <AvatarImage src={task.assigneeAvatar} />
+                          <AvatarFallback className="text-[8px]">
+                            {task.assigneeName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <span>{task.assigneeName}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge className={cn("shrink-0 text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
+                    {statusConfig[task.status]?.label || task.status}
+                  </Badge>
+                  {task.isOverdue && <span className="text-xs font-medium text-destructive">Atrasada</span>}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </>
   );
 
@@ -698,21 +656,21 @@ export default function Dashboard() {
                     <p className="text-xs text-muted-foreground">Receita</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-center gap-3 flex-wrap">
-                      {Object.entries(selectedClientHealth.deliverableTypeCounts || {}).map(([type, count]) => {
-                        const kind = getDeliverableTypeKind(type);
-                        const KindIcon = kindIconMap[kind];
-                        const colorClass = kindColorMap[kind];
-
-                        return (
-                          <span key={type} className={cn("inline-flex items-center gap-1 text-sm font-bold", colorClass)} title={`${getDeliverableTypeLabel(type) || type}: ${count as number}`}>
-                            <KindIcon className="h-4 w-4" />
-                            {count as number}
-                          </span>
-                        );
-                      })}
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="inline-flex items-center gap-1 text-sm font-bold text-info">
+                        <Video className="h-4 w-4" />
+                        {selectedClientHealth.videoCount}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-sm font-bold text-purple-500">
+                        <ImageIcon className="h-4 w-4" />
+                        {selectedClientHealth.arteCount}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-500">
+                        <GalleryHorizontal className="h-4 w-4" />
+                        {selectedClientHealth.carrosselCount}
+                      </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">Entregáveis de design no período</p>
+                    <p className="text-xs text-muted-foreground">Vídeos / Artes / Carrosséis</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-muted/50">
                     <p className="text-lg font-bold text-foreground">
@@ -808,7 +766,14 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <DeliverableTypeBadge value={task.deliverableType} />
+                              {task.deliverableType && (
+                                <Badge variant="outline" className={cn(
+                                  "text-xs",
+                                  (task.deliverableType as string).toLowerCase() === "arte" ? "border-purple-500/30 text-purple-500" : (task.deliverableType as string).toLowerCase() === "carrossel" ? "border-orange-500/30 text-orange-500" : "border-info/30 text-info"
+                                )}>
+                                  {(task.deliverableType as string).toLowerCase() === "arte" ? "🎨 Arte" : (task.deliverableType as string).toLowerCase() === "carrossel" ? "📸 Carrossel" : "🎬 Vídeo"}
+                                </Badge>
+                              )}
                               <Badge className={cn("text-[10px]", statusConfig[task.status]?.color || "bg-muted")}>
                                 {statusConfig[task.status]?.label || task.status}
                               </Badge>

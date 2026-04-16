@@ -1,14 +1,13 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { useIsAdmin, useIsTeamMember } from "@/hooks/useUserRoles";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
 import { NotificationToastContainer } from "@/components/notifications/NotificationCenter";
 import { MentionNotificationContainer } from "@/components/notifications/MentionNotification";
 import { AccessDeniedScreen } from "@/components/auth/AccessDeniedScreen";
@@ -24,31 +23,12 @@ import Calendar from "./pages/Calendar";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
-import Financial from "./pages/Financial";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,      // 30s — dados considerados frescos (evita refetch em navegação)
-      gcTime: 5 * 60_000,     // 5min — mantém cache em memória após unmount
-      refetchOnWindowFocus: false, // evita refetch ao trocar de aba
-      retry: 1,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
-  const queryClient = useQueryClient();
-  const { data: isTeamMember, isLoading: isTeamMemberLoading, refetch } = useIsTeamMember();
-
-  // Refetch team member status when user changes (login/logout)
-  useEffect(() => {
-    if (user) {
-      queryClient.invalidateQueries({ queryKey: ["is_team_member"] });
-      queryClient.invalidateQueries({ queryKey: ["is_admin"] });
-    }
-  }, [user?.id, queryClient]);
+  const { data: isTeamMember, isLoading: isTeamMemberLoading } = useIsTeamMember();
 
   if (loading || isTeamMemberLoading) {
     return (
@@ -90,28 +70,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
   
   const isAdmin = currentMember?.permission === "admin" || !!isAdminByRole;
-  const isGestor = currentMember?.permission === "gestor";
-  if (!isAdmin && !isGestor) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-}
-
-// Strict admin-only route (no gestor access)
-function StrictAdminRoute({ children }: { children: React.ReactNode }) {
-  const { data: currentMember, isLoading } = useCurrentTeamMember();
-  const { data: isAdminByRole, isLoading: isAdminLoading } = useIsAdmin();
-  
-  if (isLoading || isAdminLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  const isAdmin = currentMember?.permission === "admin" || !!isAdminByRole;
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -135,8 +93,6 @@ const App = () => (
             <Route path="/tarefas" element={<Tasks />} />
             <Route path="/calendario" element={<Calendar />} />
             <Route path="/equipe" element={<AdminRoute><Team /></AdminRoute>} />
-            <Route path="/financeiro" element={<StrictAdminRoute><Financial /></StrictAdminRoute>} />
-            <Route path="/configuracoes" element={<Settings />} />
             <Route path="/modulos" element={<Navigate to="/configuracoes" replace />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/onboarding-templates" element={<Navigate to="/configuracoes" replace />} />

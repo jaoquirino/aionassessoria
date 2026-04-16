@@ -153,37 +153,32 @@ export default function Tasks() {
     setSelectedTaskTab(initialTab || "details");
   };
 
-  // Quick create task - opens modal immediately using the same optimistic ID as cache
-  const handleQuickAddTask = (status: TaskStatusDB) => {
+  // Quick create task - creates with no client pre-selected, opens edit modal
+  const handleQuickAddTask = async (status: TaskStatusDB) => {
     if (clients.length === 0) {
       toast.error("Cadastre um cliente ativo primeiro");
       return;
     }
 
-    const tempId = `temp-${Date.now()}`;
-    setSelectedTaskId(tempId);
-
-    createTask.mutate(
-      {
+    try {
+      const result = await createTask.mutateAsync({
         title: "Nova tarefa",
-        client_id: clients[0].id,
+        client_id: clients[0].id, // Required by DB, user will change in modal
         type: "recurring",
         required_role: "Designer",
         due_date: format(addDays(new Date(), 7), "yyyy-MM-dd"),
         status,
-        optimisticId: tempId,
-      },
-      {
-        onSuccess: (result) => {
-          if (result?.id) {
-            setSelectedTaskId((current) => (current === tempId ? result.id : current));
-          }
-        },
-        onError: () => {
-          setSelectedTaskId((current) => (current === tempId ? null : current));
-        },
+      });
+
+      // Open edit modal so user can select client and module
+      if (result && result.id) {
+        setTimeout(() => {
+          setSelectedTaskId(result.id);
+        }, 100);
       }
-    );
+    } catch {
+      // Error already handled by mutation
+    }
   };
   // Handle inline field updates
   const handleUpdateField = (taskId: string, field: string, value: unknown) => {

@@ -7,8 +7,7 @@
  import { Badge } from "@/components/ui/badge";
  import { X, Eye, EyeOff, Loader2, AtSign } from "lucide-react";
  import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { capitalizeName } from "@/lib/utils";
+ import { toast } from "sonner";
  import { cn } from "@/lib/utils";
  import { PasswordRequirements } from "./PasswordRequirements";
  import { isPasswordStrong } from "@/lib/passwordValidation";
@@ -89,7 +88,7 @@ import { capitalizeName } from "@/lib/utils";
          body: {
            username: username.trim(),
            password,
-           fullName: fullName.trim() ? capitalizeName(fullName.trim()) : null,
+           fullName: fullName.trim() || null,
            roles,
            permission,
          },

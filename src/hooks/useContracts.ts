@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { differenceInDays, addMonths } from "date-fns";
+import { differenceInDays } from "date-fns";
 import { parseLocalDate } from "@/lib/utils";
 
 export interface Contract {
@@ -13,7 +13,6 @@ export interface Contract {
   renewal_date: string | null;
   status: string;
   notes: string | null;
-  is_recurring: boolean;
   created_at: string;
   updated_at: string;
   // Computed
@@ -60,36 +59,21 @@ export interface UpdateContractInput {
   is_recurring?: boolean;
 }
 
-function computeContractStatus(contract: Contract): { status: "active" | "expiring_soon" | "renewing" | "ended"; daysUntilRenewal: number; shouldAutoEnd: boolean } {
+function computeContractStatus(contract: Contract): { status: "active" | "expiring_soon" | "renewing" | "ended"; daysUntilRenewal: number } {
   if (contract.status === "ended") {
-    return { status: "ended", daysUntilRenewal: 0, shouldAutoEnd: false };
-  }
-
-  const today = new Date();
-  const renewalDate = contract.renewal_date ? parseLocalDate(contract.renewal_date) : null;
-  const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, today) : 999;
-
-  // Non-recurring contracts: end after start_date + minimum_duration_months
-  if (!contract.is_recurring) {
-    const startDate = parseLocalDate(contract.start_date);
-    const endDate = addMonths(startDate, contract.minimum_duration_months);
-    if (today > endDate) {
-      return { status: "ended", daysUntilRenewal: 0, shouldAutoEnd: true };
-    }
-  }
-
-  // Any contract past renewal date → auto-end
-  if (renewalDate && today > renewalDate) {
-    return { status: "ended", daysUntilRenewal: 0, shouldAutoEnd: true };
+    return { status: "ended", daysUntilRenewal: 0 };
   }
   
+  const renewalDate = contract.renewal_date ? parseLocalDate(contract.renewal_date) : null;
+  const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : 999;
+  
   if (daysUntilRenewal <= 7) {
-    return { status: "renewing", daysUntilRenewal, shouldAutoEnd: false };
+    return { status: "renewing", daysUntilRenewal };
   }
   if (daysUntilRenewal <= 30) {
-    return { status: "expiring_soon", daysUntilRenewal, shouldAutoEnd: false };
+    return { status: "expiring_soon", daysUntilRenewal };
   }
-  return { status: "active", daysUntilRenewal, shouldAutoEnd: false };
+  return { status: "active", daysUntilRenewal };
 }
 
 // Fetch contracts for a specific client
@@ -117,26 +101,10 @@ export function useClientContractsWithModules(clientId: string | null) {
 
       if (error) throw error;
       
-      // Auto-end expired contracts in DB
-      const contractsToEnd = (data as ContractWithModules[]).filter(c => {
-        if (c.status === "ended") return false;
-        const { shouldAutoEnd } = computeContractStatus(c);
-        return shouldAutoEnd;
-      });
-
-      if (contractsToEnd.length > 0) {
-        await Promise.all(
-          contractsToEnd.map(c =>
-            supabase.from("contracts").update({ status: "ended" }).eq("id", c.id)
-          )
-        );
-      }
-
       return (data as ContractWithModules[]).map(contract => {
         const { status, daysUntilRenewal } = computeContractStatus(contract);
         return {
           ...contract,
-          status: status === "ended" ? "ended" : contract.status,
           computedStatus: status,
           daysUntilRenewal,
         };
@@ -146,7 +114,7 @@ export function useClientContractsWithModules(clientId: string | null) {
   });
 }
 
-// Create contract with optimistic update
+// Create contract
 export function useCreateContract() {
   const queryClient = useQueryClient();
 
@@ -162,54 +130,30 @@ export function useCreateContract() {
 
       if (error) throw error;
 
+      // Add modules if provided
       if (modules && modules.length > 0) {
         const moduleInserts = modules.map(moduleId => ({
           contract_id: contract.id,
           module_id: moduleId,
         }));
+        
         await supabase.from("contract_modules").insert(moduleInserts);
       }
 
       return contract;
     },
-    onMutate: async (input) => {
-      const { modules, ...contractData } = input;
-      await queryClient.cancelQueries({ queryKey: ["client_contracts_full", input.client_id] });
-      const previous = queryClient.getQueryData(["client_contracts_full", input.client_id]);
-
-      const optimistic = {
-        id: `temp-${Date.now()}`,
-        ...contractData,
-        status: "active",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        modules: [],
-      } as unknown as ContractWithModules;
-
-      queryClient.setQueryData(["client_contracts_full", input.client_id], (old: ContractWithModules[] | undefined) => {
-        const { status, daysUntilRenewal } = computeContractStatus(optimistic);
-        return old ? [{ ...optimistic, computedStatus: status, daysUntilRenewal }, ...old] : [{ ...optimistic, computedStatus: status, daysUntilRenewal }];
-      });
-
-      return { previous };
-    },
-    onError: (error, variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["client_contracts_full", variables.client_id], context.previous);
-      }
-      toast.error("Erro ao criar contrato: " + error.message);
-    },
-    onSuccess: () => {
-      toast.success("Contrato criado com sucesso");
-    },
-    onSettled: (_, __, variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["client_contracts_full", variables.client_id] });
       queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      toast.success("Contrato criado com sucesso");
+    },
+    onError: (error) => {
+      toast.error("Erro ao criar contrato: " + error.message);
     },
   });
 }
 
-// Update contract with optimistic update
+// Update contract
 export function useUpdateContract() {
   const queryClient = useQueryClient();
 
@@ -226,33 +170,13 @@ export function useUpdateContract() {
       if (error) throw error;
       return data;
     },
-    onMutate: async (input) => {
-      await queryClient.cancelQueries({ queryKey: ["client_contracts_full"] });
-      const allQueries = queryClient.getQueriesData({ queryKey: ["client_contracts_full"] });
-
-      // Optimistically update all matching caches
-      queryClient.setQueriesData(
-        { queryKey: ["client_contracts_full"] },
-        (old: ContractWithModules[] | undefined) => {
-          if (!old) return old;
-          return old.map((c) => (c.id === input.id ? { ...c, ...input } : c));
-        }
-      );
-
-      return { allQueries };
-    },
-    onError: (error, _vars, context) => {
-      context?.allQueries?.forEach(([key, data]) => {
-        queryClient.setQueryData(key, data);
-      });
-      toast.error("Erro ao atualizar contrato: " + error.message);
-    },
     onSuccess: () => {
-      toast.success("Contrato atualizado");
-    },
-    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["client_contracts_full"] });
       queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      toast.success("Contrato atualizado");
+    },
+    onError: (error) => {
+      toast.error("Erro ao atualizar contrato: " + error.message);
     },
   });
 }

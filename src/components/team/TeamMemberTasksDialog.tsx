@@ -20,10 +20,9 @@ import { useTasksSubtaskCounts } from "@/hooks/useSubtasks";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Task } from "@/types/tasks";
-import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar, CornerDownRight, ChevronDown, ChevronRight } from "lucide-react";
+import { Loader2, Clock, CheckCircle, AlertTriangle, Calendar, CornerDownRight, Video, Image, GalleryHorizontal, ChevronDown, ChevronRight } from "lucide-react";
 
 import { cn, parseLocalDate } from "@/lib/utils";
-import { DeliverableTypeBadge } from "@/components/tasks/DeliverableTypeBadge";
 
 interface TeamMemberTasksDialogProps {
   member: {
@@ -163,6 +162,8 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
      const isOverdue = !isCompletedTab && !isParentGroup && parseLocalDate(task.due_date) < now;
      const client = clientMap.get(task.client_id);
      const status = statusConfig[task.status] || statusConfig.todo;
+     const deliverableType = (task.deliverable_type || "").toLowerCase();
+
      // Parent group header
      if (isParentGroup) {
        const isCollapsed = collapsedParents.has(task.id);
@@ -236,7 +237,18 @@ export function TeamMemberTasksDialog({ member, open, onOpenChange }: TeamMember
               )}
            </div>
            <div className="flex items-center gap-2 shrink-0">
-              <DeliverableTypeBadge value={task.deliverable_type} />
+             {deliverableType && (
+               <Badge variant="outline" className={cn(
+                 "text-xs",
+                 deliverableType === "arte" ? "border-purple-500/30 text-purple-500" :
+                 deliverableType === "carrossel" ? "border-orange-500/30 text-orange-500" :
+                 "border-info/30 text-info"
+               )}>
+                 {deliverableType === "arte" ? <><Image className="h-3 w-3 mr-1" />Arte</> :
+                  deliverableType === "carrossel" ? <><GalleryHorizontal className="h-3 w-3 mr-1" />Carrossel</> :
+                  <><Video className="h-3 w-3 mr-1" />Vídeo</>}
+               </Badge>
+             )}
              <Badge className={cn(status.color)}>
                {status.label}
              </Badge>
