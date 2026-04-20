@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
           "Authorization": `Bearer ${supabaseServiceKey}`,
           "apikey": supabaseServiceKey,
         },
-        body: JSON.stringify({ password: tempPassword }),
+        body: JSON.stringify({ password: tempPassword, email_confirm: true }),
       }
     );
 
