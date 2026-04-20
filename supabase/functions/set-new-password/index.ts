@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     }
 
     // Update the user's password AND confirm email using GoTrue Admin API directly
-    // email_confirm: true ensures users imported without confirmation can sign in
+    // email_confirm: true ensures imported users can sign in even without email
     const updateRes = await fetch(
       `${supabaseUrl}/auth/v1/admin/users/${profile.user_id}`,
       {
@@ -63,20 +63,32 @@ Deno.serve(async (req) => {
 
     if (!updateRes.ok) {
       const errorBody = await updateRes.json().catch(() => ({}));
+      console.error("Password update failed:", errorBody);
       return new Response(
         JSON.stringify({ error: errorBody.message || errorBody.msg || "Erro ao atualizar senha" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Clear the must_reset_password flag
-    await supabase
+    // Clear the must_reset_password flag - CRITICAL: must succeed
+    const { error: clearFlagError, data: clearedRows } = await supabase
       .from("profiles")
       .update({ must_reset_password: false })
-      .eq("user_id", profile.user_id);
+      .eq("user_id", profile.user_id)
+      .select("user_id, must_reset_password");
+
+    if (clearFlagError) {
+      console.error("Failed to clear must_reset_password flag:", clearFlagError);
+      return new Response(
+        JSON.stringify({ error: "Senha atualizada, mas falhou ao limpar a flag de reset. Contate o admin." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("must_reset_password cleared for user:", profile.user_id, "rows:", clearedRows);
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, cleared: clearedRows }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
