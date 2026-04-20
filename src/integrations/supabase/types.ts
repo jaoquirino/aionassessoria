@@ -309,6 +309,57 @@ export type Database = {
           },
         ]
       }
+      contract_payments: {
+        Row: {
+          contract_id: string
+          created_at: string
+          financial_transaction_id: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          reference_month: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          financial_transaction_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          reference_month: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          financial_transaction_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          reference_month?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_payments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_payments_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           client_id: string
@@ -571,6 +622,172 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_categories: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          category_id: string | null
+          client_id: string | null
+          contract_id: string | null
+          created_at: string
+          created_by: string | null
+          date: string
+          description: string | null
+          id: string
+          is_auto_generated: boolean
+          reference_month: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          is_auto_generated?: boolean
+          reference_month?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          is_auto_generated?: boolean
+          reference_month?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "financial_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      freelancer_rates: {
+        Row: {
+          created_at: string
+          deliverable_type: string | null
+          id: string
+          module_id: string
+          rate_per_unit: number
+          team_member_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deliverable_type?: string | null
+          id?: string
+          module_id: string
+          rate_per_unit?: number
+          team_member_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deliverable_type?: string | null
+          id?: string
+          module_id?: string
+          rate_per_unit?: number
+          team_member_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freelancer_rates_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "service_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freelancer_rates_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freelancer_rates_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kanban_columns: {
         Row: {
           color_class: string
@@ -604,6 +821,65 @@ export type Database = {
           label?: string
           order_index?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      module_deliverable_types: {
+        Row: {
+          created_at: string
+          id: string
+          module_id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_deliverable_types_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "service_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      module_permissions: {
+        Row: {
+          can_access: boolean
+          created_at: string
+          id: string
+          module: string
+          sub_permissions: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_access?: boolean
+          created_at?: string
+          id?: string
+          module: string
+          sub_permissions?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_access?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          sub_permissions?: Json | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -736,6 +1012,115 @@ export type Database = {
           },
         ]
       }
+      payment_period_tasks: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          is_included: boolean
+          payment_period_id: string
+          task_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_included?: boolean
+          payment_period_id: string
+          task_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_included?: boolean
+          payment_period_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_period_tasks_payment_period_id_fkey"
+            columns: ["payment_period_id"]
+            isOneToOne: false
+            referencedRelation: "payment_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_period_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_periods: {
+        Row: {
+          approved_at: string | null
+          created_at: string
+          end_date: string
+          financial_transaction_id: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          start_date: string
+          status: string
+          team_member_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          created_at?: string
+          end_date: string
+          financial_transaction_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          start_date: string
+          status?: string
+          team_member_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          created_at?: string
+          end_date?: string
+          financial_transaction_id?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          start_date?: string
+          status?: string
+          team_member_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_periods_financial_transaction_id_fkey"
+            columns: ["financial_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "financial_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_periods_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_periods_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -768,6 +1153,35 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      role_deliverables: {
+        Row: {
+          created_at: string
+          deliverable_type: string
+          id: string
+          role_id: string
+        }
+        Insert: {
+          created_at?: string
+          deliverable_type: string
+          id?: string
+          role_id: string
+        }
+        Update: {
+          created_at?: string
+          deliverable_type?: string
+          id?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_deliverables_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "available_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_colors: {
         Row: {
@@ -1270,6 +1684,7 @@ export type Database = {
           capacity_limit: number
           created_at: string
           email: string | null
+          employment_type: string
           id: string
           is_active: boolean
           name: string
@@ -1284,6 +1699,7 @@ export type Database = {
           capacity_limit?: number
           created_at?: string
           email?: string | null
+          employment_type?: string
           id?: string
           is_active?: boolean
           name: string
@@ -1298,6 +1714,7 @@ export type Database = {
           capacity_limit?: number
           created_at?: string
           email?: string | null
+          employment_type?: string
           id?: string
           is_active?: boolean
           name?: string
@@ -1410,6 +1827,10 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      has_module_access: {
+        Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1437,7 +1858,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "member"
+      app_role: "admin" | "member" | "gestor"
       client_status: "onboarding" | "active" | "paused" | "ended"
       onboarding_step_status: "pending" | "in_progress" | "completed"
       task_status: "todo" | "in_progress" | "review" | "waiting_client" | "done"
@@ -1569,7 +1990,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "member"],
+      app_role: ["admin", "member", "gestor"],
       client_status: ["onboarding", "active", "paused", "ended"],
       onboarding_step_status: ["pending", "in_progress", "completed"],
       task_status: ["todo", "in_progress", "review", "waiting_client", "done"],
