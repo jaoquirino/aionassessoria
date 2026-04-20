@@ -231,11 +231,25 @@ export default function Auth() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Senha criada com sucesso! Faça login com sua nova senha.");
-      setMustResetPassword(false);
-      setNewPassword("");
-      setConfirmNewPassword("");
-      setPassword("");
+      // Após salvar a nova senha, fazer login automaticamente
+      const internalEmail = generateInternalEmail(username);
+      let { error: signInError } = await signIn(internalEmail, newPassword);
+      if (signInError && signInError.message.includes("Invalid login credentials")) {
+        const legacyEmail = generateLegacyEmail(username);
+        const legacyResult = await signIn(legacyEmail, newPassword);
+        signInError = legacyResult.error;
+      }
+
+      if (signInError) {
+        toast.success("Senha criada! Faça login com sua nova senha.");
+        setMustResetPassword(false);
+        setNewPassword("");
+        setConfirmNewPassword("");
+        setPassword("");
+      } else {
+        toast.success("Senha criada e login realizado com sucesso!");
+        navigate("/", { replace: true });
+      }
     } catch (error: any) {
       toast.error(error.message || "Erro ao definir nova senha");
     } finally {
