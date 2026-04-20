@@ -137,7 +137,7 @@ export function useFinancialEvolution() {
       // Get all contracts with renewal_date to determine end dates
       const { data: contracts, error } = await supabase
         .from("contracts")
-        .select("id, start_date, monthly_value, status, renewal_date, minimum_duration_months, created_at");
+        .select("id, start_date, monthly_value, status, renewal_date, minimum_duration_months, created_at, is_recurring");
 
       if (error) throw error;
 
@@ -175,15 +175,20 @@ export function useFinancialEvolution() {
         return true;
       };
 
+      // Hide non-recurring and zero-value contracts from the financial chart
+      const billableContracts = (contracts || []).filter(
+        (c: any) => Number(c.monthly_value) > 0 && c.is_recurring !== false
+      );
+
       for (let month = 0; month < 12; month++) {
         // Filter contracts active in each month
-        const currentYearContracts = contracts?.filter(c => isContractActiveInMonth(c, currentYear, month)) || [];
-        const previousYearContracts = contracts?.filter(c => {
+        const currentYearContracts = billableContracts.filter(c => isContractActiveInMonth(c, currentYear, month));
+        const previousYearContracts = billableContracts.filter(c => {
           const startDate = new Date(c.start_date);
           // Only include if started before or in previous year
           if (startDate.getFullYear() > previousYear) return false;
           return isContractActiveInMonth(c, previousYear, month);
-        }) || [];
+        });
 
         // Calculate revenue
         const currentRevenue = currentYearContracts.reduce((sum, c) => sum + (c.monthly_value || 0), 0);

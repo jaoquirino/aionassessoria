@@ -175,8 +175,11 @@ export function useDashboardData() {
       const activeTasksCount = operationalTasksForWeight.filter(t => t.status !== "done").length;
 
       const activeClients = clients.filter(c => c.status === "active").length;
+      // MRR: only recurring contracts with value > 0, excluding internal clients
       const monthlyRevenue = contracts
-        .filter((c: { client_id: string }) => !internalClientIds.has(c.client_id))
+        .filter((c: { client_id: string; monthly_value: number; is_recurring?: boolean }) => 
+          !internalClientIds.has(c.client_id) && Number(c.monthly_value) > 0 && c.is_recurring !== false
+        )
         .reduce((sum: number, c: { monthly_value: number }) => sum + Number(c.monthly_value), 0);
 
       // Member weights: match Team page logic exactly (exclude project type, include all clients, include subtask weights)
@@ -376,10 +379,14 @@ export function useDashboardData() {
       });
 
       const clientRevenueMap = new Map<string, number>();
-      contracts.filter((c: { client_id: string }) => !internalClientIds.has(c.client_id)).forEach((c: { client_id: string; monthly_value: number }) => {
-        const curr = clientRevenueMap.get(c.client_id) || 0;
-        clientRevenueMap.set(c.client_id, curr + Number(c.monthly_value));
-      });
+      contracts
+        .filter((c: { client_id: string; monthly_value: number; is_recurring?: boolean }) => 
+          !internalClientIds.has(c.client_id) && Number(c.monthly_value) > 0 && c.is_recurring !== false
+        )
+        .forEach((c: { client_id: string; monthly_value: number }) => {
+          const curr = clientRevenueMap.get(c.client_id) || 0;
+          clientRevenueMap.set(c.client_id, curr + Number(c.monthly_value));
+        });
 
       // Design limits
       const clientDesignLimitMap = new Map<string, number>();
