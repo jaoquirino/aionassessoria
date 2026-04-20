@@ -46,7 +46,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update the user's password using GoTrue Admin API directly
+    // Update the user's password AND confirm email using GoTrue Admin API directly
+    // email_confirm: true ensures users imported without confirmation can sign in
     const updateRes = await fetch(
       `${supabaseUrl}/auth/v1/admin/users/${profile.user_id}`,
       {
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
           "Authorization": `Bearer ${supabaseServiceKey}`,
           "apikey": supabaseServiceKey,
         },
-        body: JSON.stringify({ password: newPassword }),
+        body: JSON.stringify({ password: newPassword, email_confirm: true }),
       }
     );
 
