@@ -137,7 +137,7 @@ export function useFinancialEvolution() {
       // Get all contracts with renewal_date to determine end dates
       const { data: contracts, error } = await supabase
         .from("contracts")
-        .select("id, start_date, monthly_value, status, renewal_date, minimum_duration_months, created_at");
+        .select("id, start_date, monthly_value, status, renewal_date, minimum_duration_months, created_at, is_recurring");
 
       if (error) throw error;
 

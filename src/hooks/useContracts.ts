@@ -59,13 +59,21 @@ export interface UpdateContractInput {
   is_recurring?: boolean;
 }
 
-function computeContractStatus(contract: Contract): { status: "active" | "expiring_soon" | "renewing" | "ended"; daysUntilRenewal: number } {
+function computeContractStatus(contract: Contract & { is_recurring?: boolean }): { status: "active" | "expiring_soon" | "renewing" | "ended"; daysUntilRenewal: number } {
   if (contract.status === "ended") {
     return { status: "ended", daysUntilRenewal: 0 };
   }
   
   const renewalDate = contract.renewal_date ? parseLocalDate(contract.renewal_date) : null;
   const daysUntilRenewal = renewalDate ? differenceInDays(renewalDate, new Date()) : 999;
+  
+  // Non-recurring contracts: ended once we pass the end of the start month
+  if (contract.is_recurring === false) {
+    if (daysUntilRenewal < 0) {
+      return { status: "ended", daysUntilRenewal: 0 };
+    }
+    return { status: "active", daysUntilRenewal };
+  }
   
   if (daysUntilRenewal <= 7) {
     return { status: "renewing", daysUntilRenewal };
